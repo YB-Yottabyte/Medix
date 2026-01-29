@@ -33,13 +33,13 @@ An intelligent medical Q&A system that retrieves and presents real medical proce
 
 ## ✨ Features
 
-✅ **Real Medical Videos** - 319 verified YouTube videos from MedVidQA dataset  
-✅ **Fast AI Responses** - Groq's Llama 3.3 70B (70 tokens/second)  
-✅ **Semantic Search** - Sentence transformer embeddings for accurate retrieval  
-✅ **Video Playback** - Embedded YouTube player with relevant procedures  
-✅ **Modern UI** - Responsive Flask + Next.js interface  
-✅ **Step-by-Step Answers** - AI-generated procedural guidance  
-✅ **Contextual Responses** - RAG-based answers using retrieved videos
+• **Real Medical Videos** - 319 verified YouTube videos from MedVidQA dataset  
+• **Fast AI Responses** - Groq's Llama 3.3 70B (70 tokens/second)  
+• **Semantic Search** - Sentence transformer embeddings for accurate retrieval  
+• **Video Playback** - Embedded YouTube player with relevant procedures  
+• **Modern UI** - Responsive Flask + Next.js interface  
+• **Step-by-Step Answers** - AI-generated procedural guidance  
+• **Contextual Responses** - RAG-based answers using retrieved videos
 
 ---
 
