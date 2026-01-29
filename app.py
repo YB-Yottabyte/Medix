@@ -8,6 +8,8 @@ from database.medical_db import MedicalDatabase
 from database.retriever import ProcedureRetriever
 from models.llm import AIHandler
 from models.generator import ResponseGenerator
+import tempfile
+import os
 
 app = Flask(__name__)
 
@@ -138,6 +140,40 @@ def health():
         'num_procedures': len(db.procedures),
         'ai_provider': config['ai']['provider']
     })
+
+@app.route('/api/transcribe', methods=['POST'])
+def transcribe():
+    """Handle audio transcription using Groq Whisper"""
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'success': False, 'error': 'No audio file provided'}), 400
+        
+        audio_file = request.files['audio']
+        
+        # Save audio to temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as temp_audio:
+            audio_file.save(temp_audio.name)
+            temp_path = temp_audio.name
+        
+        try:
+            # Use Groq Whisper for transcription
+            transcript = ai_handler.transcribe_audio(temp_path)
+            
+            return jsonify({
+                'success': True,
+                'transcript': transcript
+            })
+        finally:
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+                
+    except Exception as e:
+        print(f"❌ Transcription error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     host = config['web']['host']

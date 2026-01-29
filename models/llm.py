@@ -194,3 +194,22 @@ Your calm, context-appropriate response:"""
             return f"❌ Error calling Hugging Face API: {str(e)}"
         except Exception as e:
             return f"❌ Error: {str(e)}"
+
+    def transcribe_audio(self, audio_path: str) -> str:
+        """Transcribe audio using Groq Whisper API"""
+        try:
+            from groq import Groq
+            
+            client = Groq(api_key=self.groq_config['api_key'])
+            
+            with open(audio_path, 'rb') as audio_file:
+                transcription = client.audio.transcriptions.create(
+                    model="whisper-large-v3",
+                    file=audio_file,
+                    response_format="text"
+                )
+            
+            return transcription.strip()
+            
+        except Exception as e:
+            raise Exception(f"Transcription failed: {str(e)}")

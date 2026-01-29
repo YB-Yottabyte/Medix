@@ -1075,60 +1075,74 @@
         let currentVideoId = '';
         let isPlayingAudio = false;
         let currentUtterance = null;
-        let recognition = null;
-        let isListening = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let isRecording = false;
 
-        // Initialize Speech Recognition
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
+        async function toggleVoiceInput() {
+            const micBtn = document.getElementById('micBtn');
+            const queryInput = document.getElementById('queryInput');
             
-            recognition.onstart = function() {
-                isListening = true;
-                document.getElementById('micBtn').classList.add('listening');
-                document.getElementById('queryInput').placeholder = '🎤 Listening...';
-            };
-            
-            recognition.onresult = function(event) {
-                const transcript = event.results[0][0].transcript;
-                document.getElementById('queryInput').value = transcript;
-                document.getElementById('queryInput').placeholder = 'Example: How to perform CPR? How to treat vertigo?';
-            };
-            
-            recognition.onerror = function(event) {
-                console.error('Speech recognition error:', event.error);
-                isListening = false;
-                document.getElementById('micBtn').classList.remove('listening');
-                document.getElementById('queryInput').placeholder = 'Example: How to perform CPR? How to treat vertigo?';
-                
-                if (event.error === 'not-allowed') {
-                    alert('Microphone access denied. Please enable microphone permissions.');
-                } else if (event.error === 'no-speech') {
-                    alert('No speech detected. Please try again.');
-                }
-            };
-            
-            recognition.onend = function() {
-                isListening = false;
-                document.getElementById('micBtn').classList.remove('listening');
-            };
-        }
-
-        function toggleVoiceInput() {
-            if (!recognition) {
-                alert('Voice input is not supported in your browser. Please use Chrome, Edge, or Safari.');
+            if (isRecording) {
+                // Stop recording
+                mediaRecorder.stop();
+                isRecording = false;
+                micBtn.classList.remove('listening');
                 return;
             }
             
-            if (isListening) {
-                recognition.stop();
-                isListening = false;
-                document.getElementById('micBtn').classList.remove('listening');
-            } else {
-                recognition.start();
+            try {
+                // Request microphone access
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Start recording
+                audioChunks = [];
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    // Stop all audio tracks
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Create audio blob
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    // Send to backend for transcription
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.webm');
+                    
+                    try {
+                        queryInput.placeholder = '🎤 Transcribing...';
+                        const response = await fetch('/api/transcribe', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success && data.transcript) {
+                            queryInput.value = data.transcript;
+                        } else {
+                            alert('Could not transcribe audio. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Transcription error:', error);
+                        alert('Transcription failed. Please try again.');
+                    } finally {
+                        queryInput.placeholder = 'Example: How to perform CPR? How to treat vertigo?';
+                    }
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                micBtn.classList.add('listening');
+                
+            } catch (error) {
+                console.error('Microphone access error:', error);
+                alert('Microphone access denied. Please enable microphone permissions.');
             }
         }
 
