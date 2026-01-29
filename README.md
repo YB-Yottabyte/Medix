@@ -205,7 +205,7 @@ medical-qa-system/
 ### Workflow
 
 ```
-User Query → Embedding → Semantic Search → Top-K Videos → 
+User Query → Embedding → Semantic Search → Top-K Videos →
 RAG Context → Llama 3.3 → Answer + Videos → UI Display
 ```
 
@@ -214,6 +214,7 @@ RAG Context → Llama 3.3 → Answer + Videos → UI Display
 ## 📊 Dataset
 
 **MedVidQA** (TREC 2024)
+
 - **319 verified videos** from YouTube
 - **Medical procedures** covering common clinical tasks
 - **Quality filtered** for availability and relevance
@@ -224,18 +225,21 @@ RAG Context → Llama 3.3 → Answer + Videos → UI Display
 ## 🔧 Tech Stack
 
 **Backend:**
+
 - Python 3.8+
 - Flask 3.0
 - Sentence Transformers
 - NumPy, PyYAML
 
 **Frontend:**
+
 - Next.js 15
 - React 19
 - TailwindCSS
 - TypeScript
 
 **AI:**
+
 - Groq (Llama 3.3 70B)
 - all-MiniLM-L6-v2 (embeddings)
 
