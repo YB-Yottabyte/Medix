@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Procedure Q&A</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ffffff;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Navbar - Fixed at top */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 18px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .navbar-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .navbar-brand {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .navbar-links {
+            display: flex;
+            gap: 35px;
+        }
+        
+        .navbar-links a {
+            color: #64748b;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding: 8px 0;
+            position: relative;
+        }
+        
+        .navbar-links a:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #2563eb;
+            transition: width 0.3s ease;
+        }
+        
+        .navbar-links a:hover {
+            color: #2563eb;
+        }
+        
+        .navbar-links a:hover:after {
+            width: 100%;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
+            padding: 140px 40px 120px;
+            text-align: center;
+            margin-top: 70px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1), rgba(59, 130, 246, 0.05));
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            top: 60%;
+            right: 10%;
+            animation-delay: -7s;
+        }
+        
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            top: 30%;
+            right: 25%;
+            animation-delay: -14s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero h1 {
+            font-size: 4.2em;
+            font-weight: 800;
+            margin-bottom: 25px;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #1e293b 0%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: slideInDown 0.8s ease-out;
+        }
+        
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .hero p {
+            font-size: 1.4em;
+            max-width: 800px;
+            margin: 0 auto 40px;
+            color: #64748b;
+            line-height: 1.7;
+            font-weight: 400;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 16px 40px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1em;
+            margin: 20px auto 40px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(37, 99, 235, 0.4);
+        }
+        
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+            margin-top: 60px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 30px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            min-width: 180px;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 3.2em;
+            font-weight: 800;
+            display: block;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stat-label {
+            font-size: 1.05em;
+            color: #64748b;
+            margin-top: 12px;
+            font-weight: 500;
+        }
+        
+        /* About Section */
+        .about-section {
+            max-width: 1400px;
+            margin: 120px auto 100px;
+            padding: 0 40px;
+        }
+        
+        .about-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .about-section h2 {
+            font-size: 2.8em;
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        
+        .about-description {
+            font-size: 1.2em;
+            color: #64748b;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+        
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            margin-bottom: 60px;
+        }
+        
+        .about-image {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+        }
+        
+        .about-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .about-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.4em;
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .feature-card p {
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 1.05em;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: -60px auto 80px;
+            padding: 0 40px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .query-card {
+            background: white;
+            border-radius: 24px;
+            padding: 50px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+            border: 1px solid #e2e8f0;
+            animation: slideInUp 0.6s ease-out;
+        }
+        
+        .query-card h2 {
+            font-size: 2em;
+            color: #1e293b;
+            margin-bottom: 30px;
+            font-weight: 700;
+            color: #1e293b;
+            letter-spacing: -0.02em;
+        }
+        
+        .header p {
+            font-size: 1.15em;
+            color: #64748b;
+            max-width: 700px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        
+        .main-content { 
+            padding: 40px; 
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1e293b;
+            font-size: 1.05em;
+        }
+        
+        #queryInput {
+            width: 100%;
+            padding: 18px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 1.05em;
+            font-family: inherit;
+            min-height: 100px;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+        
+        #queryInput:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+        
+        .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        }
+        
+        .submit-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .submit-btn:disabled { 
+            opacity: 0.6; 
+            cursor: not-allowed; 
+        }
+        
+        .examples {
+            margin: 25px 0;
+        }
+        
+        .examples p {
+            font-size: 0.95em;
+            color: #64748b;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .example-btn {
+            display: inline-block;
+            background: #f1f5f9;
+            padding: 10px 18px;
+            margin: 5px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+            color: #475569;
+            border: 1px solid transparent;
+        }
+        
+        .example-btn:hover { 
+            background: #2563eb; 
+            color: white;
+            border-color: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        .loading { 
+            display: none; 
+            text-align: center; 
+            padding: 40px; 
+        }
+        
+        .loading.active { 
+            display: block; 
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        .spinner {
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin { 
+            0% { transform: rotate(0deg); } 
+            100% { transform: rotate(360deg); } 
+        }
+        
+        .loading p {
+            color: #64748b;
+            font-size: 1.05em;
+        }
+        
+        .response-section { 
+            display: none; 
+            margin-top: 30px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        .response-section.active { 
+            display: block; 
+        }
+        
+        /* Landscape Layout - Side by Side */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 968px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .video-section {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 25px;
+        }
+        
+        .video-section h2,
+        .video-section h3:first-child {
+            display: none; /* Hide titles */
+        }
+        
+        /* Vertical Stacked Layout - Video on Top, Response Below */
+        .content-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            margin-top: 20px;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @media (max-width: 968px) {
+            .content-grid {
+                gap: 20px;
+            }
+        }
+        
+        .response-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 50px 32px 32px 32px;
+            position: relative;
+            height: fit-content;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .response-card h2 {
+            display: none; /* Hide the title */
+        }
+        
+        #responseContent {
+            color: #374151;
+            font-size: 15px;
+            line-height: 1.75;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            text-align: left;
+            padding-right: 10px;
+        }
+        
+        /* Add spacing between paragraphs */
+        #responseContent p {
+            margin-bottom: 1em;
+        }
+        
+        /* Style numbered lists with proper indentation */
+        #responseContent {
+            text-indent: 0;
+        }
+        
+        /* Indent lines that start with numbers */
+        #responseContent::after {
+            content: '';
+            display: block;
+        }
+        
+        /* Better paragraph spacing */
+        #responseContent br {
+            display: block;
+            content: "";
+            margin-top: 0.75em;
+        }
+        
+        .audio-icon-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 0;
+            z-index: 10;
+        }
+        
+        .audio-icon-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #64748b;
+            transition: fill 0.3s ease;
+        }
+        
+        .audio-icon-btn:hover {
+            background: #f8fafc;
+            border-color: #2563eb;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        .audio-icon-btn:hover svg {
+            fill: #2563eb;
+        }
+        
+        .audio-icon-btn.playing {
+            background: #2563eb;
+            border-color: #2563eb;
+            animation: pulse-audio 1.5s ease-in-out infinite;
+        }
+        
+        .audio-icon-btn.playing svg {
+            fill: white;
+        }
+        
+        @keyframes pulse-audio {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .response-card p {
+            color: #475569;
+            line-height: 1.7;
+            font-size: 1.05em;
+        }
+        
+        .segment-info {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 2px solid #10b981;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .segment-info strong { 
+            color: #059669;
+            font-size: 1.1em;
+        }
+        
+        .replay-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .replay-btn:hover { 
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        .video-container {
+            margin: 25px 0;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        #player { 
+            width: 100%; 
+            aspect-ratio: 16/9; 
+        }
+        
+        .video-info {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 16px;
+            margin-top: 20px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .video-step {
+            padding: 15px 20px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .video-step:hover { 
+            background: #2563eb; 
+            color: white;
+            border-color: #2563eb;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        .step-time {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .video-step:hover .step-time { background: white; color: #667eea; }
+        .response-box {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 5px solid #667eea;
+        }
+        .response-header { font-weight: 600; color: #667eea; margin-bottom: 15px; font-size: 1.2em; }
+        .warning-box {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #ff9800;
+            margin-top: 20px;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #1e293b;
+            color: white;
+            padding: 60px 40px 30px;
+            margin-top: 100px;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 50px;
+            margin-bottom: 40px;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .footer-section p,
+        .footer-section a {
+            color: #94a3b8;
+            line-height: 1.8;
+            text-decoration: none;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .footer-section a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 30px;
+            border-top: 1px solid #334155;
+            text-align: center;
+            color: #94a3b8;
+        }
+        
+        /* Tech Stack */
+        .tech-stack {
+            background: #f8fafc;
+            padding: 80px 40px;
+            text-align: center;
+        }
+        
+        .tech-stack h2 {
+            font-size: 2.5em;
+            color: #1e293b;
+            margin-bottom: 50px;
+            font-weight: 700;
+        }
+        
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .tech-item {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .tech-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .tech-item-name {
+            font-weight: 600;
+            color: #1e293b;
+            margin-top: 10px;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">MedVidQA Research</div>
+            <div class="navbar-links">
+                <a href="#home">Home</a>
+                <a href="#about">About</a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+        <div class="hero-content">
+            <h1>AI-Powered Medical Video Q&A</h1>
+            <p>Leveraging the MedVidQA dataset and advanced NLP to provide intelligent, video-based answers to medical procedure questions</p>
+            <a href="#query" class="cta-button" onclick="document.getElementById('queryInput').focus(); return false;">Try It Now →</a>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">319</span>
+                    <span class="stat-label">Medical Procedures</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">100%</span>
+                    <span class="stat-label">Video-Based</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">AI</span>
+                    <span class="stat-label">Powered Answers</span>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Query Section - Moved up for better UX -->
+    <div class="container" id="query">
+        <div class="query-card">
+            <h2>Ask a Medical Question</h2>
+            <div class="query-section">
+                <label for="queryInput">Ask about a medical procedure:</label>
+                <textarea id="queryInput" placeholder="Example: How to perform CPR? How to treat vertigo?"></textarea>
+                
+                <div class="examples">
+                    <p>Try these:</p>
+                    <span class="example-btn" onclick="setQuery('How to perform epley maneuver for vertigo?')">Vertigo</span>
+                    <span class="example-btn" onclick="setQuery('How to give CPR to a child?')">CPR</span>
+                    <span class="example-btn" onclick="setQuery('How to use an AED?')">AED</span>
+                    <span class="example-btn" onclick="setQuery('How to stop severe bleeding?')">Bleeding</span>
+                    <span class="example-btn" onclick="setQuery('How to treat someone in shock?')">Shock</span>
+                </div>
+            </div>
+
+            <button class="submit-btn" onclick="submitQuery()" id="submitBtn">Get Answer</button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Finding video and generating response...</p>
+            </div>
+
+            <div class="response-section" id="responseSection">
+                <div class="content-grid">
+                    <!-- Video Section - Left Side -->
+                    <div class="video-section" id="videoSection" style="display: none;">
+                        <div class="segment-info" id="segmentInfo">
+                            <strong>Playing segment:</strong> <span id="segmentTime">0:00 - 0:00</span>
+                            <br><small>Video will automatically stop at the end of the relevant segment</small>
+                            <br><button class="replay-btn" onclick="replaySegment()">Replay Segment</button>
+                        </div>
+                        
+                        <div class="video-container">
+                            <div id="player"></div>
+                        </div>
+                        
+                        <div class="video-info">
+                            <h3 style="color: #2563eb; font-weight: 600;">Timeline</h3>
+                            <div id="videoSteps"></div>
+                        </div>
+                    </div>
+
+                    <!-- Answer Section - Right Side -->
+                    <div class="response-card">
+                        <button class="audio-icon-btn" id="audioIconBtn" onclick="toggleAudioPlayback()" title="Listen to response">
+                            <svg id="audioSvgIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                            </svg>
+                        </button>
+                        <div id="responseContent"></div>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <p><strong>Important:</strong> These videos are from the MedVidQA research dataset. Always consult healthcare professionals for medical advice.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- About Section -->
+    <section class="about-section" id="about">
+        <div class="about-header">
+            <h2>About This Project</h2>
+            <p class="about-description">A cutting-edge research project combining artificial intelligence, natural language processing, and medical video analysis to provide accurate, video-supported answers to medical procedure questions.</p>
+        </div>
+        
+        <div class="about-grid">
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80" alt="Medical AI Technology" />
+            </div>
+            <div class="about-content">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Research Focus</h3>
+                    <p>This system demonstrates the application of natural language processing and video understanding for medical question answering, utilizing the MedVidQA dataset.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎬</div>
+                    <h3>Video Integration</h3>
+                    <p>Each answer is accompanied by relevant video segments from verified medical procedures, providing visual guidance alongside textual explanations.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="about-content">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI Technology</h3>
+                <p>Powered by state-of-the-art language models and semantic search, delivering accurate and contextually relevant answers to medical queries.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Dataset Excellence</h3>
+                <p>Built on the comprehensive MedVidQA dataset containing 319 verified medical procedure videos with detailed annotations and step-by-step guidance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Real-time Answers</h3>
+                <p>Instant semantic search and AI-powered response generation provide immediate, contextually accurate answers to your medical procedure questions.</p>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script>
+        let player = null;
+        let videoEndTime = 0;
+        let videoStartTime = 0;
+        let checkInterval = null;
+        let currentVideoId = '';
+        let isPlayingAudio = false;
+        let currentUtterance = null;
+
+        function toggleAudioPlayback() {
+            const iconBtn = document.getElementById('audioIconBtn');
+            const responseText = document.getElementById('responseContent').textContent;
+            
+            if (isPlayingAudio) {
+                // Stop playing
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                }
+                isPlayingAudio = false;
+                iconBtn.classList.remove('playing');
+                currentUtterance = null;
+            } else {
+                // Start playing with enhanced browser TTS
+                if (!('speechSynthesis' in window)) {
+                    alert('Audio is not supported in your browser.');
+                    return;
+                }
+                
+                // Cancel any ongoing speech
+                window.speechSynthesis.cancel();
+                
+                currentUtterance = new SpeechSynthesisUtterance(responseText);
+                
+                // Enhanced settings for calm, professional voice
+                currentUtterance.rate = 0.88;  // Slower for clarity and calmness
+                currentUtterance.pitch = 0.95; // Slightly lower for professional tone
+                currentUtterance.volume = 1.0;
+                
+                // Prioritize Google and Microsoft natural voices ONLY
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && 
+                    (voice.name.includes('Google US English') || 
+                     voice.name.includes('Google UK English Female') ||
+                     voice.name.includes('Microsoft Zira') ||
+                     voice.name.includes('Microsoft David') ||
+                     voice.name.includes('Microsoft Mark'))
+                ) || voices.find(voice => 
+                    voice.lang.startsWith('en') && voice.name.includes('Google')
+                ) || voices.find(voice => 
+                    voice.lang.startsWith('en') && voice.name.includes('Microsoft')
+                ) || voices.find(voice => voice.lang.startsWith('en'));
+                
+                if (preferredVoice) {
+                    currentUtterance.voice = preferredVoice;
+                    console.log('Using voice:', preferredVoice.name);
+                }
+                
+                currentUtterance.onstart = function() {
+                    isPlayingAudio = true;
+                    iconBtn.classList.add('playing');
+                };
+                
+                currentUtterance.onend = function() {
+                    isPlayingAudio = false;
+                    iconBtn.classList.remove('playing');
+                    currentUtterance = null;
+                };
+                
+                currentUtterance.onerror = function() {
+                    isPlayingAudio = false;
+                    iconBtn.classList.remove('playing');
+                    currentUtterance = null;
+                };
+                
+                window.speechSynthesis.speak(currentUtterance);
+            }
+        }
+        
+        // Load voices when available
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        function onYouTubeIframeAPIReady() {
+            console.log('YouTube API Ready');
+        }
+
+        function createPlayer(videoId, startSeconds, endSeconds) {
+            currentVideoId = videoId;
+            videoStartTime = startSeconds || 0;
+            videoEndTime = endSeconds || 9999;
+
+            if (player) {
+                player.destroy();
+                player = null;
+            }
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
+
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: videoId,
+                playerVars: {
+                    autoplay: 1,
+                    start: Math.floor(startSeconds),
+                    end: Math.floor(endSeconds),
+                    rel: 0,
+                    modestbranding: 1,
+                    enablejsapi: 1
+                },
+                events: {
+                    onReady: onPlayerReady,
+                    onStateChange: onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            console.log('Playing from', videoStartTime, 'to', videoEndTime);
+            event.target.playVideo();
+            
+            checkInterval = setInterval(() => {
+                if (player && typeof player.getCurrentTime === 'function') {
+                    const currentTime = player.getCurrentTime();
+                    if (currentTime >= videoEndTime) {
+                        player.pauseVideo();
+                        clearInterval(checkInterval);
+                        showSegmentComplete();
+                    }
+                }
+            }, 500);
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === 0 && checkInterval) {
+                clearInterval(checkInterval);
+            }
+        }
+
+        function showSegmentComplete() {
+            const info = document.getElementById('segmentInfo');
+            if (info) {
+                info.innerHTML = `
+                    <strong>✅ Segment Complete!</strong>
+                    <br>Watched: ${formatTime(videoStartTime)} - ${formatTime(videoEndTime)}
+                    <br><button class="replay-btn" onclick="replaySegment()">🔄 Replay Segment</button>
+                `;
+            }
+        }
+
+        function replaySegment() {
+            if (player && currentVideoId) {
+                player.seekTo(videoStartTime);
+                player.playVideo();
+                
+                if (checkInterval) clearInterval(checkInterval);
+                checkInterval = setInterval(() => {
+                    if (player && typeof player.getCurrentTime === 'function') {
+                        if (player.getCurrentTime() >= videoEndTime) {
+                            player.pauseVideo();
+                            clearInterval(checkInterval);
+                            showSegmentComplete();
+                        }
+                    }
+                }, 500);
+            }
+        }
+
+        function setQuery(text) {
+            document.getElementById('queryInput').value = text;
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return mins + ':' + secs.toString().padStart(2, '0');
+        }
+
+        function jumpToTime(seconds) {
+            if (player) {
+                player.seekTo(seconds);
+                player.playVideo();
+            }
+        }
+
+        async function submitQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a question!');
+                return;
+            }
+
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('responseSection').classList.remove('active');
+            document.getElementById('submitBtn').disabled = true;
+
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
+
+            try {
+                const response = await fetch('/api/query_video', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    return;
+                }
+
+                // Display response
+                const responseContent = document.getElementById('responseContent');
+                if (responseContent) {
+                    // Format text with proper indentation for numbered lists
+                    let formattedText = data.response || 'No response available';
+                    
+                    // Add indentation to lines starting with numbers
+                    formattedText = formattedText.split('\n').map(line => {
+                        // Check if line starts with a number followed by a period or parenthesis
+                        if (/^\d+[\.\)]/.test(line.trim())) {
+                            return '  ' + line; // Add 2 spaces indent
+                        }
+                        return line;
+                    }).join('\n');
+                    
+                    responseContent.textContent = formattedText;
+                    document.getElementById('audioIconBtn').style.display = 'flex';
+                }
+
+                // Display video
+                const videoSection = document.getElementById('videoSection');
+                const segmentInfo = document.getElementById('segmentInfo');
+                const segmentTime = document.getElementById('segmentTime');
+                const videoSteps = document.getElementById('videoSteps');
+
+                if (data.video_id && data.answer_start !== undefined && data.answer_end !== undefined) {
+                    if (videoSection) videoSection.style.display = 'block';
+                    
+                    if (segmentTime) {
+                        segmentTime.textContent = formatTime(data.answer_start) + ' - ' + formatTime(data.answer_end);
+                    }
+                    if (segmentInfo) {
+                        segmentInfo.innerHTML = 
+                            '<strong>🎯 Playing segment:</strong> ' + formatTime(data.answer_start) + ' - ' + formatTime(data.answer_end) +
+                            '<br><small>Video will automatically stop at the end of the relevant segment</small>' +
+                            '<br><button class="replay-btn" onclick="replaySegment()">🔄 Replay Segment</button>';
+                    }
+                    
+                    createPlayer(data.video_id, data.answer_start, data.answer_end);
+
+                    if (videoSteps) {
+                        videoSteps.innerHTML = 
+                            '<div class="video-step" onclick="jumpToTime(' + data.answer_start + ')">' +
+                            '<span class="step-time">' + formatTime(data.answer_start) + '</span>' +
+                            '<span>▶️ Start of answer</span></div>' +
+                            '<div class="video-step" onclick="jumpToTime(' + data.answer_end + ')">' +
+                            '<span class="step-time">' + formatTime(data.answer_end) + '</span>' +
+                            '<span>⏹️ End of answer</span></div>';
+                    }
+                } else {
+                    if (videoSection) videoSection.style.display = 'none';
+                }
+
+                document.getElementById('responseSection').classList.add('active');
+                document.getElementById('responseSection').scrollIntoView({ behavior: 'smooth' });
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        document.getElementById('queryInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitQuery();
+            }
+        });
+        
+        // Scroll to top button
+        window.addEventListener('scroll', function() {
+            const scrollBtn = document.getElementById('scrollTop');
+            if (window.pageYOffset > 300) {
+                scrollBtn.classList.add('show');
+            } else {
+                scrollBtn.classList.remove('show');
+            }
+        });
+        
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+    
+    <!-- Scroll to top button -->
+    <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
+        ↑
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>MedVidQA Project</h3>
+                <p>A research project leveraging AI and video understanding for medical question answering.</p>
+                <p style="margin-top: 20px;">Arizona State University<br>Spring 2026</p>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <a href="https://github.com/bbrfi/MedVidQA" target="_blank">MedVidQA Dataset</a>
+                <a href="#about">About the Project</a>
+                <a href="#home">Try the System</a>
+            </div>
+            <div class="footer-section">
+                <h3>Technology</h3>
+                <p>Built with Flask, Python, and advanced NLP models</p>
+                <p>Sentence Transformers for semantic search</p>
+                <p>Free AI powered by Groq & Llama 3.3</p>
+            </div>
+            <div class="footer-section">
+                <h3>Disclaimer</h3>
+                <p>This is a research project using the MedVidQA dataset. Always consult healthcare professionals for medical advice.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Sai Rithwik Kukunuri. All rights reserved.</p>
+            <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.8;">MedVidQA Research Project - Educational purposes only.</p>
+        </div>
+    </footer>
+</body>
+</html>
+
