@@ -205,86 +205,18 @@ Current demo includes 5 sample medical procedures:
 - ✅ Blood Pressure Measurement
 - ✅ Insulin Injection
 
----
-
-## 🎓 Research Applications
-
-This project demonstrates key concepts for AI-assisted healthcare:
-
-1. **Retrieval-Augmented Generation (RAG)** - Combining database search with LLM generation
-2. **Multimodal Understanding** - Foundation for video + text analysis
-3. **Healthcare AI** - Safe, responsible AI for medical guidance
-4. **Hands-Free Interaction** - Ready for AR/VR adaptation
-
-### Future AR Integration (Meta Quest 3)
-- ✅ Voice input/output
-- ✅ Real-time video analysis
-- ✅ Context-aware procedural guidance
-- ✅ Egocentric video understanding
-- ✅ Step recognition and tracking
 
 ---
 
-## ⚠️ Important Safety Notice
+## 📄 License
 
-**This system provides general guidance based on standard medical procedures.**
-
-- ✋ Always consult licensed healthcare professionals for medical advice
-- 🚨 In emergencies, call 911 or your local emergency number immediately
-- 👨‍⚕️ Not a replacement for professional medical training or judgment
-- 📖 For educational and assistive purposes only
-
----
-
-## 🐛 Troubleshooting
-
-### "No API key configured"
-→ Add your API key to `config.yaml` or switch to Ollama (local)
-
-### "Cannot connect to Ollama"  
-→ Make sure Ollama is running: `ollama serve`
-
-### "No relevant procedures found"
-→ Try rephrasing your query or lower `similarity_threshold` in config
-
-### Import errors
-→ Reinstall dependencies: `pip install -r requirements.txt`
-
-### Database not found
-→ Run: `python scripts/download_dataset.py`
-
----
-
-## 📝 License
-
-MIT License - See LICENSE file for details
-
----
-
-## 🙏 Acknowledgments
-
-- **HiREST Dataset**: Zala et al., CVPR 2023
-- **EVA-CLIP**: BAAI Foundation
-- **Sentence-Transformers**: UKPLab
-- **Groq**: Fast inference API
-- **Ollama**: Local LLM runtime
-
----
-
-## 📧 Support
-
-For questions about this project:
-- Review the [Setup Guide](SETUP_GUIDE.md)
-- Check configuration in `config.yaml`
-- Run `python demo.py` to test components
+MIT License
 
 ---
 
 <div align="center">
 
-**Built for CSE 492 - Spring 2026**  
-*AI-powered question answering for medical procedures*
-
-⭐ Star this repo if you find it helpful!
+**CSE 492 Thesis Project - Spring 2026**  
+*AI-Powered Medical Video Q&A System*
 
 </div>
