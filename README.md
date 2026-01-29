@@ -43,6 +43,29 @@ An intelligent medical Q&A system that retrieves and presents real medical proce
 
 ---
 
+## 🔧 Tech Stack
+
+**Backend:**
+
+- Python 3.8+
+- Flask 3.0
+- Sentence Transformers
+- NumPy, PyYAML
+
+**Frontend:**
+
+- Next.js 15
+- React 19
+- TailwindCSS
+- TypeScript
+
+**AI:**
+
+- Groq (Llama 3.3 70B)
+- all-MiniLM-L6-v2 (embeddings)
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -219,29 +242,6 @@ RAG Context → Llama 3.3 → Answer + Videos → UI Display
 - **Medical procedures** covering common clinical tasks
 - **Quality filtered** for availability and relevance
 - **Splits:** train.json, val.json, test.json
-
----
-
-## 🔧 Tech Stack
-
-**Backend:**
-
-- Python 3.8+
-- Flask 3.0
-- Sentence Transformers
-- NumPy, PyYAML
-
-**Frontend:**
-
-- Next.js 15
-- React 19
-- TailwindCSS
-- TypeScript
-
-**AI:**
-
-- Groq (Llama 3.3 70B)
-- all-MiniLM-L6-v2 (embeddings)
 
 ---
 
