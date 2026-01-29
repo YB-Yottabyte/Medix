@@ -180,6 +180,12 @@ medical-qa-system/
 │   ├── llm.py                    # Groq AI handler
 │   └── generator.py              # RAG response generator
 │
+├── static/
+│   ├── css/
+│   │   └── styles.css            # Application styles
+│   └── js/
+│       └── app.js                # Frontend JavaScript logic
+│
 ├── data/
 │   ├── verified_medvidqa_videos.json    # 319 verified videos
 │   └── cache_medvidqa_verified/         # Embeddings & procedures
@@ -194,7 +200,7 @@ medical-qa-system/
 │   └── build_database.py         # Build embeddings cache
 │
 ├── templates/
-│   └── index_video.html          # Flask UI
+│   └── index_video.html          # Flask UI template (clean HTML)
 │
 └── frontend/                      # Next.js frontend (optional)
     └── src/app/
