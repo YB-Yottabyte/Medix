@@ -11,7 +11,7 @@
 
 _Thesis Project: AI-assisted medical education using real medical procedure videos_
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Architecture](#-architecture)
+[Quick Start](#-quick-start) • [Features](#-features) • [Architecture](#️-architecture)
 
 </div>
 
