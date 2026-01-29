@@ -9,7 +9,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
 [![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-orange.svg)](https://groq.com/)
 
-*Thesis Project: AI-assisted medical education using real medical procedure videos*
+_Thesis Project: AI-assisted medical education using real medical procedure videos_
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Architecture](#-architecture)
 
@@ -22,6 +22,7 @@
 An intelligent medical Q&A system that retrieves and presents real medical procedure videos with AI-generated contextual answers. Built on the **MedVidQA dataset** (TREC 2024), this system combines semantic search with Llama 3.3 70B to provide accurate, video-based medical guidance.
 
 ### Key Innovation
+
 - **319 verified medical procedure videos** from YouTube
 - **Video-first answers** with embedded playback
 - **Fast AI responses** using Groq's Llama 3.3 70B (70 tokens/second)
@@ -38,13 +39,14 @@ An intelligent medical Q&A system that retrieves and presents real medical proce
 ✅ **Video Playback** - Embedded YouTube player with relevant procedures  
 ✅ **Modern UI** - Responsive Flask + Next.js interface  
 ✅ **Step-by-Step Answers** - AI-generated procedural guidance  
-✅ **Contextual Responses** - RAG-based answers using retrieved videos  
+✅ **Contextual Responses** - RAG-based answers using retrieved videos
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Python 3.8+
 - Node.js 18+ (for Next.js frontend)
 - Groq API Key (free at https://console.groq.com/keys)
@@ -52,17 +54,20 @@ An intelligent medical Q&A system that retrieves and presents real medical proce
 ### Installation
 
 **1. Clone & Install Python Dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 **2. Configure API Key**
+
 ```bash
 # Create .env file or edit config.yaml
 echo "GROQ_API_KEY=your-key-here" > .env
 ```
 
 **3. Build Database (if needed)**
+
 ```bash
 # Verify available videos
 python scripts/verify_videos.py
@@ -72,12 +77,14 @@ python scripts/build_database.py
 ```
 
 **4. Run Backend**
+
 ```bash
 python app.py
 # Server starts at http://localhost:8080
 ```
 
 **5. Run Frontend (Optional)**
+
 ```bash
 cd frontend
 npm install
@@ -90,6 +97,7 @@ npm run dev
 ## 🎯 Usage
 
 ### Example Queries
+
 - "How to perform CPR?"
 - "Steps for wound care and dressing"
 - "How to administer insulin injection?"
@@ -97,7 +105,9 @@ npm run dev
 - "How to insert a nasogastric tube?"
 
 ### System Response
+
 The system retrieves relevant medical videos and generates contextual answers with:
+
 - **Video embedded** for visual learning
 - **Step-by-step procedure** breakdown
 - **AI-generated context** based on retrieved content
@@ -111,20 +121,20 @@ The system retrieves relevant medical videos and generates contextual answers wi
 
 ```yaml
 ai:
-  provider: 'groq'
-  model: 'llama-3.3-70b-versatile'
+  provider: "groq"
+  model: "llama-3.3-70b-versatile"
   groq:
-    api_key: 'your-groq-api-key'
+    api_key: "your-groq-api-key"
     temperature: 0.3
     max_tokens: 1024
 
 database:
-  embedding_model: 'sentence-transformers/all-MiniLM-L6-v2'
-  top_k: 5                    # Number of videos to retrieve
-  similarity_threshold: 0.3   # Minimum relevance score
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  top_k: 5 # Number of videos to retrieve
+  similarity_threshold: 0.3 # Minimum relevance score
 
 web:
-  host: '0.0.0.0'
+  host: "0.0.0.0"
   port: 8080
   debug: false
 ```
@@ -170,41 +180,64 @@ medical-qa-system/
 
 ---
 
-## 🔧 How It Works
+## 🏗️ Architecture
 
-```mermaid
-User Query → Semantic Search → Retrieve Procedures → AI Generation → Response
+### System Components
+
+1. **Frontend Layer**
+   - Flask template (video playback UI)
+   - Next.js React app (modern interface)
+
+2. **Backend Layer**
+   - Flask REST API (`/api/query_video`)
+   - Semantic retrieval engine
+   - RAG response generator
+
+3. **AI Layer**
+   - Groq API (Llama 3.3 70B)
+   - Sentence transformers (embeddings)
+
+4. **Data Layer**
+   - MedVidQA dataset (319 videos)
+   - Pre-computed embeddings cache
+   - Video metadata & transcripts
+
+### Workflow
+
 ```
-
-1. **User Query**: Question about medical procedure
-2. **Semantic Search**: Find relevant procedures using embeddings
-3. **Retrieval**: Extract step-by-step instructions from database
-4. **AI Generation**: Generate personalized response with context
-5. **Response**: Clear, actionable guidance with safety notes
-
-### Technology Stack
-- **Backend**: Flask (Python)
-- **Embeddings**: Sentence-Transformers (MiniLM)
-- **AI Models**: Groq/Ollama/Hugging Face APIs
-- **Frontend**: Vanilla JavaScript, Modern CSS
-- **Database**: HiREST dataset (CVPR 2023)
+User Query → Embedding → Semantic Search → Top-K Videos → 
+RAG Context → Llama 3.3 → Answer + Videos → UI Display
+```
 
 ---
 
-## 📚 Dataset Information
+## 📊 Dataset
 
-Based on **HiREST** (Hierarchical Retrieval and Step-captioning)
-- Published at CVPR 2023
-- Hierarchical video-moment retrieval dataset
-- Step-by-step procedure annotations with timestamps
+**MedVidQA** (TREC 2024)
+- **319 verified videos** from YouTube
+- **Medical procedures** covering common clinical tasks
+- **Quality filtered** for availability and relevance
+- **Splits:** train.json, val.json, test.json
 
-Current demo includes 5 sample medical procedures:
-- ✅ Medication Administration
-- ✅ Wound Care Management  
-- ✅ CPR (Adult)
-- ✅ Blood Pressure Measurement
-- ✅ Insulin Injection
+---
 
+## 🔧 Tech Stack
+
+**Backend:**
+- Python 3.8+
+- Flask 3.0
+- Sentence Transformers
+- NumPy, PyYAML
+
+**Frontend:**
+- Next.js 15
+- React 19
+- TailwindCSS
+- TypeScript
+
+**AI:**
+- Groq (Llama 3.3 70B)
+- all-MiniLM-L6-v2 (embeddings)
 
 ---
 
@@ -217,6 +250,6 @@ MIT License
 <div align="center">
 
 **CSE 492 Thesis Project - Spring 2026**  
-*AI-Powered Medical Video Q&A System*
+_AI-Powered Medical Video Q&A System_
 
 </div>
