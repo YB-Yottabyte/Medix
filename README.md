@@ -1,16 +1,17 @@
-# 🏥 Medical Procedure Q&A System
+# 🏥 Medical Video Q&A System
 
 <div align="center">
 
-**AI-Powered Question Answering for Medical Procedures**
+**AI-Powered Medical Q&A with Video-Based Answers**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)](https://flask.palletsprojects.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
+[![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-orange.svg)](https://groq.com/)
 
-*Built for family caregivers and community health aides performing essential medical procedures*
+*Thesis Project: AI-assisted medical education using real medical procedure videos*
 
-[Quick Start](#-quick-start) • [Features](#-features) • [Demo](#-demo) • [Configuration](#-configuration)
+[Quick Start](#-quick-start) • [Features](#-features) • [Architecture](#-architecture)
 
 </div>
 
@@ -18,151 +19,114 @@
 
 ## 📖 About
 
-This system provides AI-powered, step-by-step guidance for medical procedures through an intelligent question-answering interface. It combines **semantic search** with **retrieval-augmented generation (RAG)** to deliver accurate, personalized medical guidance based on the HiREST dataset (CVPR 2023).
+An intelligent medical Q&A system that retrieves and presents real medical procedure videos with AI-generated contextual answers. Built on the **MedVidQA dataset** (TREC 2024), this system combines semantic search with Llama 3.3 70B to provide accurate, video-based medical guidance.
 
-### Use Case
-Designed for:
-- Family caregivers performing medication administration, wound care, and emergency procedures
-- Community health aides in remote or resource-constrained environments  
-- Training scenarios for medical procedure education
-- Research in AI-assisted healthcare and augmented reality applications
+### Key Innovation
+- **319 verified medical procedure videos** from YouTube
+- **Video-first answers** with embedded playback
+- **Fast AI responses** using Groq's Llama 3.3 70B (70 tokens/second)
+- **Semantic retrieval** via sentence transformers
+- **Modern dual interface** (Flask + Next.js)
 
 ---
 
 ## ✨ Features
 
-✅ **Intelligent Retrieval** - Semantic search across medical procedure database  
-✅ **AI-Powered Responses** - Context-aware answers using free AI APIs  
-✅ **Dual Interface** - Beautiful web UI + terminal interface  
-✅ **Multiple AI Providers** - Groq, Ollama, or Hugging Face  
-✅ **Offline Capable** - Works with local Ollama (no internet needed)  
-✅ **Step-by-Step Guidance** - Detailed procedural instructions with timing  
-✅ **Safety-First** - Clear warnings and professional consultation reminders  
+✅ **Real Medical Videos** - 319 verified YouTube videos from MedVidQA dataset  
+✅ **Fast AI Responses** - Groq's Llama 3.3 70B (70 tokens/second)  
+✅ **Semantic Search** - Sentence transformer embeddings for accurate retrieval  
+✅ **Video Playback** - Embedded YouTube player with relevant procedures  
+✅ **Modern UI** - Responsive Flask + Next.js interface  
+✅ **Step-by-Step Answers** - AI-generated procedural guidance  
+✅ **Contextual Responses** - RAG-based answers using retrieved videos  
 
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+- Python 3.8+
+- Node.js 18+ (for Next.js frontend)
+- Groq API Key (free at https://console.groq.com/keys)
 
-### Installation (3 steps)
+### Installation
 
-**1. Install Dependencies**
+**1. Clone & Install Python Dependencies**
 ```bash
-cd medical-qa-system
 pip install -r requirements.txt
 ```
 
-**2. Setup Dataset**
+**2. Configure API Key**
 ```bash
-python scripts/download_dataset.py
+# Create .env file or edit config.yaml
+echo "GROQ_API_KEY=your-key-here" > .env
 ```
 
-**3. Configure AI Provider (Choose one)**
-
-**Option A: Groq (Recommended - Fast & Free)**
+**3. Build Database (if needed)**
 ```bash
-# 1. Get free API key: https://console.groq.com/keys
-# 2. Edit config.yaml and add your key:
-```
-```yaml
-ai:
-  provider: 'groq'
-  groq:
-    api_key: 'your-groq-api-key-here'
+# Verify available videos
+python scripts/verify_videos.py
+
+# Build embeddings database
+python scripts/build_database.py
 ```
 
-**Option B: Ollama (Local - No API Key)**
-```bash
-# 1. Install Ollama: https://ollama.ai
-# 2. Pull model:
-ollama pull llama3.1
-
-# 3. Edit config.yaml:
-```
-```yaml
-ai:
-  provider: 'ollama'
-```
-
-**4. Run the System**
-
-**Web Interface:**
+**4. Run Backend**
 ```bash
 python app.py
-# Open: http://localhost:5000
+# Server starts at http://localhost:8080
 ```
 
-**Terminal Interface:**
+**5. Run Frontend (Optional)**
 ```bash
-python terminal_qa.py
+cd frontend
+npm install
+npm run dev
+# Frontend starts at http://localhost:3000
 ```
 
 ---
 
-## 🎯 Demo
-
-### Try It Out
-```bash
-# Run demo to test the system
-python demo.py
-```
+## 🎯 Usage
 
 ### Example Queries
-- "How do I safely administer insulin?"
-- "What are the steps for wound care?"
-- "How to perform CPR on an adult?"
-- "What should I check before giving medication?"
-- "How to measure blood pressure correctly?"
+- "How to perform CPR?"
+- "Steps for wound care and dressing"
+- "How to administer insulin injection?"
+- "What is the procedure for blood pressure measurement?"
+- "How to insert a nasogastric tube?"
 
-### Sample Output
-```
-💡 ANSWER:
-─────────────────────────────────────────────────────────
-To safely administer insulin, follow these critical steps:
-
-1. Verify the Insulin Type & Dose (15-30s)
-   - Check prescription and insulin vial label
-   - Confirm correct type and expiration date
-
-2. Hand Hygiene (30-45s)
-   - Wash hands thoroughly with soap and water
-   - This prevents infection at injection site
-
-3. Prepare the Insulin (45-60s)
-   - Roll vial gently (don't shake)
-   - Clean vial top with alcohol swab
-...
-```
+### System Response
+The system retrieves relevant medical videos and generates contextual answers with:
+- **Video embedded** for visual learning
+- **Step-by-step procedure** breakdown
+- **AI-generated context** based on retrieved content
+- **Multiple relevant videos** ranked by similarity
 
 ---
 
 ## ⚙️ Configuration
 
-### AI Providers Comparison
+### `config.yaml` Structure
 
-| Provider | Speed | Cost | Internet | Setup |
-|----------|-------|------|----------|-------|
-| **Groq** | ⚡⚡⚡ Very Fast | Free | Required | API Key |
-| **Ollama** | ⚡⚡ Fast | Free | Not Required | Local Install |
-| **Hugging Face** | ⚡ Moderate | Free | Required | API Key |
-
-### Database Settings (`config.yaml`)
 ```yaml
+ai:
+  provider: 'groq'
+  model: 'llama-3.3-70b-versatile'
+  groq:
+    api_key: 'your-groq-api-key'
+    temperature: 0.3
+    max_tokens: 1024
+
 database:
-  embedding_model: 'all-MiniLM-L6-v2'  # Sentence transformer model
-  top_k: 5                              # Number of procedures to retrieve
-  similarity_threshold: 0.3             # Minimum relevance score (0-1)
-```
+  embedding_model: 'sentence-transformers/all-MiniLM-L6-v2'
+  top_k: 5                    # Number of videos to retrieve
+  similarity_threshold: 0.3   # Minimum relevance score
 
-### Web Server Settings
-```yaml
 web:
-  host: '0.0.0.0'    # Listen on all interfaces
-  port: 5000         # Port number
-  debug: true        # Enable debug mode
+  host: '0.0.0.0'
+  port: 8080
+  debug: false
 ```
 
 ---
@@ -171,29 +135,37 @@ web:
 
 ```
 medical-qa-system/
-├── 📱 app.py                      # Flask web application
-├── 💻 terminal_qa.py              # Terminal interface
-├── 🎬 demo.py                     # Quick demo script
-├── ⚙️  config.yaml                 # Configuration file
-├── 📋 requirements.txt            # Python dependencies
+├── app.py                         # Flask backend server
+├── config.yaml                    # System configuration
+├── requirements.txt               # Python dependencies
 │
-├── 🗄️  database/
-│   ├── db_builder.py             # Build searchable database from HiREST
-│   └── retriever.py              # Semantic search and retrieval
+├── database/
+│   ├── medical_db.py             # Database loader
+│   └── retriever.py              # Semantic search engine
 │
-├── 🤖 models/
-│   ├── ai_handler.py             # Multi-provider AI integration
-│   └── response_generator.py    # RAG response generation
+├── models/
+│   ├── llm.py                    # Groq AI handler
+│   └── generator.py              # RAG response generator
 │
-├── 📊 data/
-│   ├── splits/                   # HiREST dataset annotations
-│   └── cache/                    # Processed embeddings & database
+├── data/
+│   ├── verified_medvidqa_videos.json    # 319 verified videos
+│   └── cache_medvidqa_verified/         # Embeddings & procedures
 │
-├── 🎨 templates/
-│   └── index.html                # Modern web UI
+├── MedVidQA/
+│   ├── train.json                # Original dataset splits
+│   ├── val.json
+│   └── test.json
 │
-└── 🛠️  scripts/
-    └── download_dataset.py       # Dataset setup utility
+├── scripts/
+│   ├── verify_videos.py          # Check video availability
+│   └── build_database.py         # Build embeddings cache
+│
+├── templates/
+│   └── index_video.html          # Flask UI
+│
+└── frontend/                      # Next.js frontend (optional)
+    └── src/app/
+        └── page.tsx              # Main page component
 ```
 
 ---
