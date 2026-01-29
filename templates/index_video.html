@@ -666,63 +666,6 @@
             50% { transform: scale(1.05); }
         }
         
-        /* Microphone Button Styles */
-        .mic-btn {
-            position: absolute;
-            right: 12px;
-            top: 12px;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            border: 2px solid #cbd5e1;
-            background: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-            z-index: 10;
-        }
-        
-        .mic-btn svg {
-            width: 24px;
-            height: 24px;
-            fill: #64748b;
-            transition: fill 0.3s ease;
-        }
-        
-        .mic-btn:hover {
-            background: #f8fafc;
-            border-color: #2563eb;
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-        }
-        
-        .mic-btn:hover svg {
-            fill: #2563eb;
-        }
-        
-        .mic-btn.listening {
-            background: #ef4444;
-            border-color: #ef4444;
-            animation: pulse-mic 1.5s ease-in-out infinite;
-        }
-        
-        .mic-btn.listening svg {
-            fill: white;
-        }
-        
-        @keyframes pulse-mic {
-            0%, 100% { 
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-            }
-            50% { 
-                transform: scale(1.05);
-                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-            }
-        }
-        
         .response-card p {
             color: #475569;
             line-height: 1.7;
@@ -957,15 +900,7 @@
             <h2>Ask a Medical Question</h2>
             <div class="query-section">
                 <label for="queryInput">Ask about a medical procedure:</label>
-                <div style="position: relative;">
-                    <textarea id="queryInput" placeholder="Example: How to perform CPR? How to treat vertigo?"></textarea>
-                    <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Click to speak">
-                        <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-                        </svg>
-                    </button>
-                </div>
+                <textarea id="queryInput" placeholder="Example: How to perform CPR? How to treat vertigo?"></textarea>
                 
                 <div class="examples">
                     <p>Try these:</p>
@@ -1075,76 +1010,6 @@
         let currentVideoId = '';
         let isPlayingAudio = false;
         let currentUtterance = null;
-        let mediaRecorder = null;
-        let audioChunks = [];
-        let isRecording = false;
-
-        async function toggleVoiceInput() {
-            const micBtn = document.getElementById('micBtn');
-            const queryInput = document.getElementById('queryInput');
-            
-            if (isRecording) {
-                // Stop recording
-                mediaRecorder.stop();
-                isRecording = false;
-                micBtn.classList.remove('listening');
-                return;
-            }
-            
-            try {
-                // Request microphone access
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                
-                // Start recording
-                audioChunks = [];
-                mediaRecorder = new MediaRecorder(stream);
-                
-                mediaRecorder.ondataavailable = (event) => {
-                    audioChunks.push(event.data);
-                };
-                
-                mediaRecorder.onstop = async () => {
-                    // Stop all audio tracks
-                    stream.getTracks().forEach(track => track.stop());
-                    
-                    // Create audio blob
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    
-                    // Send to backend for transcription
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob, 'recording.webm');
-                    
-                    try {
-                        queryInput.placeholder = '🎤 Transcribing...';
-                        const response = await fetch('/api/transcribe', {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.success && data.transcript) {
-                            queryInput.value = data.transcript;
-                        } else {
-                            alert('Could not transcribe audio. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Transcription error:', error);
-                        alert('Transcription failed. Please try again.');
-                    } finally {
-                        queryInput.placeholder = 'Example: How to perform CPR? How to treat vertigo?';
-                    }
-                };
-                
-                mediaRecorder.start();
-                isRecording = true;
-                micBtn.classList.add('listening');
-                
-            } catch (error) {
-                console.error('Microphone access error:', error);
-                alert('Microphone access denied. Please enable microphone permissions.');
-            }
-        }
 
         function toggleAudioPlayback() {
             const iconBtn = document.getElementById('audioIconBtn');
