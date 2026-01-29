@@ -1,4 +1,4 @@
-# 🏥 Medical Video Q&A System
+# Medical Video Q&A System
 
 <div align="center">
 
