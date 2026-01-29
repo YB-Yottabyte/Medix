@@ -23,7 +23,8 @@ An intelligent medical Q&A system that retrieves and presents real medical proce
 
 ### Key Innovation
 
-- **319 verified medical procedure videos** from YouTube
+- **784 verified medical procedure videos** from YouTube
+- **2,714 medical Q&A pairs** covering comprehensive procedures
 - **Video-first answers** with embedded playback
 - **Fast AI responses** using Groq's Llama 3.3 70B (70 tokens/second)
 - **Semantic retrieval** via sentence transformers
@@ -33,7 +34,8 @@ An intelligent medical Q&A system that retrieves and presents real medical proce
 
 ## ✨ Features
 
-• **Real Medical Videos** - 319 verified YouTube videos from MedVidQA dataset  
+• **Real Medical Videos** - 784 verified YouTube videos from MedVidQA dataset  
+• **Comprehensive Coverage** - 2,714 medical Q&A pairs spanning diverse procedures
 • **Fast AI Responses** - Groq's Llama 3.3 70B (70 tokens/second)  
 • **Semantic Search** - Sentence transformer embeddings for accurate retrieval  
 • **Video Playback** - Embedded YouTube player with relevant procedures  
@@ -187,8 +189,8 @@ medical-qa-system/
 │       └── app.js                # Frontend JavaScript logic
 │
 ├── data/
-│   ├── verified_medvidqa_videos.json    # 319 verified videos
-│   └── cache_medvidqa_verified/         # Embeddings & procedures
+│   ├── verified_medvidqa_videos.json    # 2,714 Q&A pairs from 784 videos
+│   └── cache_medvidqa_verified/         # Embeddings & procedures (2,714 vectors)
 │
 ├── MedVidQA/
 │   ├── train.json                # Original dataset splits
@@ -227,9 +229,9 @@ medical-qa-system/
    - Sentence transformers (embeddings)
 
 4. **Data Layer**
-   - MedVidQA dataset (319 videos)
-   - Pre-computed embeddings cache
-   - Video metadata & transcripts
+   - MedVidQA dataset (784 videos, 2,714 Q&A pairs)
+   - Pre-computed embeddings cache (2,714 vectors)
+   - Video metadata & comprehensive procedure annotations
 
 ### Workflow
 
@@ -244,10 +246,11 @@ RAG Context → Llama 3.3 → Answer + Videos → UI Display
 
 **MedVidQA** (TREC 2024)
 
-- **319 verified videos** from YouTube
-- **Medical procedures** covering common clinical tasks
+- **784 verified videos** from YouTube (87% of original dataset)
+- **2,714 question-answer pairs** covering comprehensive medical procedures
+- **Medical procedures** spanning ACL recovery, knee exercises, neck stretches, breathing techniques, first aid, physical therapy, and more
 - **Quality filtered** for availability and relevance
-- **Splits:** train.json, val.json, test.json
+- **Comprehensive coverage** from train.json, val.json, test.json splits
 
 ---
 

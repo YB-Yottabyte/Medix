@@ -104,6 +104,22 @@ export default function Home() {
             <p className="text-xl md:text-2xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Get instant, AI-powered answers to your medical procedure questions with step-by-step guidance.
             </p>
+            
+            {/* Dataset Stats */}
+            <div className="flex flex-wrap justify-center gap-8 mt-12">
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-blue-600">784</div>
+                <div className="text-gray-600 font-medium">Medical Videos</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-purple-600">2,714</div>
+                <div className="text-gray-600 font-medium">Q&A Procedures</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl md:text-4xl font-bold text-green-600">AI</div>
+                <div className="text-gray-600 font-medium">Powered</div>
+              </div>
+            </div>
           </motion.div>
         </div>
       </section>
