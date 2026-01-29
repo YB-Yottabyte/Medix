@@ -173,6 +173,8 @@ medical-qa-system/
 ├── app.py                         # Flask backend server
 ├── config.yaml                    # System configuration
 ├── requirements.txt               # Python dependencies
+├── README.md                      # Project documentation
+├── UPDATE_SUMMARY.md              # Dataset upgrade documentation
 │
 ├── database/
 │   ├── medical_db.py             # Database loader
@@ -190,23 +192,25 @@ medical-qa-system/
 │
 ├── data/
 │   ├── verified_medvidqa_videos.json    # 2,714 Q&A pairs from 784 videos
-│   └── cache_medvidqa_verified/         # Embeddings & procedures (2,714 vectors)
+│   ├── cache_medvidqa_verified/         # Embeddings & procedures (2,714 vectors)
+│   └── backup_20260129_120227/          # Safety backup of old system
 │
 ├── MedVidQA/
-│   ├── train.json                # Original dataset splits
-│   ├── val.json
-│   └── test.json
+│   ├── train.json                # Original dataset splits (2,710 entries)
+│   ├── val.json                  # Validation set (145 entries)
+│   └── test.json                 # Test set (155 entries)
 │
 ├── scripts/
-│   ├── verify_videos.py          # Check video availability
-│   └── build_database.py         # Build embeddings cache
+│   ├── build_database.py         # Build embeddings cache
+│   ├── verify_all_videos.py      # Complete video verification system
+│   └── update_system.py          # System update automation
 │
 ├── templates/
-│   └── index_video.html          # Flask UI template (clean HTML)
+│   └── index_video.html          # Flask UI template (updated with 784 videos)
 │
 └── frontend/                      # Next.js frontend (optional)
     └── src/app/
-        └── page.tsx              # Main page component
+        └── page.tsx              # Main page component (updated stats)
 ```
 
 ---
