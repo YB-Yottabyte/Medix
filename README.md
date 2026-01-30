@@ -9,7 +9,7 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg)](https://nextjs.org/)
 [![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-orange.svg)](https://groq.com/)
 
-_Thesis Project: AI-assisted medical education using real medical procedure videos_
+_Thesis Project: AI-assisted medical education using real medical procedure videos with comprehensive dataset_
 
 [Quick Start](#-quick-start) • [Features](#-features) • [Architecture](#️-architecture)
 
