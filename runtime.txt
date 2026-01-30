@@ -1,4 +1,0 @@
-# Vercel Python Runtime
-python-3.9
-
-# Add any additional runtime requirements here if needed
