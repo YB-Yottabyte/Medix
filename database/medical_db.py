@@ -34,3 +34,4 @@ class MedicalDatabase:
         
         print(f"Loaded database from {cache_dir}")
         print(f"  - {len(self.procedures)} procedures")
+

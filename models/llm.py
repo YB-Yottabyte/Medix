@@ -195,3 +195,4 @@ Your calm, context-appropriate response:"""
         except Exception as e:
             return f"Error: {str(e)}"
 
+

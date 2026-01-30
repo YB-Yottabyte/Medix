@@ -136,3 +136,4 @@ def build_verified_medvidqa_database():
 
 if __name__ == "__main__":
     build_verified_medvidqa_database()
+

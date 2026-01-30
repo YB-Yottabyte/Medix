@@ -66,3 +66,4 @@ class ResponseGenerator:
         output.append("")
         
         return "\n".join(output)
+
