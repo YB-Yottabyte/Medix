@@ -3,6 +3,7 @@ Flask Web Application for Medical Procedure Q&A
 """
 from flask import Flask, render_template, request, jsonify
 import yaml
+import os
 from pathlib import Path
 from database.medical_db import MedicalDatabase
 from database.retriever import ProcedureRetriever
@@ -12,8 +13,16 @@ from models.generator import ResponseGenerator
 app = Flask(__name__)
 
 # Load configuration
-with open('config.yaml', 'r') as f:
+config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+with open(config_path, 'r') as f:
     config = yaml.safe_load(f)
+
+# Vercel environment variables override
+if os.getenv('VERCEL'):
+    # Override config for Vercel deployment
+    config['web']['debug'] = False
+    if os.getenv('GROQ_API_KEY'):
+        config['ai']['groq']['api_key'] = os.getenv('GROQ_API_KEY')
 
 # Initialize components
 print("Initializing Medical Q&A System...")
