@@ -49,7 +49,6 @@ def build_verified_medvidqa_database():
         vid_id = item['video_id']
         
         if vid_id in seen_videos:
-            # Already verified this video
             if any(v['video_id'] == vid_id for v in verified_data):
                 verified_data.append(item)
             continue
@@ -57,12 +56,12 @@ def build_verified_medvidqa_database():
         seen_videos.add(vid_id)
         tested += 1
         
-        if tested <= 100:  # Only test first 100 unique videos
+        if tested <= 100:
             if verify_video(vid_id):
                 verified_data.append(item)
-                print(f"  ✅ {vid_id}: {item['question'][:40]}...")
+                print(f"{vid_id}: {item['question'][:40]}...")
             else:
-                print(f"  ❌ {vid_id}: unavailable")
+                print(f"{vid_id}: unavailable")
         
         if tested >= 100:
             break
@@ -81,7 +80,7 @@ def build_verified_medvidqa_database():
         seen_questions.add(question.lower())
         
         proc = {
-            'procedure_name': question,
+            'question': question,
             'video_id': item['video_id'],
             'youtube_url': item['video_url'],
             'youtube_embed': f"https://www.youtube.com/embed/{item['video_id']}?start={item['answer_start_second']}",
@@ -106,7 +105,7 @@ def build_verified_medvidqa_database():
     print("\n🔧 Building embeddings...")
     embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
     
-    texts = [proc['procedure_name'] for proc in procedures]
+    texts = [proc['question'] for proc in procedures]
     embeddings = embedding_model.encode(texts, show_progress_bar=True, convert_to_numpy=True)
     
     # Save to cache
@@ -119,20 +118,20 @@ def build_verified_medvidqa_database():
     with open(cache_dir / 'embeddings.npy', 'wb') as f:
         np.save(f, embeddings)
     
-    print(f"\n✅ Database saved to {cache_dir}")
+    print(f"\nDatabase saved to {cache_dir}")
     
     # Show sample procedures
     print("\n" + "="*70)
-    print("📋 Sample Verified MedVidQA Procedures:")
+    print("Sample Verified MedVidQA Procedures:")
     print("="*70)
     for i, proc in enumerate(procedures[:10], 1):
-        print(f"\n{i}. {proc['procedure_name']}")
-        print(f"   Video: {proc['youtube_url']}")
-        print(f"   Answer: {proc['answer_start']}s - {proc['answer_end']}s")
-        print(f"   Source: {proc['source']}")
+        print(f"\n{i}. {proc['question']}")
+        print(f"Video: {proc['youtube_url']}")
+        print(f"Answer: {proc['answer_start']}s - {proc['answer_end']}s")
+        print(f"Source: {proc['source']}")
     
     print("\n" + "="*70)
-    print(f"✅ Built database with {len(procedures)} verified MedVidQA procedures!")
+    print(f"Built database with {len(procedures)} verified MedVidQA procedures!")
     print("="*70)
 
 if __name__ == "__main__":

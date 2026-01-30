@@ -106,10 +106,10 @@ def verify_all_medvidqa_videos():
         
         if is_available:
             available.append(video_data)
-            status = "✅"
+            status = "[OK]"
         else:
             unavailable.append(video_data)
-            status = "❌"
+            status = "[FAIL]"
         
         print(f"{i+1:3d}. [{status}] {vid_id} ({question_count:2d}Q): {first_question}...")
         
@@ -129,7 +129,7 @@ def verify_all_medvidqa_videos():
     print(f"\nTotal question-answer pairs from available videos: {total_questions}")
     
     if available:
-        print(f"\n📹 TOP 10 AVAILABLE VIDEOS (by question count):")
+        print(f"\nTOP 10 AVAILABLE VIDEOS (by question count):")
         print("-"*80)
         for i, video in enumerate(available[:10]):
             print(f"{i+1}. Video ID: {video['video_id']} ({video['question_count']} questions)")
@@ -160,17 +160,17 @@ def verify_all_medvidqa_videos():
         with open(output_file, 'w') as f:
             json.dump(verified_dataset, f, indent=2)
         
-        print(f"✅ Saved {len(verified_dataset)} verified question-answer pairs from {len(available)} videos")
+        print(f"Saved {len(verified_dataset)} verified question-answer pairs from {len(available)} videos")
         print(f"   Output file: {output_file}")
         
         # Also save just the unique video info
         unique_output_file = 'data/verified_medvidqa_videos_unique.json'
         with open(unique_output_file, 'w') as f:
             json.dump(available, f, indent=2)
-        print(f"✅ Saved {len(available)} unique verified videos to {unique_output_file}")
+        print(f"Saved {len(available)} unique verified videos to {unique_output_file}")
         
         # Statistics by dataset split
-        print(f"\n📊 STATISTICS BY ORIGINAL DATASET SPLIT:")
+        print(f"\nSTATISTICS BY ORIGINAL DATASET SPLIT:")
         train_questions = [q for v in available for q in v['all_questions'] if q['sample_id'] <= 2710]
         test_questions = [q for v in available for q in v['all_questions'] if 2711 <= q['sample_id'] <= 2865]
         val_questions = [q for v in available for q in v['all_questions'] if q['sample_id'] >= 3019]

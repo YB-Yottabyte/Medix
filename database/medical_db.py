@@ -32,5 +32,5 @@ class MedicalDatabase:
         model_name = self.config['database']['embedding_model']
         self.embedding_model = SentenceTransformer(model_name)
         
-        print(f"✓ Loaded database from {cache_dir}")
+        print(f"Loaded database from {cache_dir}")
         print(f"  - {len(self.procedures)} procedures")

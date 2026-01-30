@@ -16,7 +16,7 @@ with open('config.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Initialize components
-print("🔧 Initializing Medical Q&A System...")
+print("Initializing Medical Q&A System...")
 print("=" * 60)
 
 # Load or build database - Using VERIFIED MedVidQA dataset (real medical videos)
@@ -24,7 +24,7 @@ db = MedicalDatabase(config)
 cache_dir = 'data/cache_medvidqa_verified'  # Use verified MedVidQA database
 
 if Path(cache_dir).exists() and (Path(cache_dir) / 'procedures.pkl').exists():
-    print("📚 Loading Verified MedVidQA Database (319 real medical procedures)...")
+    print("Loading Verified MedVidQA Database (319 real medical procedures)...")
     db.load(cache_dir)
 else:
     print("❌ Verified MedVidQA database not found!")
@@ -36,7 +36,7 @@ retriever = ProcedureRetriever(config, db)
 ai_handler = AIHandler(config)
 response_generator = ResponseGenerator(config, retriever, ai_handler)
 
-print("\n✅ System ready!")
+print("\nSystem ready!")
 print(f"   - Database: {len(db.procedures)} procedures loaded")
 print(f"   - AI Provider: {config['ai']['provider']}")
 print("=" * 60)
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     port = config['web']['port']
     debug = config['web']['debug']
     
-    print(f"\n🌐 Starting web server...")
+    print(f"\nStarting web server...")
     print(f"   Access at: http://localhost:{port}")
     print(f"   Press Ctrl+C to stop")
     print("=" * 60)

@@ -50,7 +50,7 @@ class ProcedureRetriever:
         
         for i, proc in enumerate(results, 1):
             context_parts.append(f"\n{'='*60}")
-            context_parts.append(f"Procedure {i}: {proc['procedure_name']}")
+            context_parts.append(f"Procedure {i}: {proc['question']}")
             context_parts.append(f"Relevance Score: {proc['similarity_score']:.2%}")
             context_parts.append(f"{'='*60}")
             
@@ -86,9 +86,9 @@ class ProcedureRetriever:
         
         return "\n".join(context_parts)
     
-    def get_procedure_summary(self, procedure_name: str) -> Dict:
+    def get_procedure_summary(self, question: str) -> Dict:
         """Get summary of a specific procedure"""
         for proc in self.db.procedures:
-            if proc['procedure_name'].lower() == procedure_name.lower():
+            if proc['question'].lower() == question.lower():
                 return proc
         return None

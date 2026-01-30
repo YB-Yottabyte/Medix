@@ -44,7 +44,6 @@
         </div>
     </section>
     
-    <!-- Query Section - Moved up for better UX -->
     <div class="container" id="query">
         <div class="query-card">
             <h2>Ask a Medical Question</h2>
@@ -71,7 +70,6 @@
 
             <div class="response-section" id="responseSection">
                 <div class="content-grid">
-                    <!-- Video Section - Left Side -->
                     <div class="video-section" id="videoSection" style="display: none;">
                         <div class="segment-info" id="segmentInfo">
                             <strong>Playing segment:</strong> <span id="segmentTime">0:00 - 0:00</span>
@@ -89,7 +87,6 @@
                         </div>
                     </div>
 
-                    <!-- Answer Section - Right Side -->
                     <div class="response-card">
                         <button class="audio-icon-btn" id="audioIconBtn" onclick="toggleAudioPlayback()" title="Listen to response">
                             <svg id="audioSvgIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -107,7 +104,6 @@
         </div>
     </div>
     
-    <!-- About Section -->
     <section class="about-section" id="about">
         <div class="about-header">
             <h2>About This Project</h2>
@@ -180,17 +176,14 @@
                     return;
                 }
                 
-                // Cancel any ongoing speech
                 window.speechSynthesis.cancel();
                 
                 currentUtterance = new SpeechSynthesisUtterance(responseText);
                 
-                // Enhanced settings for calm, professional voice
-                currentUtterance.rate = 0.88;  // Slower for clarity and calmness
-                currentUtterance.pitch = 0.95; // Slightly lower for professional tone
+                currentUtterance.rate = 0.88; 
+                currentUtterance.pitch = 0.95;
                 currentUtterance.volume = 1.0;
                 
-                // Prioritize Google and Microsoft natural voices ONLY
                 const voices = window.speechSynthesis.getVoices();
                 const preferredVoice = voices.find(voice => 
                     voice.lang.startsWith('en') && 
@@ -231,7 +224,6 @@
             }
         }
         
-        // Load voices when available
         if (window.speechSynthesis) {
             window.speechSynthesis.onvoiceschanged = function() {
                 window.speechSynthesis.getVoices();
@@ -373,17 +365,13 @@
                     return;
                 }
 
-                // Display response
                 const responseContent = document.getElementById('responseContent');
+
                 if (responseContent) {
-                    // Format text with proper indentation for numbered lists
                     let formattedText = data.response || 'No response available';
-                    
-                    // Add indentation to lines starting with numbers
                     formattedText = formattedText.split('\n').map(line => {
-                        // Check if line starts with a number followed by a period or parenthesis
                         if (/^\d+[\.\)]/.test(line.trim())) {
-                            return '  ' + line; // Add 2 spaces indent
+                            return '  ' + line;
                         }
                         return line;
                     }).join('\n');
@@ -392,7 +380,6 @@
                     document.getElementById('audioIconBtn').style.display = 'flex';
                 }
 
-                // Display video
                 const videoSection = document.getElementById('videoSection');
                 const segmentInfo = document.getElementById('segmentInfo');
                 const segmentTime = document.getElementById('segmentTime');
@@ -444,7 +431,6 @@
             }
         });
         
-        // Scroll to top button
         window.addEventListener('scroll', function() {
             const scrollBtn = document.getElementById('scrollTop');
             if (window.pageYOffset > 300) {
@@ -459,12 +445,10 @@
         }
     </script>
     
-    <!-- Scroll to top button -->
     <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
         ↑
     </div>
     
-    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">

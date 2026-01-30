@@ -3,6 +3,7 @@
 Update Medical QA System to use Complete Verified Dataset
 This script updates your system to use all verified videos instead of just the original 28
 """
+
 import json
 import os
 import shutil
@@ -17,14 +18,14 @@ def backup_current_data():
     if os.path.exists('data/verified_medvidqa_videos.json'):
         shutil.copy('data/verified_medvidqa_videos.json', 
                    f'{backup_dir}/verified_medvidqa_videos_old.json')
-        print(f"✅ Backed up original verified videos to {backup_dir}")
+        print(f"Backed up original verified videos to {backup_dir}")
     
     # Backup embeddings if they exist
     if os.path.exists('data/cache_medvidqa_verified/embeddings.npy'):
         os.makedirs(f'{backup_dir}/cache_medvidqa_verified', exist_ok=True)
         shutil.copy('data/cache_medvidqa_verified/embeddings.npy',
                    f'{backup_dir}/cache_medvidqa_verified/embeddings.npy')
-        print(f"✅ Backed up old embeddings to {backup_dir}")
+        print(f"Backed up old embeddings to {backup_dir}")
 
 def update_system_with_complete_dataset():
     """Update the system to use the complete verified dataset."""
@@ -33,10 +34,9 @@ def update_system_with_complete_dataset():
     print("  UPDATING MEDICAL QA SYSTEM")
     print("="*60)
     
-    # Check if complete verification has been done
     complete_file = 'data/verified_medvidqa_videos_complete.json'
     if not os.path.exists(complete_file):
-        print(f"❌ Complete verified dataset not found: {complete_file}")
+        print(f"Complete verified dataset not found: {complete_file}")
         print("Please run 'python scripts/verify_all_videos.py' first!")
         return
     
@@ -57,13 +57,13 @@ def update_system_with_complete_dataset():
     with open('data/verified_medvidqa_videos.json', 'w') as f:
         json.dump(complete_data, f, indent=2)
     
-    print(f"✅ Updated verified_medvidqa_videos.json with {len(complete_data)} entries")
+    print(f"Updated verified_medvidqa_videos.json with {len(complete_data)} entries")
     
     # Remove old embeddings cache (will be regenerated with new data)
     embeddings_dir = 'data/cache_medvidqa_verified'
     if os.path.exists(embeddings_dir):
         shutil.rmtree(embeddings_dir)
-        print("✅ Removed old embeddings cache (will be regenerated)")
+        print("Removed old embeddings cache (will be regenerated)")
     
     # Update any configuration that might specify the number of videos
     config_updates = []
@@ -84,18 +84,18 @@ def update_system_with_complete_dataset():
                 yaml.dump(config, f, indent=2)
             config_updates.append("config.yaml")
         except ImportError:
-            print("⚠️  yaml library not available, skipping config.yaml update")
+            print("yaml library not available, skipping config.yaml update")
         except Exception as e:
-            print(f"⚠️  Could not update config.yaml: {e}")
+            print(f"Could not update config.yaml: {e}")
     
     print("\n" + "="*60)
     print("  SYSTEM UPDATE COMPLETE!")
     print("="*60)
-    print(f"📊 BEFORE: 28 videos with 28 question-answer pairs")
-    print(f"📊 AFTER:  {unique_videos} videos with {len(complete_data)} question-answer pairs")
-    print(f"📈 IMPROVEMENT: {unique_videos/28:.1f}x more videos, {len(complete_data)/28:.1f}x more Q&A pairs")
+    print(f"BEFORE: 28 videos with 28 question-answer pairs")
+    print(f"AFTER:  {unique_videos} videos with {len(complete_data)} question-answer pairs")
+    print(f"IMPROVEMENT: {unique_videos/28:.1f}x more videos, {len(complete_data)/28:.1f}x more Q&A pairs")
     
-    print(f"\n📋 NEXT STEPS:")
+    print(f"\nNEXT STEPS:")
     print(f"1. Run your system - embeddings will be automatically regenerated")
     print(f"2. The database will now include all verified medical videos")
     print(f"3. Users can now ask questions about a much broader range of medical topics")
@@ -103,7 +103,7 @@ def update_system_with_complete_dataset():
     if config_updates:
         print(f"4. Updated configuration files: {', '.join(config_updates)}")
     
-    print(f"\n⚠️  NOTE: First run may take longer as embeddings are rebuilt")
+    print(f"\nNOTE: First run may take longer as embeddings are rebuilt")
 
 def show_comparison():
     """Show a comparison between old and new datasets."""

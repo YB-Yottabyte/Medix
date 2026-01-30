@@ -40,12 +40,12 @@ class ResponseGenerator:
         output.append("╚" + "═" * 78 + "╝")
         output.append("")
         
-        output.append("📋 YOUR QUESTION:")
+        output.append("YOUR QUESTION:")
         output.append("─" * 80)
         output.append(response_data['query'])
         output.append("")
         
-        output.append("💡 ANSWER:")
+        output.append("ANSWER:")
         output.append("─" * 80)
         output.append(response_data['response'])
         output.append("")
@@ -54,12 +54,12 @@ class ResponseGenerator:
             output.append("📚 RELEVANT PROCEDURES FROM DATABASE:")
             output.append("─" * 80)
             for i, proc in enumerate(response_data['retrieved_procedures'], 1):
-                output.append(f"\n{i}. {proc['procedure_name']} (Match: {proc['similarity_score']:.0%})")
+                output.append(f"\n{i}. {proc['question']} (Match: {proc['similarity_score']:.0%})")
                 if proc['steps']:
                     output.append(f"   Total Steps: {len(proc['steps'])}")
         
         output.append("")
-        output.append("⚠️  IMPORTANT REMINDER:")
+        output.append("IMPORTANT REMINDER:")
         output.append("─" * 80)
         output.append("This system provides general guidance. Always consult with healthcare")
         output.append("professionals for medical advice and emergency situations.")

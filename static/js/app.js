@@ -30,12 +30,10 @@ function toggleAudioPlayback() {
         
         currentUtterance = new SpeechSynthesisUtterance(responseText);
         
-        // Enhanced settings for calm, professional voice
-        currentUtterance.rate = 0.88;  // Slower for clarity and calmness
-        currentUtterance.pitch = 0.95; // Slightly lower for professional tone
+        currentUtterance.rate = 0.88;
+        currentUtterance.pitch = 0.95;
         currentUtterance.volume = 1.0;
         
-        // Prioritize Google and Microsoft natural voices ONLY
         const voices = window.speechSynthesis.getVoices();
         const preferredVoice = voices.find(voice => 
             voice.lang.startsWith('en') && 

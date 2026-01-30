@@ -86,7 +86,7 @@ Your calm, context-appropriate response:"""
         api_key = self.groq_config.get('api_key')
         
         if not api_key:
-            return "❌ Error: Groq API key not configured. Please add your API key to config.yaml.\nGet a free key at: https://console.groq.com/keys"
+            return "Error: Groq API key not configured. Please add your API key to config.yaml.\nGet a free key at: https://console.groq.com/keys"
         
         url = "https://api.groq.com/openai/v1/chat/completions"
         
@@ -116,14 +116,14 @@ Your calm, context-appropriate response:"""
                     error_detail = error_json.get('error', {}).get('message', error_detail)
                 except:
                     pass
-                return f"❌ Error calling Groq API: {response.status_code} - {error_detail}\n\nTip: Try regenerating your API key at https://console.groq.com/keys"
+                return f"Error calling Groq API: {response.status_code} - {error_detail}\n\nTip: Try regenerating your API key at https://console.groq.com/keys"
             
             result = response.json()
             return result['choices'][0]['message']['content']
         except requests.exceptions.RequestException as e:
-            return f"❌ Error calling Groq API: {str(e)}"
+            return f"Error calling Groq API: {str(e)}"
         except Exception as e:
-            return f"❌ Error: {str(e)}"
+            return f"Error: {str(e)}"
     
     def _generate_ollama(self, query: str, context: str) -> str:
         """Generate response using Ollama (Local, Free)"""
@@ -148,18 +148,18 @@ Your calm, context-appropriate response:"""
             result = response.json()
             return result['response']
         except requests.exceptions.ConnectionError:
-            return "❌ Error: Cannot connect to Ollama. Make sure Ollama is running locally.\nInstall from: https://ollama.ai\nThen run: ollama pull llama3.1"
+            return "Error: Cannot connect to Ollama. Make sure Ollama is running locally.\nInstall from: https://ollama.ai\nThen run: ollama pull llama3.1"
         except requests.exceptions.RequestException as e:
-            return f"❌ Error calling Ollama: {str(e)}"
+            return f"Error calling Ollama: {str(e)}"
         except Exception as e:
-            return f"❌ Error: {str(e)}"
+            return f"Error: {str(e)}"
     
     def _generate_huggingface(self, query: str, context: str) -> str:
         """Generate response using Hugging Face Inference API"""
         api_key = self.hf_config.get('api_key')
         
         if not api_key:
-            return "❌ Error: Hugging Face API key not configured. Please add your API key to config.yaml.\nGet a free key at: https://huggingface.co/settings/tokens"
+            return "Error: Hugging Face API key not configured. Please add your API key to config.yaml.\nGet a free key at: https://huggingface.co/settings/tokens"
         
         model = self.hf_config['model']
         url = f"https://api-inference.huggingface.co/models/{model}"
@@ -191,7 +191,7 @@ Your calm, context-appropriate response:"""
                 return result[0].get('generated_text', str(result))
             return str(result)
         except requests.exceptions.RequestException as e:
-            return f"❌ Error calling Hugging Face API: {str(e)}"
+            return f"Error calling Hugging Face API: {str(e)}"
         except Exception as e:
-            return f"❌ Error: {str(e)}"
+            return f"Error: {str(e)}"
 
