@@ -31,14 +31,14 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### Key Numbers
 
-| Metric | Value |
-|---|---|
-| Medical Videos | 784 verified YouTube videos |
-| Q&A Pairs | 2,714 procedure questions |
+| Metric              | Value                               |
+| ------------------- | ----------------------------------- |
+| Medical Videos      | 784 verified YouTube videos         |
+| Q&A Pairs           | 2,714 procedure questions           |
 | Database Procedures | 319 verified, searchable procedures |
-| Vision Model | Llama 4 Scout 17B (Groq) |
-| Language Model | Llama 3.3 70B (Groq) |
-| Voice Model | Whisper Large v3 (Groq) |
+| Vision Model        | Llama 4 Scout 17B (Groq)            |
+| Language Model      | Llama 3.3 70B (Groq)                |
+| Voice Model         | Whisper Large v3 (Groq)             |
 
 ---
 
@@ -46,12 +46,12 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### Input Modalities
 
-| Modality | How It Works |
-|---|---|
-| **Text** | Type a medical question in the search box |
-| **Voice** | Click the microphone button and speak your question. Uses browser Speech API with Whisper v3 server-side fallback |
-| **Image** | Upload a photo of a medical condition. Llama 4 Scout VLM identifies body part, condition, and severity |
-| **Camera Frame** | Send a live camera frame via API for real-time analysis (AR headset integration) |
+| Modality         | How It Works                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Text**         | Type a medical question in the search box                                                                         |
+| **Voice**        | Click the microphone button and speak your question. Uses browser Speech API with Whisper v3 server-side fallback |
+| **Image**        | Upload a photo of a medical condition. Llama 4 Scout VLM identifies body part, condition, and severity            |
+| **Camera Frame** | Send a live camera frame via API for real-time analysis (AR headset integration)                                  |
 
 ### Output
 
@@ -79,16 +79,16 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### Which File Does What
 
-| File | Role |
-|---|---|
-| `app.py` | Flask server — receives requests, routes them, returns JSON |
-| `models/llm.py` | Calls Groq API (Llama 3.3 for text, Whisper for voice) |
+| File                         | Role                                                         |
+| ---------------------------- | ------------------------------------------------------------ |
+| `app.py`                     | Flask server — receives requests, routes them, returns JSON  |
+| `models/llm.py`              | Calls Groq API (Llama 3.3 for text, Whisper for voice)       |
 | `models/image_recognizer.py` | Sends image to Llama 4 Scout VLM, gets body part + condition |
-| `models/generator.py` | Combines search results + LLM into a single response |
-| `database/retriever.py` | Embeds queries, computes similarity, returns top procedures |
-| `database/medical_db.py` | Loads procedures and embeddings from disk |
-| `static/js/app.js` | Frontend — voice recording, image upload, video player, TTS |
-| `templates/index_video.html` | The web page at localhost:8080 |
+| `models/generator.py`        | Combines search results + LLM into a single response         |
+| `database/retriever.py`      | Embeds queries, computes similarity, returns top procedures  |
+| `database/medical_db.py`     | Loads procedures and embeddings from disk                    |
+| `static/js/app.js`           | Frontend — voice recording, image upload, video player, TTS  |
+| `templates/index_video.html` | The web page at localhost:8080                               |
 
 ---
 
@@ -96,31 +96,31 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### Backend
 
-| Package | Purpose |
-|---|---|
-| Flask 3.0 | Web server and REST API |
-| Sentence Transformers | Semantic embedding for search |
-| Groq SDK | LLM, VLM, and Whisper API calls |
-| Pillow | Image processing |
-| NumPy | Vector similarity computation |
-| PyYAML | Configuration management |
+| Package               | Purpose                         |
+| --------------------- | ------------------------------- |
+| Flask 3.0             | Web server and REST API         |
+| Sentence Transformers | Semantic embedding for search   |
+| Groq SDK              | LLM, VLM, and Whisper API calls |
+| Pillow                | Image processing                |
+| NumPy                 | Vector similarity computation   |
+| PyYAML                | Configuration management        |
 
 ### Frontend
 
-| Technology | Purpose |
-|---|---|
-| HTML / CSS / JavaScript | Main web interface |
-| Web Speech API | Browser-native voice input and TTS |
-| YouTube IFrame API | Video playback with timestamp control |
+| Technology              | Purpose                               |
+| ----------------------- | ------------------------------------- |
+| HTML / CSS / JavaScript | Main web interface                    |
+| Web Speech API          | Browser-native voice input and TTS    |
+| YouTube IFrame API      | Video playback with timestamp control |
 
 ### AI Models (all via Groq — free tier)
 
-| Model | Role |
-|---|---|
-| `llama-3.3-70b-versatile` | Answer generation |
-| `meta-llama/llama-4-scout-17b-16e-instruct` | Image analysis (VLM) |
-| `whisper-large-v3` | Voice transcription |
-| `all-MiniLM-L6-v2` | Text embedding (local) |
+| Model                                       | Role                   |
+| ------------------------------------------- | ---------------------- |
+| `llama-3.3-70b-versatile`                   | Answer generation      |
+| `meta-llama/llama-4-scout-17b-16e-instruct` | Image analysis (VLM)   |
+| `whisper-large-v3`                          | Voice transcription    |
+| `all-MiniLM-L6-v2`                          | Text embedding (local) |
 
 ---
 
@@ -196,27 +196,27 @@ All settings are in `config.yaml`:
 
 ```yaml
 ai:
-  provider: groq                          # AI provider (groq / ollama / huggingface)
+  provider: groq # AI provider (groq / ollama / huggingface)
   groq:
-    api_key: "your-key"                   # Get free at console.groq.com/keys
-    model: llama-3.3-70b-versatile        # Language model for answer generation
-    temperature: 0.3                      # Lower = more focused answers
-    max_tokens: 1024                      # Max response length
+    api_key: "your-key" # Get free at console.groq.com/keys
+    model: llama-3.3-70b-versatile # Language model for answer generation
+    temperature: 0.3 # Lower = more focused answers
+    max_tokens: 1024 # Max response length
 
 vision:
-  clip_model: openai/clip-vit-base-patch32  # Legacy (not used in v2.0)
-  top_k_matches: 5                          # Number of image matches to return
-  max_image_size: 10485760                  # 10MB max upload size
+  clip_model: openai/clip-vit-base-patch32 # Legacy (not used in v2.0)
+  top_k_matches: 5 # Number of image matches to return
+  max_image_size: 10485760 # 10MB max upload size
 
 database:
-  embedding_model: all-MiniLM-L6-v2       # Sentence transformer model
-  similarity_threshold: 0.3               # Minimum similarity score
-  top_k: 5                                # Number of procedures to retrieve
+  embedding_model: all-MiniLM-L6-v2 # Sentence transformer model
+  similarity_threshold: 0.3 # Minimum similarity score
+  top_k: 5 # Number of procedures to retrieve
 
 web:
-  host: 0.0.0.0                           # Listen on all interfaces
-  port: 8080                              # Server port
-  debug: false                            # Flask debug mode
+  host: 0.0.0.0 # Listen on all interfaces
+  port: 8080 # Server port
+  debug: false # Flask debug mode
 ```
 
 ---
@@ -313,7 +313,7 @@ medical-video-qa/
 ├── database/
 │   ├── __init__.py
 │   ├── medical_db.py              # Database loader and embedding storage
-│   └── retriever.py               # Multi-query fusion RAG retriever
+│   └── retriever.py               # Smart semantic retriever
 │
 ├── static/
 │   ├── css/styles.css             # Application styles
@@ -345,12 +345,12 @@ medical-video-qa/
 
 The system is built on the [MedVidQA dataset](https://github.com/bbrfi/MedVidQA), a benchmark for medical video question answering.
 
-| Split | Entries |
-|---|---|
-| Train | 2,710 |
-| Validation | 145 |
-| Test | 155 |
-| **Total** | **3,010** |
+| Split      | Entries   |
+| ---------- | --------- |
+| Train      | 2,710     |
+| Validation | 145       |
+| Test       | 155       |
+| **Total**  | **3,010** |
 
 After video verification: **784 available videos** with **2,714 valid Q&A pairs** and **319 unique searchable procedures**.
 
@@ -372,6 +372,7 @@ After video verification: **784 available videos** with **2,714 valid Q&A pairs*
 ### Text Query
 
 Type in the search box:
+
 - "How to perform CPR on a child?"
 - "How to splint a fractured hand?"
 - "What is the Epley maneuver for vertigo?"
@@ -410,14 +411,14 @@ print(response.json())
 
 ## 🔍 Troubleshooting
 
-| Issue | Solution |
-|---|---|
-| **"Verified MedVidQA database not found"** | Run `python scripts/build_database.py` first |
-| **Groq API errors** | Check your API key in `config.yaml`. Get a free key at [console.groq.com/keys](https://console.groq.com/keys) |
-| **Port 8080 in use** | Run `lsof -ti:8080 \| xargs kill -9` then restart |
-| **Voice input not working** | Use Chrome or Edge. Safari has limited Web Speech API support. The Whisper fallback activates automatically |
-| **Image recognition wrong match** | The VLM works best with clear, well-lit medical images |
-| **Slow first startup** | The embedding model downloads on first run (~90MB). Subsequent starts are fast |
+| Issue                                      | Solution                                                                                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| **"Verified MedVidQA database not found"** | Run `python scripts/build_database.py` first                                                                  |
+| **Groq API errors**                        | Check your API key in `config.yaml`. Get a free key at [console.groq.com/keys](https://console.groq.com/keys) |
+| **Port 8080 in use**                       | Run `lsof -ti:8080 \| xargs kill -9` then restart                                                             |
+| **Voice input not working**                | Use Chrome or Edge. Safari has limited Web Speech API support. The Whisper fallback activates automatically   |
+| **Image recognition wrong match**          | The VLM works best with clear, well-lit medical images                                                        |
+| **Slow first startup**                     | The embedding model downloads on first run (~90MB). Subsequent starts are fast                                |
 
 ---
 
@@ -426,7 +427,7 @@ print(response.json())
 - [x] Text-based medical Q&A with video retrieval
 - [x] Image recognition with Llama 4 Scout VLM
 - [x] Voice input (Web Speech API + Whisper fallback)
-- [x] Multi-query fusion RAG retrieval
+- [x] Smart semantic retrieval
 - [x] Condition-based score boosting
 - [x] Emergency detection and warnings
 - [x] Text-to-speech output

@@ -110,7 +110,7 @@
 
   <!-- ===== ROW 4: RAG SEARCH (y=398) ===== -->
   <rect x="140" y="398" width="600" height="70" rx="12" fill="url(#green)" filter="url(#sh)"/>
-  <text x="440" y="422" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">🔍  Multi-Query Fusion RAG Search</text>
+  <text x="440" y="422" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">🔍  Smart Semantic Search</text>
   <text x="440" y="440" text-anchor="middle" fill="#a7f3d0" font-size="11">Embed query → Compare against 319 procedure vectors → Rank by similarity</text>
   <text x="440" y="456" text-anchor="middle" fill="#6ee7b7" font-size="9">database/retriever.py  ·  all-MiniLM-L6-v2  ·  319 procedures from 784 videos</text>
 

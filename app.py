@@ -518,7 +518,7 @@ def pipeline_info():
                 'output': 'Body part + condition + severity + search query',
             },
             '3_retrieval': {
-                'method': 'Multi-query fusion RAG',
+                'method': 'Smart semantic',
                 'embedding_model': config['database']['embedding_model'],
                 'database_size': len(db.procedures),
                 'similarity_threshold': config['database']['similarity_threshold'],

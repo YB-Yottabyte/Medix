@@ -1,6 +1,6 @@
 """
 Enhanced Retriever for searching medical procedures database
-Supports multi-query fusion and cross-encoder re-ranking
+Supports smart semantic and cross-encoder re-ranking
 """
 import numpy as np
 from typing import List, Dict, Optional
