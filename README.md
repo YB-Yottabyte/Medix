@@ -71,111 +71,40 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ## 🏗 Architecture
 
-### How It Works (Step by Step)
+### System Flow
 
-```
- YOU (User)
-  │
-  │  Type a question, speak, or upload an image
-  │
-  ▼
-┌──────────────────────────────────────────────────────┐
-│                   FLASK SERVER (app.py)               │
-│                                                      │
-│  Receives your request and routes it:                │
-│                                                      │
-│  Text query ──────────────────────┐                  │
-│                                   │                  │
-│  Voice audio ──► Whisper v3 ──► Text                 │
-│                  (models/llm.py)  │                  │
-│                                   ▼                  │
-│  Image/Frame ──► Llama 4 Scout ──► "Hand fracture"   │
-│                  (models/          + search query     │
-│                   image_recognizer.py)                │
-└──────────────────────┬───────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────────┐
-│              SEARCH (database/retriever.py)           │
-│                                                      │
-│  1. Takes the query (or multiple query variants)     │
-│  2. Converts to embedding vector                     │
-│     using all-MiniLM-L6-v2                           │
-│  3. Compares against 319 procedure embeddings        │
-│  4. Boosts scores for matching body part/condition   │
-│  5. Returns top 5 most relevant procedures           │
-│                                                      │
-│  Database: database/medical_db.py                    │
-│  Embeddings: data/cache_medvidqa_verified/            │
-└──────────────────────┬───────────────────────────────┘
-                       │
-                       │  Top procedures + context
-                       ▼
-┌──────────────────────────────────────────────────────┐
-│          AI ANSWER (models/generator.py)              │
-│                                                      │
-│  1. Formats retrieved procedures as context          │
-│  2. Sends to Llama 3.3 70B (via Groq)               │
-│     with a medical-expert system prompt              │
-│  3. Gets back calm, step-by-step guidance            │
-│                                                      │
-│  LLM handler: models/llm.py                         │
-└──────────────────────┬───────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────────┐
-│              RESPONSE (back to you)                   │
-│                                                      │
-│  ┌─────────────┐ ┌──────────────┐ ┌──────────────┐  │
-│  │ AI Guidance  │ │ YouTube Video│ │ Audio (TTS)  │  │
-│  │ (text)       │ │ (jumps to    │ │ (click       │  │
-│  │              │ │  exact time) │ │  speaker)    │  │
-│  └─────────────┘ └──────────────┘ └──────────────┘  │
-│                                                      │
-│  Frontend: templates/index_video.html                │
-│  Logic:    static/js/app.js                          │
-│  Styles:   static/css/styles.css                     │
-└──────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A["🧑 User"] -->|Type a question| B["app.py — Flask Server"]
+    A -->|Speak a question| V["🎙 Whisper v3"]
+    A -->|Upload image or camera frame| I["👁 Llama 4 Scout VLM"]
+
+    V -->|Transcribed text| B
+    I -->|Body part + condition + search query| B
+
+    B -->|Query| C["🔍 Retriever\n database/retriever.py"]
+    C -->|Embed query → compare against\n319 procedure embeddings| D["📚 Top 5 Matching Procedures"]
+
+    D -->|Procedures as context| E["🤖 Llama 3.3 70B\n models/generator.py"]
+    E -->|Step-by-step guidance| F["📤 Response"]
+
+    F --> G["📝 AI Guidance"]
+    F --> H["🎬 YouTube Video\n jumps to exact timestamp"]
+    F --> J["🔊 Text-to-Speech"]
 ```
 
 ### Which File Does What
 
-| File | What It Does |
+| File | Role |
 |---|---|
-| `app.py` | Flask server — receives requests, routes to the right handler, returns JSON |
-| `models/image_recognizer.py` | Sends images to Llama 4 Scout VLM, parses body part + condition, searches procedures |
-| `models/llm.py` | Sends prompts to Groq API (Llama 3.3), handles Whisper transcription |
-| `models/generator.py` | Combines retrieval + AI generation into one call |
-| `database/retriever.py` | Embeds queries, computes similarity, returns top-K procedures |
-| `database/medical_db.py` | Loads procedures and pre-computed embeddings from disk |
-| `static/js/app.js` | Frontend logic — voice recording, image upload, video player, TTS |
-| `templates/index_video.html` | The web page you see at localhost:8080 |
-
-### Example: What Happens When You Upload a Hand Fracture Image
-
-```
-1. You upload image ──► app.py /api/image_query
-2. app.py sends image bytes ──► image_recognizer.py
-3. image_recognizer.py encodes image as base64
-   ──► sends to Groq API (Llama 4 Scout VLM)
-   ──► VLM returns: "Hand, Fractures, Serious"
-4. image_recognizer.py builds 3 search queries:
-   • "How to treat metacarpal fractures"
-   • "How to splint a fractured hand"
-   • "Fractures hand first aid treatment"
-5. Each query ──► retriever.py ──► cosine similarity against 319 embeddings
-6. Scores are combined (40/30/30 weighted blend)
-   + fracture procedures boosted 2x
-   + exercise/stretch procedures penalized 0.3x
-7. Top match: "How do I splint a fractured hand?" (video BXaoZ6jGHCs)
-8. generator.py sends procedure context ──► Llama 3.3 70B
-   ──► returns step-by-step splinting instructions
-9. app.py returns JSON with:
-   • AI guidance text
-   • YouTube video ID + start/end timestamps
-   • VLM analysis details
-10. Frontend plays video at the exact segment + shows the guidance
-```
+| `app.py` | Flask server — receives requests, routes them, returns JSON |
+| `models/llm.py` | Calls Groq API (Llama 3.3 for text, Whisper for voice) |
+| `models/image_recognizer.py` | Sends image to Llama 4 Scout VLM, gets body part + condition |
+| `models/generator.py` | Combines search results + LLM into a single response |
+| `database/retriever.py` | Embeds queries, computes similarity, returns top procedures |
+| `database/medical_db.py` | Loads procedures and embeddings from disk |
+| `static/js/app.js` | Frontend — voice recording, image upload, video player, TTS |
+| `templates/index_video.html` | The web page at localhost:8080 |
 
 ---
 
