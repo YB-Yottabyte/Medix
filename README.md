@@ -302,43 +302,67 @@ Returns full system architecture details and supported endpoints.
 ```
 medical-video-qa/
 │
-├── app.py                          # Flask server — all API endpoints
+├── app.py                          # Flask server — all multimodal API endpoints
 ├── config.yaml                     # System configuration
-├── requirements.txt                # Python dependencies
+├── requirements.txt                # Python dependencies  
 ├── README.md                       # This file
+├── LICENSE                         # MIT license
+├── .env.example                    # Environment variables template
+├── .gitignore                      # Git ignore rules
+├── CONTRIBUTING.md                 # Contribution guidelines
+├── SECURITY.md                     # Security policy
+│
+├── docs/
+│   └── architecture.svg           # Hand-coded SVG system architecture diagram
 │
 ├── models/
 │   ├── __init__.py
-│   ├── llm.py                     # Groq AI handler (Llama 3.3)
+│   ├── llm.py                     # Groq AI handler (Llama 3.3 70B)
 │   ├── generator.py               # RAG response generator
-│   ├── transcript.py              # YouTube transcript fetcher + cache
-│   └── image_recognizer.py        # Llama 4 Scout VLM image analysis
+│   ├── transcript.py              # YouTube transcript fetcher + caching system
+│   └── image_recognizer.py        # Llama 4 Scout VLM medical image analysis
 │
 ├── database/
 │   ├── __init__.py
 │   ├── medical_db.py              # Database loader and embedding storage
-│   └── retriever.py               # Smart semantic retriever
+│   └── retriever.py               # Smart semantic search with multi-query fusion
 │
 ├── static/
-│   ├── css/styles.css             # Application styles
-│   └── js/app.js                  # Frontend logic (voice, video, image)
+│   ├── css/
+│   │   └── styles.css             # Application styling
+│   └── js/
+│       └── app.js                 # Frontend logic (voice, video, image, TTS)
 │
 ├── templates/
-│   └── index_video.html           # Main web interface
+│   └── index_video.html           # Main web interface with AR-ready features
+│
+├── frontend/                       # Next.js frontend (optional deployment)
+│   └── src/
+│       └── app/
+│           ├── page.tsx           # Main page component  
+│           ├── layout.tsx         # App layout
+│           └── globals.css        # Global styles
 │
 ├── data/
-│   ├── verified_medvidqa_videos.json    # 2,714 Q&A pairs from 784 videos
-│   └── cache_medvidqa_verified/         # Pre-computed embeddings (319 procedures)
+│   ├── verified_medvidqa_videos.json       # 2,714 Q&A pairs from 784 videos
+│   ├── cache_medvidqa_verified/            # Pre-computed embeddings (319 procedures)
+│   ├── transcript_cache/                   # YouTube transcript cache directory
+│   │   ├── 1vnjCOq4rGQ.json               # Cached video transcripts
+│   │   ├── 2LhXnZ2a2xg.json               # (10+ cached transcripts)
+│   │   └── ...
+│   └── backup_20260129_120227/             # System backup from dataset upgrade
+│       └── verified_medvidqa_videos_old.json
 │
-├── MedVidQA/
+├── MedVidQA/                       # Original research dataset
+│   ├── README.md                  # Dataset documentation
 │   ├── train.json                 # Training split (2,710 entries)
-│   ├── val.json                   # Validation split (145 entries)
+│   ├── val.json                   # Validation split (145 entries) 
 │   └── test.json                  # Test split (155 entries)
 │
 └── scripts/
     ├── build_database.py          # Build embeddings cache
-    ├── verify_all_videos.py       # Verify YouTube video availability
-    └── update_system.py           # System update automation
+    ├── verify_all_videos.py       # Complete video verification system
+    └── update_system.py           # Automated system update pipeline
 ```
 
 ---
