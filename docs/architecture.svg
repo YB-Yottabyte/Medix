@@ -1,197 +1,160 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 720" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 700" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#0f172a"/>
       <stop offset="100%" style="stop-color:#1e293b"/>
     </linearGradient>
-    <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="blue" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#3b82f6"/>
       <stop offset="100%" style="stop-color:#2563eb"/>
     </linearGradient>
-    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="purple" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#8b5cf6"/>
       <stop offset="100%" style="stop-color:#7c3aed"/>
     </linearGradient>
-    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="green" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#10b981"/>
       <stop offset="100%" style="stop-color:#059669"/>
     </linearGradient>
-    <linearGradient id="orange" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="amber" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#f59e0b"/>
       <stop offset="100%" style="stop-color:#d97706"/>
     </linearGradient>
-    <linearGradient id="red" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ef4444"/>
-      <stop offset="100%" style="stop-color:#dc2626"/>
-    </linearGradient>
-    <linearGradient id="teal" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="teal" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" style="stop-color:#14b8a6"/>
       <stop offset="100%" style="stop-color:#0d9488"/>
     </linearGradient>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.25"/>
+    <linearGradient id="slate" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#334155"/>
+      <stop offset="100%" style="stop-color:#1e293b"/>
+    </linearGradient>
+    <filter id="sh" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.3"/>
     </filter>
-    <filter id="glow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#3b82f6" flood-opacity="0.3"/>
-    </filter>
+    <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+    </marker>
   </defs>
 
   <!-- Background -->
-  <rect width="900" height="720" rx="16" fill="url(#bg)"/>
+  <rect width="880" height="700" rx="16" fill="url(#bg)"/>
 
   <!-- Title -->
-  <text x="450" y="42" text-anchor="middle" fill="#f1f5f9" font-size="20" font-weight="700" letter-spacing="0.5">MedVidQA — Multimodal RAG Pipeline</text>
-  <text x="450" y="62" text-anchor="middle" fill="#64748b" font-size="12" font-weight="400">How a question becomes a video-guided answer</text>
+  <text x="440" y="38" text-anchor="middle" fill="#f1f5f9" font-size="19" font-weight="700">MedVidQA — Multimodal RAG Pipeline</text>
+  <text x="440" y="56" text-anchor="middle" fill="#64748b" font-size="11">How a question becomes a video-guided answer</text>
 
-  <!-- ====== INPUT ROW ====== -->
-  <!-- Text Input -->
-  <rect x="50" y="85" width="170" height="72" rx="12" fill="url(#blue)" filter="url(#shadow)"/>
-  <text x="135" y="113" text-anchor="middle" fill="white" font-size="20">⌨️</text>
-  <text x="135" y="133" text-anchor="middle" fill="white" font-size="13" font-weight="600">Text Query</text>
-  <text x="135" y="148" text-anchor="middle" fill="#bfdbfe" font-size="10">Type your question</text>
+  <!-- ===== ROW 1: INPUTS (y=80) ===== -->
+  <rect x="40"  y="80" width="180" height="64" rx="10" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="130" y="106" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">⌨️  Text Query</text>
+  <text x="130" y="122" text-anchor="middle" fill="#bfdbfe" font-size="10">Type your question</text>
 
-  <!-- Voice Input -->
-  <rect x="255" y="85" width="170" height="72" rx="12" fill="url(#blue)" filter="url(#shadow)"/>
-  <text x="340" y="113" text-anchor="middle" fill="white" font-size="20">🎙️</text>
-  <text x="340" y="133" text-anchor="middle" fill="white" font-size="13" font-weight="600">Voice Input</text>
-  <text x="340" y="148" text-anchor="middle" fill="#bfdbfe" font-size="10">Speak your question</text>
+  <rect x="240" y="80" width="180" height="64" rx="10" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="330" y="106" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">🎙️  Voice Input</text>
+  <text x="330" y="122" text-anchor="middle" fill="#bfdbfe" font-size="10">Speak your question</text>
 
-  <!-- Image Input -->
-  <rect x="460" y="85" width="170" height="72" rx="12" fill="url(#blue)" filter="url(#shadow)"/>
-  <text x="545" y="113" text-anchor="middle" fill="white" font-size="20">📷</text>
-  <text x="545" y="133" text-anchor="middle" fill="white" font-size="13" font-weight="600">Image Upload</text>
-  <text x="545" y="148" text-anchor="middle" fill="#bfdbfe" font-size="10">Photo of condition</text>
+  <rect x="460" y="80" width="180" height="64" rx="10" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="550" y="106" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">📷  Image Upload</text>
+  <text x="550" y="122" text-anchor="middle" fill="#bfdbfe" font-size="10">Photo of condition</text>
 
-  <!-- Camera Frame -->
-  <rect x="665" y="85" width="185" height="72" rx="12" fill="url(#blue)" filter="url(#shadow)"/>
-  <text x="757" y="113" text-anchor="middle" fill="white" font-size="20">🥽</text>
-  <text x="757" y="133" text-anchor="middle" fill="white" font-size="13" font-weight="600">AR Camera Frame</text>
-  <text x="757" y="148" text-anchor="middle" fill="#bfdbfe" font-size="10">Meta Quest 3 live feed</text>
+  <rect x="660" y="80" width="180" height="64" rx="10" fill="url(#blue)" filter="url(#sh)"/>
+  <text x="750" y="106" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">🥽  AR Camera</text>
+  <text x="750" y="122" text-anchor="middle" fill="#bfdbfe" font-size="10">Meta Quest 3 live feed</text>
 
-  <!-- Input label -->
-  <rect x="12" y="83" width="24" height="76" rx="4" fill="#3b82f6" opacity="0.6"/>
-  <text x="24" y="127" text-anchor="middle" fill="white" font-size="9" font-weight="600" transform="rotate(-90,24,127)">INPUT</text>
+  <!-- Row label -->
+  <rect x="10" y="80" width="20" height="64" rx="4" fill="#3b82f6" opacity="0.5"/>
+  <text x="20" y="118" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" transform="rotate(-90,20,118)">INPUT</text>
 
-  <!-- ====== ARROWS DOWN FROM INPUT ====== -->
-  <line x1="135" y1="157" x2="135" y2="195" stroke="#475569" stroke-width="2" stroke-dasharray="4,4"/>
-  <polygon points="135,200 130,192 140,192" fill="#475569"/>
+  <!-- ===== ARROWS: Row 1 → Row 2 ===== -->
+  <line x1="130" y1="144" x2="130" y2="190" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="330" y1="144" x2="330" y2="190" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="550" y1="144" x2="550" y2="190" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="750" y1="144" x2="750" y2="190" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <line x1="340" y1="157" x2="340" y2="195" stroke="#475569" stroke-width="2" stroke-dasharray="4,4"/>
-  <polygon points="340,200 335,192 345,192" fill="#475569"/>
+  <!-- ===== ROW 2: PROCESSING (y=200) ===== -->
+  <rect x="40"  y="200" width="180" height="56" rx="10" fill="url(#slate)" stroke="#475569" stroke-width="1"/>
+  <text x="130" y="224" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="500">Pass-through</text>
+  <text x="130" y="240" text-anchor="middle" fill="#64748b" font-size="9">app.py</text>
 
-  <line x1="545" y1="157" x2="545" y2="195" stroke="#475569" stroke-width="2" stroke-dasharray="4,4"/>
-  <polygon points="545,200 540,192 550,192" fill="#475569"/>
+  <rect x="240" y="200" width="180" height="56" rx="10" fill="url(#purple)" filter="url(#sh)"/>
+  <text x="330" y="222" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Whisper Large v3</text>
+  <text x="330" y="240" text-anchor="middle" fill="#c4b5fd" font-size="10">Speech → Text  ·  Groq API</text>
 
-  <line x1="757" y1="157" x2="757" y2="195" stroke="#475569" stroke-width="2" stroke-dasharray="4,4"/>
-  <polygon points="757,200 752,192 762,192" fill="#475569"/>
+  <rect x="460" y="200" width="180" height="56" rx="10" fill="url(#purple)" filter="url(#sh)"/>
+  <text x="550" y="222" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Llama 4 Scout</text>
+  <text x="550" y="240" text-anchor="middle" fill="#c4b5fd" font-size="10">Image → Condition</text>
 
-  <!-- ====== PROCESSING ROW ====== -->
-  <!-- Direct pass-through for text -->
-  <rect x="50" y="200" width="170" height="62" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
-  <text x="135" y="225" text-anchor="middle" fill="#94a3b8" font-size="11" font-weight="500">Direct pass-through</text>
-  <text x="135" y="245" text-anchor="middle" fill="#64748b" font-size="10">app.py</text>
+  <rect x="660" y="200" width="180" height="56" rx="10" fill="url(#purple)" filter="url(#sh)"/>
+  <text x="750" y="222" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">Llama 4 Scout</text>
+  <text x="750" y="240" text-anchor="middle" fill="#c4b5fd" font-size="10">Frame → Condition</text>
 
-  <!-- Whisper -->
-  <rect x="255" y="200" width="170" height="62" rx="12" fill="url(#purple)" filter="url(#shadow)"/>
-  <text x="340" y="222" text-anchor="middle" fill="white" font-size="13" font-weight="600">Whisper Large v3</text>
-  <text x="340" y="240" text-anchor="middle" fill="#c4b5fd" font-size="10">Speech → Text</text>
-  <text x="340" y="254" text-anchor="middle" fill="#a78bfa" font-size="9">via Groq API</text>
+  <!-- Row label -->
+  <rect x="10" y="200" width="20" height="56" rx="4" fill="#8b5cf6" opacity="0.5"/>
+  <text x="20" y="234" text-anchor="middle" fill="#fff" font-size="6" font-weight="700" transform="rotate(-90,20,234)">PROCESS</text>
 
-  <!-- VLM for image -->
-  <rect x="460" y="200" width="170" height="62" rx="12" fill="url(#purple)" filter="url(#shadow)"/>
-  <text x="545" y="222" text-anchor="middle" fill="white" font-size="13" font-weight="600">Llama 4 Scout</text>
-  <text x="545" y="240" text-anchor="middle" fill="#c4b5fd" font-size="10">Image → Condition</text>
-  <text x="545" y="254" text-anchor="middle" fill="#a78bfa" font-size="9">image_recognizer.py</text>
+  <!-- ===== ARROWS: Row 2 → Merge (all converge to center x=440, y=300) ===== -->
+  <!-- Each box drops straight down, then turns horizontal to center -->
+  <polyline points="130,256 130,280 440,280" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/>
+  <polyline points="330,256 330,280 440,280" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/>
+  <polyline points="550,256 550,280 440,280" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/>
+  <polyline points="750,256 750,280 440,280" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- Single line down from merge point -->
+  <line x1="440" y1="280" x2="440" y2="300" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <!-- VLM for camera -->
-  <rect x="665" y="200" width="185" height="62" rx="12" fill="url(#purple)" filter="url(#shadow)"/>
-  <text x="757" y="222" text-anchor="middle" fill="white" font-size="13" font-weight="600">Llama 4 Scout</text>
-  <text x="757" y="240" text-anchor="middle" fill="#c4b5fd" font-size="10">Frame → Condition</text>
-  <text x="757" y="254" text-anchor="middle" fill="#a78bfa" font-size="9">image_recognizer.py</text>
-
-  <!-- Process label -->
-  <rect x="12" y="200" width="24" height="62" rx="4" fill="#8b5cf6" opacity="0.6"/>
-  <text x="24" y="238" text-anchor="middle" fill="white" font-size="8" font-weight="600" transform="rotate(-90,24,238)">PROCESS</text>
-
-  <!-- ====== ARROWS TO MERGE ====== -->
-  <line x1="135" y1="262" x2="135" y2="300" stroke="#475569" stroke-width="2"/>
-  <line x1="135" y1="300" x2="420" y2="300" stroke="#475569" stroke-width="2"/>
-
-  <line x1="340" y1="262" x2="340" y2="300" stroke="#475569" stroke-width="2"/>
-  <line x1="340" y1="300" x2="420" y2="300" stroke="#475569" stroke-width="2"/>
-
-  <line x1="545" y1="262" x2="545" y2="300" stroke="#475569" stroke-width="2"/>
-  <line x1="545" y1="300" x2="470" y2="300" stroke="#475569" stroke-width="2"/>
-
-  <line x1="757" y1="262" x2="757" y2="300" stroke="#475569" stroke-width="2"/>
-  <line x1="757" y1="300" x2="470" y2="300" stroke="#475569" stroke-width="2"/>
-
-  <line x1="450" y1="300" x2="450" y2="315" stroke="#475569" stroke-width="2"/>
-  <polygon points="450,320 445,312 455,312" fill="#475569"/>
-
-  <!-- ====== ENRICHED QUERY ====== -->
-  <rect x="275" y="320" width="350" height="52" rx="12" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
-  <text x="450" y="343" text-anchor="middle" fill="#fbbf24" font-size="13" font-weight="600">🔗 Enriched Query Builder</text>
-  <text x="450" y="360" text-anchor="middle" fill="#94a3b8" font-size="10">Merges text + visual context into search queries</text>
+  <!-- ===== ROW 3: ENRICHED QUERY (y=310) ===== -->
+  <rect x="240" y="310" width="400" height="48" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="440" y="332" text-anchor="middle" fill="#fbbf24" font-size="12" font-weight="600">🔗  Enriched Query Builder</text>
+  <text x="440" y="348" text-anchor="middle" fill="#94a3b8" font-size="10">Merges text + visual context into search queries</text>
 
   <!-- Arrow down -->
-  <line x1="450" y1="372" x2="450" y2="395" stroke="#475569" stroke-width="2"/>
-  <polygon points="450,400 445,392 455,392" fill="#475569"/>
+  <line x1="440" y1="358" x2="440" y2="388" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-  <!-- ====== RAG SEARCH ====== -->
-  <rect x="200" y="400" width="500" height="80" rx="14" fill="url(#green)" filter="url(#glow)"/>
-  <text x="450" y="426" text-anchor="middle" fill="white" font-size="15" font-weight="700">🔍 Multi-Query Fusion RAG Search</text>
-  <text x="450" y="446" text-anchor="middle" fill="#a7f3d0" font-size="11">Embed query → Compare against 319 procedure vectors → Rank by similarity</text>
-  <text x="450" y="464" text-anchor="middle" fill="#6ee7b7" font-size="10">database/retriever.py  •  all-MiniLM-L6-v2  •  319 procedures from 784 videos</text>
+  <!-- ===== ROW 4: RAG SEARCH (y=398) ===== -->
+  <rect x="140" y="398" width="600" height="70" rx="12" fill="url(#green)" filter="url(#sh)"/>
+  <text x="440" y="422" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">🔍  Multi-Query Fusion RAG Search</text>
+  <text x="440" y="440" text-anchor="middle" fill="#a7f3d0" font-size="11">Embed query → Compare against 319 procedure vectors → Rank by similarity</text>
+  <text x="440" y="456" text-anchor="middle" fill="#6ee7b7" font-size="9">database/retriever.py  ·  all-MiniLM-L6-v2  ·  319 procedures from 784 videos</text>
 
-  <!-- Search label -->
-  <rect x="12" y="400" width="24" height="80" rx="4" fill="#10b981" opacity="0.6"/>
-  <text x="24" y="447" text-anchor="middle" fill="white" font-size="8" font-weight="600" transform="rotate(-90,24,447)">SEARCH</text>
-
-  <!-- Arrow down -->
-  <line x1="450" y1="480" x2="450" y2="505" stroke="#475569" stroke-width="2"/>
-  <polygon points="450,510 445,502 455,502" fill="#475569"/>
-  <text x="458" y="498" fill="#64748b" font-size="9" font-style="italic">Top 5 procedures</text>
-
-  <!-- ====== AI GENERATION ====== -->
-  <rect x="200" y="510" width="500" height="72" rx="14" fill="url(#orange)" filter="url(#shadow)"/>
-  <text x="450" y="537" text-anchor="middle" fill="white" font-size="15" font-weight="700">🤖 Llama 3.3 70B — Answer Generation</text>
-  <text x="450" y="555" text-anchor="middle" fill="#fde68a" font-size="11">Procedures as context → Medical-expert system prompt → Step-by-step guidance</text>
-  <text x="450" y="571" text-anchor="middle" fill="#fcd34d" font-size="10">models/generator.py  •  models/llm.py  •  via Groq API</text>
-
-  <!-- Generate label -->
-  <rect x="12" y="510" width="24" height="72" rx="4" fill="#f59e0b" opacity="0.6"/>
-  <text x="24" y="552" text-anchor="middle" fill="white" font-size="7" font-weight="600" transform="rotate(-90,24,552)">GENERATE</text>
+  <!-- Row label -->
+  <rect x="10" y="398" width="20" height="70" rx="4" fill="#10b981" opacity="0.5"/>
+  <text x="20" y="440" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" transform="rotate(-90,20,440)">SEARCH</text>
 
   <!-- Arrow down -->
-  <line x1="450" y1="582" x2="450" y2="610" stroke="#475569" stroke-width="2"/>
-  <polygon points="450,615 445,607 455,607" fill="#475569"/>
+  <line x1="440" y1="468" x2="440" y2="498" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="455" y="486" fill="#64748b" font-size="9" font-style="italic">Top 5 procedures</text>
 
-  <!-- ====== OUTPUT ROW ====== -->
-  <rect x="50" y="620" width="250" height="72" rx="12" fill="url(#teal)" filter="url(#shadow)"/>
-  <text x="175" y="648" text-anchor="middle" fill="white" font-size="20">📝</text>
-  <text x="175" y="668" text-anchor="middle" fill="white" font-size="13" font-weight="600">AI Guidance</text>
-  <text x="175" y="683" text-anchor="middle" fill="#99f6e4" font-size="10">Calm, step-by-step instructions</text>
+  <!-- ===== ROW 5: AI GENERATION (y=508) ===== -->
+  <rect x="140" y="508" width="600" height="64" rx="12" fill="url(#amber)" filter="url(#sh)"/>
+  <text x="440" y="532" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">🤖  Llama 3.3 70B — Answer Generation</text>
+  <text x="440" y="548" text-anchor="middle" fill="#fef3c7" font-size="11">Procedures as context → Medical-expert prompt → Step-by-step guidance</text>
+  <text x="440" y="562" text-anchor="middle" fill="#fde68a" font-size="9">models/generator.py  ·  models/llm.py  ·  via Groq API</text>
 
-  <rect x="325" y="620" width="250" height="72" rx="12" fill="url(#teal)" filter="url(#shadow)"/>
-  <text x="450" y="648" text-anchor="middle" fill="white" font-size="20">🎬</text>
-  <text x="450" y="668" text-anchor="middle" fill="white" font-size="13" font-weight="600">YouTube Video</text>
-  <text x="450" y="683" text-anchor="middle" fill="#99f6e4" font-size="10">Jumps to exact timestamp</text>
+  <!-- Row label -->
+  <rect x="10" y="508" width="20" height="64" rx="4" fill="#f59e0b" opacity="0.5"/>
+  <text x="20" y="546" text-anchor="middle" fill="#fff" font-size="6" font-weight="700" transform="rotate(-90,20,546)">GENERATE</text>
 
-  <rect x="600" y="620" width="250" height="72" rx="12" fill="url(#teal)" filter="url(#shadow)"/>
-  <text x="725" y="648" text-anchor="middle" fill="white" font-size="20">🔊</text>
-  <text x="725" y="668" text-anchor="middle" fill="white" font-size="13" font-weight="600">Audio Playback</text>
-  <text x="725" y="683" text-anchor="middle" fill="#99f6e4" font-size="10">Text-to-Speech output</text>
+  <!-- ===== ARROWS: Row 5 → Outputs (fan out from center to 3 boxes) ===== -->
+  <line x1="440" y1="572" x2="440" y2="598" stroke="#475569" stroke-width="1.5"/>
+  <polyline points="440,598 170,598 170,610" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <line x1="440" y1="598" x2="440" y2="610" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <polyline points="440,598 710,598 710,610" fill="none" stroke="#475569" stroke-width="1.5" stroke-linejoin="round" marker-end="url(#arrow)"/>
 
-  <!-- Output label -->
-  <rect x="12" y="620" width="24" height="72" rx="4" fill="#14b8a6" opacity="0.6"/>
-  <text x="24" y="662" text-anchor="middle" fill="white" font-size="8" font-weight="600" transform="rotate(-90,24,662)">OUTPUT</text>
+  <!-- ===== ROW 6: OUTPUTS (y=620) ===== -->
+  <rect x="50"  y="620" width="240" height="56" rx="10" fill="url(#teal)" filter="url(#sh)"/>
+  <text x="170" y="644" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">📝  AI Guidance</text>
+  <text x="170" y="660" text-anchor="middle" fill="#99f6e4" font-size="10">Calm, step-by-step instructions</text>
 
-  <!-- Arrows to outputs -->
-  <line x1="350" y1="615" x2="175" y2="620" stroke="#475569" stroke-width="1.5"/>
-  <line x1="450" y1="615" x2="450" y2="620" stroke="#475569" stroke-width="1.5"/>
-  <line x1="550" y1="615" x2="725" y2="620" stroke="#475569" stroke-width="1.5"/>
+  <rect x="320" y="620" width="240" height="56" rx="10" fill="url(#teal)" filter="url(#sh)"/>
+  <text x="440" y="644" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">🎬  YouTube Video</text>
+  <text x="440" y="660" text-anchor="middle" fill="#99f6e4" font-size="10">Jumps to exact timestamp</text>
+
+  <rect x="590" y="620" width="240" height="56" rx="10" fill="url(#teal)" filter="url(#sh)"/>
+  <text x="710" y="644" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">🔊  Audio Playback</text>
+  <text x="710" y="660" text-anchor="middle" fill="#99f6e4" font-size="10">Text-to-Speech output</text>
+
+  <!-- Row label -->
+  <rect x="10" y="620" width="20" height="56" rx="4" fill="#14b8a6" opacity="0.5"/>
+  <text x="20" y="654" text-anchor="middle" fill="#fff" font-size="7" font-weight="700" transform="rotate(-90,20,654)">OUTPUT</text>
 
   <!-- Footer -->
-  <text x="450" y="712" text-anchor="middle" fill="#475569" font-size="10">Arizona State University • CSE 492 Thesis • Spring 2026</text>
+  <text x="440" y="695" text-anchor="middle" fill="#475569" font-size="10">Arizona State University  ·  CSE 492 Thesis  ·  Spring 2026</text>
 </svg>
