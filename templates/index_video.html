@@ -49,7 +49,19 @@
             <h2>Ask a Medical Question</h2>
             <div class="query-section">
                 <label for="queryInput">Ask about a medical procedure:</label>
-                <textarea id="queryInput" placeholder="Example: How to perform CPR? How to treat vertigo?"></textarea>
+                <div class="query-input-wrapper">
+                    <textarea id="queryInput" placeholder="Example: How to perform CPR? How to treat vertigo?"></textarea>
+                    <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="Speak your question">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="voice-status" id="voiceStatus" style="display: none;">
+                    <span class="voice-dot"></span>
+                    <span id="voiceStatusText">Listening...</span>
+                </div>
                 
                 <div class="examples">
                     <p>Try these:</p>
@@ -61,7 +73,31 @@
                 </div>
             </div>
 
-            <button class="submit-btn" onclick="submitQuery()" id="submitBtn">Get Answer</button>
+            <div class="divider">
+                <span>OR</span>
+            </div>
+
+            <div class="query-section">
+                <label for="imageInput">Upload an Image of Medical Condition:</label>
+                <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Click to upload or drag and drop</p>
+                    <p class="upload-hint">PNG, JPG, JPEG (Max 10MB)</p>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+                <div id="imagePreview" style="display: none;">
+                    <img id="previewImg" src="" alt="Preview">
+                    <button class="remove-image-btn" onclick="clearImage()" title="Remove image">✕</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; margin-bottom: 20px;">
+                <button class="submit-btn" onclick="submitQuery()" id="submitBtn">Get Answer</button>
+            </div>
 
             <div class="loading" id="loading">
                 <div class="spinner"></div>
@@ -131,8 +167,8 @@
         <div class="about-content">
             <div class="feature-card">
                 <div class="feature-icon">🤖</div>
-                <h3>AI Technology</h3>
-                <p>Powered by state-of-the-art language models and semantic search, delivering accurate and contextually relevant answers to medical queries.</p>
+                <h3>Multimodal AI Pipeline</h3>
+                <p>Powered by Llama 4 Scout (vision), Whisper (voice), and Llama 3.3 (language). Multi-query fusion RAG retrieval ensures accurate, contextually relevant answers.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
@@ -140,310 +176,12 @@
                 <p>Built on the comprehensive MedVidQA dataset containing 784 verified medical videos with 2,714 detailed question-answer pairs covering diverse medical procedures and step-by-step guidance.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>Real-time Answers</h3>
-                <p>Instant semantic search and AI-powered response generation provide immediate, contextually accurate answers to your medical procedure questions.</p>
+                <div class="feature-icon">🥽</div>
+                <h3>AR-Ready Pipeline</h3>
+                <p>Designed for Meta Quest 3 integration with hands-free voice input, real-time camera frame analysis, and step-by-step AR guidance overlays for medical procedures.</p>
             </div>
         </div>
     </section>
-
-    <script src="https://www.youtube.com/iframe_api"></script>
-    <script>
-        let player = null;
-        let videoEndTime = 0;
-        let videoStartTime = 0;
-        let checkInterval = null;
-        let currentVideoId = '';
-        let isPlayingAudio = false;
-        let currentUtterance = null;
-
-        function toggleAudioPlayback() {
-            const iconBtn = document.getElementById('audioIconBtn');
-            const responseText = document.getElementById('responseContent').textContent;
-            
-            if (isPlayingAudio) {
-                // Stop playing
-                if (window.speechSynthesis) {
-                    window.speechSynthesis.cancel();
-                }
-                isPlayingAudio = false;
-                iconBtn.classList.remove('playing');
-                currentUtterance = null;
-            } else {
-                // Start playing with enhanced browser TTS
-                if (!('speechSynthesis' in window)) {
-                    alert('Audio is not supported in your browser.');
-                    return;
-                }
-                
-                window.speechSynthesis.cancel();
-                
-                currentUtterance = new SpeechSynthesisUtterance(responseText);
-                
-                currentUtterance.rate = 0.88; 
-                currentUtterance.pitch = 0.95;
-                currentUtterance.volume = 1.0;
-                
-                const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find(voice => 
-                    voice.lang.startsWith('en') && 
-                    (voice.name.includes('Google US English') || 
-                     voice.name.includes('Google UK English Female') ||
-                     voice.name.includes('Microsoft Zira') ||
-                     voice.name.includes('Microsoft David') ||
-                     voice.name.includes('Microsoft Mark'))
-                ) || voices.find(voice => 
-                    voice.lang.startsWith('en') && voice.name.includes('Google')
-                ) || voices.find(voice => 
-                    voice.lang.startsWith('en') && voice.name.includes('Microsoft')
-                ) || voices.find(voice => voice.lang.startsWith('en'));
-                
-                if (preferredVoice) {
-                    currentUtterance.voice = preferredVoice;
-                    console.log('Using voice:', preferredVoice.name);
-                }
-                
-                currentUtterance.onstart = function() {
-                    isPlayingAudio = true;
-                    iconBtn.classList.add('playing');
-                };
-                
-                currentUtterance.onend = function() {
-                    isPlayingAudio = false;
-                    iconBtn.classList.remove('playing');
-                    currentUtterance = null;
-                };
-                
-                currentUtterance.onerror = function() {
-                    isPlayingAudio = false;
-                    iconBtn.classList.remove('playing');
-                    currentUtterance = null;
-                };
-                
-                window.speechSynthesis.speak(currentUtterance);
-            }
-        }
-        
-        if (window.speechSynthesis) {
-            window.speechSynthesis.onvoiceschanged = function() {
-                window.speechSynthesis.getVoices();
-            };
-        }
-
-        function onYouTubeIframeAPIReady() {
-            console.log('YouTube API Ready');
-        }
-
-        function createPlayer(videoId, startSeconds, endSeconds) {
-            currentVideoId = videoId;
-            videoStartTime = startSeconds || 0;
-            videoEndTime = endSeconds || 9999;
-
-            if (player) {
-                player.destroy();
-                player = null;
-            }
-            if (checkInterval) {
-                clearInterval(checkInterval);
-                checkInterval = null;
-            }
-
-            player = new YT.Player('player', {
-                height: '100%',
-                width: '100%',
-                videoId: videoId,
-                playerVars: {
-                    autoplay: 1,
-                    start: Math.floor(startSeconds),
-                    end: Math.floor(endSeconds),
-                    rel: 0,
-                    modestbranding: 1,
-                    enablejsapi: 1
-                },
-                events: {
-                    onReady: onPlayerReady,
-                    onStateChange: onPlayerStateChange
-                }
-            });
-        }
-
-        function onPlayerReady(event) {
-            console.log('Playing from', videoStartTime, 'to', videoEndTime);
-            event.target.playVideo();
-            
-            checkInterval = setInterval(() => {
-                if (player && typeof player.getCurrentTime === 'function') {
-                    const currentTime = player.getCurrentTime();
-                    if (currentTime >= videoEndTime) {
-                        player.pauseVideo();
-                        clearInterval(checkInterval);
-                        showSegmentComplete();
-                    }
-                }
-            }, 500);
-        }
-
-        function onPlayerStateChange(event) {
-            if (event.data === 0 && checkInterval) {
-                clearInterval(checkInterval);
-            }
-        }
-
-        function showSegmentComplete() {
-            const info = document.getElementById('segmentInfo');
-            if (info) {
-                info.innerHTML = `
-                    <strong>✅ Segment Complete!</strong>
-                    <br>Watched: ${formatTime(videoStartTime)} - ${formatTime(videoEndTime)}
-                    <br><button class="replay-btn" onclick="replaySegment()">🔄 Replay Segment</button>
-                `;
-            }
-        }
-
-        function replaySegment() {
-            if (player && currentVideoId) {
-                player.seekTo(videoStartTime);
-                player.playVideo();
-                
-                if (checkInterval) clearInterval(checkInterval);
-                checkInterval = setInterval(() => {
-                    if (player && typeof player.getCurrentTime === 'function') {
-                        if (player.getCurrentTime() >= videoEndTime) {
-                            player.pauseVideo();
-                            clearInterval(checkInterval);
-                            showSegmentComplete();
-                        }
-                    }
-                }, 500);
-            }
-        }
-
-        function setQuery(text) {
-            document.getElementById('queryInput').value = text;
-        }
-
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return mins + ':' + secs.toString().padStart(2, '0');
-        }
-
-        function jumpToTime(seconds) {
-            if (player) {
-                player.seekTo(seconds);
-                player.playVideo();
-            }
-        }
-
-        async function submitQuery() {
-            const query = document.getElementById('queryInput').value.trim();
-            if (!query) {
-                alert('Please enter a question!');
-                return;
-            }
-
-            document.getElementById('loading').classList.add('active');
-            document.getElementById('responseSection').classList.remove('active');
-            document.getElementById('submitBtn').disabled = true;
-
-            if (checkInterval) {
-                clearInterval(checkInterval);
-                checkInterval = null;
-            }
-
-            try {
-                const response = await fetch('/api/query_video', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ query: query })
-                });
-
-                const data = await response.json();
-
-                if (data.error) {
-                    alert('Error: ' + data.error);
-                    return;
-                }
-
-                const responseContent = document.getElementById('responseContent');
-
-                if (responseContent) {
-                    let formattedText = data.response || 'No response available';
-                    formattedText = formattedText.split('\n').map(line => {
-                        if (/^\d+[\.\)]/.test(line.trim())) {
-                            return '  ' + line;
-                        }
-                        return line;
-                    }).join('\n');
-                    
-                    responseContent.textContent = formattedText;
-                    document.getElementById('audioIconBtn').style.display = 'flex';
-                }
-
-                const videoSection = document.getElementById('videoSection');
-                const segmentInfo = document.getElementById('segmentInfo');
-                const segmentTime = document.getElementById('segmentTime');
-                const videoSteps = document.getElementById('videoSteps');
-
-                if (data.video_id && data.answer_start !== undefined && data.answer_end !== undefined) {
-                    if (videoSection) videoSection.style.display = 'block';
-                    
-                    if (segmentTime) {
-                        segmentTime.textContent = formatTime(data.answer_start) + ' - ' + formatTime(data.answer_end);
-                    }
-                    if (segmentInfo) {
-                        segmentInfo.innerHTML = 
-                            '<strong>🎯 Playing segment:</strong> ' + formatTime(data.answer_start) + ' - ' + formatTime(data.answer_end) +
-                            '<br><small>Video will automatically stop at the end of the relevant segment</small>' +
-                            '<br><button class="replay-btn" onclick="replaySegment()">🔄 Replay Segment</button>';
-                    }
-                    
-                    createPlayer(data.video_id, data.answer_start, data.answer_end);
-
-                    if (videoSteps) {
-                        videoSteps.innerHTML = 
-                            '<div class="video-step" onclick="jumpToTime(' + data.answer_start + ')">' +
-                            '<span class="step-time">' + formatTime(data.answer_start) + '</span>' +
-                            '<span>▶️ Start of answer</span></div>' +
-                            '<div class="video-step" onclick="jumpToTime(' + data.answer_end + ')">' +
-                            '<span class="step-time">' + formatTime(data.answer_end) + '</span>' +
-                            '<span>⏹️ End of answer</span></div>';
-                    }
-                } else {
-                    if (videoSection) videoSection.style.display = 'none';
-                }
-
-                document.getElementById('responseSection').classList.add('active');
-                document.getElementById('responseSection').scrollIntoView({ behavior: 'smooth' });
-
-            } catch (error) {
-                alert('Error: ' + error.message);
-            } finally {
-                document.getElementById('loading').classList.remove('active');
-                document.getElementById('submitBtn').disabled = false;
-            }
-        }
-
-        document.getElementById('queryInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                submitQuery();
-            }
-        });
-        
-        window.addEventListener('scroll', function() {
-            const scrollBtn = document.getElementById('scrollTop');
-            if (window.pageYOffset > 300) {
-                scrollBtn.classList.add('show');
-            } else {
-                scrollBtn.classList.remove('show');
-            }
-        });
-        
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    </script>
     
     <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
         ↑
@@ -464,9 +202,9 @@
             </div>
             <div class="footer-section">
                 <h3>Technology</h3>
-                <p>Built with Flask, Python, and advanced NLP models</p>
-                <p>Sentence Transformers for semantic search</p>
-                <p>Free AI powered by Groq & Llama 3.3</p>
+                <p>Multimodal RAG Pipeline v2.0</p>
+                <p>Llama 4 Scout (Vision) + Whisper (Voice)</p>
+                <p>Llama 3.3 70B (Language) via Groq</p>
             </div>
             <div class="footer-section">
                 <h3>Disclaimer</h3>
@@ -480,7 +218,7 @@
     </footer>
 
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260215010"></script>
 </body>
 </html>
 

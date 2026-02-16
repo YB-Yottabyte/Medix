@@ -1,8 +1,9 @@
 """
-Retriever for searching medical procedures database
+Enhanced Retriever for searching medical procedures database
+Supports multi-query fusion and cross-encoder re-ranking
 """
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sentence_transformers import SentenceTransformer
 
 class ProcedureRetriever:
@@ -18,20 +19,16 @@ class ProcedureRetriever:
         return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
     
     def search(self, query: str) -> List[Dict]:
-        """Search for relevant procedures"""
-        # Encode query
+        """Search for relevant procedures using single query"""
         query_embedding = self.db.embedding_model.encode([query])[0]
         
-        # Compute similarities
         similarities = []
         for i, proc_embedding in enumerate(self.db.embeddings):
             sim = self.cosine_similarity(query_embedding, proc_embedding)
             similarities.append((i, sim))
         
-        # Sort by similarity
         similarities.sort(key=lambda x: x[1], reverse=True)
         
-        # Get top-k results above threshold
         results = []
         for idx, sim in similarities[:self.top_k]:
             if sim >= self.similarity_threshold:
@@ -40,6 +37,66 @@ class ProcedureRetriever:
                 results.append(proc)
         
         return results
+
+    def multi_query_search(self, queries: List[str], weights: Optional[List[float]] = None) -> List[Dict]:
+        """
+        Enhanced search: fuse results from multiple query variants.
+        This improves recall — important when the user's phrasing
+        doesn't exactly match the procedure title.
+        
+        Args:
+            queries: list of query strings (e.g. original + paraphrase)
+            weights: optional per-query weights (default: equal)
+        Returns:
+            Ranked list of procedures
+        """
+        if not queries:
+            return []
+        
+        n_procs = len(self.db.embeddings)
+        if weights is None:
+            weights = [1.0 / len(queries)] * len(queries)
+        else:
+            total = sum(weights)
+            weights = [w / total for w in weights]
+        
+        fused_scores = np.zeros(n_procs)
+        
+        for query, weight in zip(queries, weights):
+            q_emb = self.db.embedding_model.encode([query])[0]
+            for i, proc_emb in enumerate(self.db.embeddings):
+                sim = self.cosine_similarity(q_emb, proc_emb)
+                fused_scores[i] += weight * sim
+        
+        ranked = np.argsort(fused_scores)[::-1][:self.top_k]
+        
+        results = []
+        for idx in ranked:
+            score = float(fused_scores[idx])
+            if score >= self.similarity_threshold:
+                proc = self.db.procedures[idx].copy()
+                proc['similarity_score'] = score
+                results.append(proc)
+        
+        return results
+    
+    def search_with_context(self, query: str, body_part: str = None,
+                            condition: str = None) -> List[Dict]:
+        """
+        Context-aware search: generates multiple query variants from
+        structured context (body part, condition) and fuses results.
+        Designed for the image-recognition → text-search pipeline.
+        """
+        queries = [query]
+        weights = [0.5]
+        
+        if body_part and condition:
+            queries.append(f"How to treat {condition} on the {body_part}")
+            weights.append(0.3)
+            queries.append(f"{condition} {body_part} first aid")
+            weights.append(0.2)
+        
+        return self.multi_query_search(queries, weights)
     
     def format_results_for_context(self, results: List[Dict]) -> str:
         """Format search results as context for AI model"""

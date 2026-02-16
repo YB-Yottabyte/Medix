@@ -186,10 +186,50 @@ function jumpToTime(seconds) {
     }
 }
 
+let selectedImageFile = null;
+
+function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file (PNG, JPG, JPEG)');
+        return;
+    }
+
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Image file is too large. Maximum size is 10MB.');
+        return;
+    }
+
+    selectedImageFile = file;
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('imagePreview').style.display = 'block';
+        document.getElementById('imageUploadArea').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearImage() {
+    selectedImageFile = null;
+    document.getElementById('imageInput').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('imageUploadArea').style.display = 'block';
+}
+
 async function submitQuery() {
     const query = document.getElementById('queryInput').value.trim();
-    if (!query) {
-        alert('Please enter a question!');
+    const hasImage = selectedImageFile !== null;
+
+    // Check if user provided either query or image
+    if (!query && !hasImage) {
+        alert('Please enter a question or upload an image!');
         return;
     }
 
@@ -203,22 +243,114 @@ async function submitQuery() {
     }
 
     try {
-        const response = await fetch('/api/query_video', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ query: query })
-        });
+        let data;
 
-        const data = await response.json();
+        // If image is provided, use image recognition endpoint
+        if (hasImage) {
+            const formData = new FormData();
+            formData.append('image', selectedImageFile);
 
-        if (data.error) {
-            alert('Error: ' + data.error);
-            return;
+            const response = await fetch('/api/image_query', {
+                method: 'POST',
+                body: formData
+            });
+
+            data = await response.json();
+
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+
+            // Display image recognition results
+            displayImageRecognitionResults(data);
+        } else {
+            // Use regular text query
+            const response = await fetch('/api/query_video', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ query: query })
+            });
+
+            data = await response.json();
+
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+
+            // Display regular query results
+            displayTextQueryResults(data);
         }
 
-        // Display response
-        const responseContent = document.getElementById('responseContent');
-        if (responseContent) {
+        document.getElementById('responseSection').classList.add('active');
+        document.getElementById('responseSection').scrollIntoView({ behavior: 'smooth' });
+
+    } catch (error) {
+        alert('Error: ' + error.message);
+    } finally {
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('submitBtn').disabled = false;
+    }
+}
+
+function displayImageRecognitionResults(data) {
+    const responseContent = document.getElementById('responseContent');
+    if (responseContent) {
+        let resultText = '';
+        
+        // Display emergency warning prominently if detected
+        if (data.is_emergency && data.emergency_warning) {
+            resultText += '🚨 ' + data.emergency_warning + '\n\n';
+            resultText += '═'.repeat(60) + '\n\n';
+        }
+        
+        resultText += '🧠 AI VISION ANALYSIS (Llama 4 Scout)\n\n';
+        
+        // Show what the VLM detected in the image
+        if (data.recognition) {
+            const r = data.recognition;
+            if (r.detected_body_part) {
+                resultText += `📍 Body Part: ${r.detected_body_part}\n`;
+            }
+            if (r.detected_condition) {
+                resultText += `🩹 Condition: ${r.detected_condition}\n`;
+            }
+            if (r.detected_severity) {
+                resultText += `⚠️  Severity: ${r.detected_severity}\n`;
+            }
+            if (r.description) {
+                resultText += `📝 Description: ${r.description}\n`;
+            }
+            resultText += '\n';
+        }
+        
+        resultText += '📋 MATCHED PROCEDURE\n';
+        resultText += `✅ ${data.question}\n`;
+        resultText += `🎯 Confidence: ${data.confidence.toFixed(1)}%\n\n`;
+        
+        if (data.ai_guidance) {
+            resultText += '💡 AI GUIDANCE:\n';
+            resultText += data.ai_guidance;
+        }
+
+        if (data.recognition && data.recognition.all_matches && data.recognition.all_matches.length > 1) {
+            resultText += '\n\n📌 Other Possible Matches:\n';
+            data.recognition.all_matches.slice(1).forEach((match, idx) => {
+                resultText += `${idx + 2}. ${match.question} (${match.confidence.toFixed(1)}%)\n`;
+            });
+        }
+
+        responseContent.textContent = resultText;
+        document.getElementById('audioIconBtn').style.display = 'flex';
+    }
+
+    displayVideoPlayer(data);
+}
+
+function displayTextQueryResults(data) {
+    const responseContent = document.getElementById('responseContent');
+    if (responseContent) {
             // Format text with proper indentation for numbered lists
             let formattedText = data.response || 'No response available';
             
@@ -235,7 +367,10 @@ async function submitQuery() {
             document.getElementById('audioIconBtn').style.display = 'flex';
         }
 
-        // Display video
+    displayVideoPlayer(data);
+}
+
+function displayVideoPlayer(data) {
         const videoSection = document.getElementById('videoSection');
         const segmentInfo = document.getElementById('segmentInfo');
         const segmentTime = document.getElementById('segmentTime');
@@ -268,16 +403,6 @@ async function submitQuery() {
         } else {
             if (videoSection) videoSection.style.display = 'none';
         }
-
-        document.getElementById('responseSection').classList.add('active');
-        document.getElementById('responseSection').scrollIntoView({ behavior: 'smooth' });
-
-    } catch (error) {
-        alert('Error: ' + error.message);
-    } finally {
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('submitBtn').disabled = false;
-    }
 }
 
 document.getElementById('queryInput').addEventListener('keydown', function(e) {
@@ -301,3 +426,165 @@ function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+
+// ================================================================
+// VOICE INPUT — Web Speech API (browser) with Whisper fallback
+// ================================================================
+
+let isRecording = false;
+let recognition = null;
+let mediaRecorder = null;
+let audioChunks = [];
+
+function toggleVoiceInput() {
+    if (isRecording) {
+        stopVoiceInput();
+    } else {
+        startVoiceInput();
+    }
+}
+
+function startVoiceInput() {
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const voiceStatusText = document.getElementById('voiceStatusText');
+
+    // Try browser Web Speech API first (Chrome, Edge)
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = function() {
+            isRecording = true;
+            voiceBtn.classList.add('recording');
+            voiceStatus.style.display = 'flex';
+            voiceStatusText.textContent = 'Listening...';
+        };
+
+        recognition.onresult = function(event) {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+            }
+            document.getElementById('queryInput').value = transcript;
+
+            if (event.results[event.results.length - 1].isFinal) {
+                voiceStatusText.textContent = 'Got it!';
+                setTimeout(() => stopVoiceInput(), 500);
+            } else {
+                voiceStatusText.textContent = 'Listening: "' + transcript.substring(0, 40) + '..."';
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.log('Speech recognition error:', event.error);
+            if (event.error === 'not-allowed') {
+                voiceStatusText.textContent = 'Microphone access denied';
+            } else {
+                // Fallback to server-side Whisper
+                voiceStatusText.textContent = 'Switching to Whisper...';
+                stopVoiceInput();
+                startWhisperRecording();
+                return;
+            }
+            setTimeout(() => stopVoiceInput(), 2000);
+        };
+
+        recognition.onend = function() {
+            if (isRecording) {
+                stopVoiceInput();
+            }
+        };
+
+        recognition.start();
+    } else {
+        // No browser speech API — use server-side Whisper
+        startWhisperRecording();
+    }
+}
+
+function stopVoiceInput() {
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+
+    isRecording = false;
+    voiceBtn.classList.remove('recording');
+
+    if (recognition) {
+        recognition.stop();
+        recognition = null;
+    }
+
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+    }
+
+    setTimeout(() => {
+        voiceStatus.style.display = 'none';
+    }, 1500);
+}
+
+async function startWhisperRecording() {
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const voiceStatusText = document.getElementById('voiceStatusText');
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = function(event) {
+            audioChunks.push(event.data);
+        };
+
+        mediaRecorder.onstop = async function() {
+            stream.getTracks().forEach(track => track.stop());
+
+            if (audioChunks.length === 0) return;
+
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            voiceStatusText.textContent = 'Transcribing with Whisper...';
+
+            try {
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'recording.webm');
+
+                const response = await fetch('/api/voice_transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success && data.text) {
+                    document.getElementById('queryInput').value = data.text;
+                    voiceStatusText.textContent = 'Got it!';
+                } else {
+                    voiceStatusText.textContent = 'Could not transcribe';
+                }
+            } catch (error) {
+                console.error('Whisper transcription error:', error);
+                voiceStatusText.textContent = 'Transcription failed';
+            }
+
+            setTimeout(() => {
+                voiceStatus.style.display = 'none';
+            }, 1500);
+        };
+
+        isRecording = true;
+        voiceBtn.classList.add('recording');
+        voiceStatus.style.display = 'flex';
+        voiceStatusText.textContent = 'Recording... tap mic to stop';
+        mediaRecorder.start();
+
+    } catch (err) {
+        console.error('Microphone access error:', err);
+        voiceStatus.style.display = 'flex';
+        voiceStatusText.textContent = 'Microphone access denied';
+        setTimeout(() => { voiceStatus.style.display = 'none'; }, 2000);
+    }
+}
