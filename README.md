@@ -55,16 +55,17 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### Output
 
-- **AI-Generated Guidance** — Calm, step-by-step instructions from Llama 3.3 70B
+- **AI-Generated Guidance** — Transcript-grounded, step-by-step instructions from Llama 3.3 70B
 - **Video Playback** — Embedded YouTube player jumps to the exact relevant segment
 - **Text-to-Speech** — Click the speaker icon to hear the guidance read aloud
 - **Emergency Detection** — Automatically flags life-threatening conditions with 911 warnings
 
 ### Pipeline Highlights
 
-- **Multi-Query Fusion RAG** — Combines multiple query variants with weighted scoring for better retrieval
+- **Transcript-Grounded Answers** — AI responses are based on what the instructor actually says in the video, not hallucinated
+- **YouTube Transcript Fetching** — Automatically fetches and caches video transcripts so the LLM has real content
+- **Smart Semantic Search** — Embeds queries and compares against 319 procedure vectors by similarity
 - **Condition-Based Boosting** — When vision detects "fracture," fracture procedures are boosted and exercise videos are penalized
-- **Body-Part Filtering** — Prevents hand injuries from matching foot procedures
 - **Context-Aware Search** — Visual analysis enriches the text query before retrieval
 
 ---
@@ -84,6 +85,7 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 | `app.py`                     | Flask server — receives requests, routes them, returns JSON  |
 | `models/llm.py`              | Calls Groq API (Llama 3.3 for text, Whisper for voice)       |
 | `models/image_recognizer.py` | Sends image to Llama 4 Scout VLM, gets body part + condition |
+| `models/transcript.py`       | Fetches and caches YouTube video transcripts for LLM context |
 | `models/generator.py`        | Combines search results + LLM into a single response         |
 | `database/retriever.py`      | Embeds queries, computes similarity, returns top procedures  |
 | `database/medical_db.py`     | Loads procedures and embeddings from disk                    |
@@ -101,6 +103,7 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 | Flask 3.0             | Web server and REST API         |
 | Sentence Transformers | Semantic embedding for search   |
 | Groq SDK              | LLM, VLM, and Whisper API calls |
+| youtube-transcript-api | Fetch YouTube video transcripts |
 | Pillow                | Image processing                |
 | NumPy                 | Vector similarity computation   |
 | PyYAML                | Configuration management        |
@@ -308,6 +311,7 @@ medical-video-qa/
 │   ├── __init__.py
 │   ├── llm.py                     # Groq AI handler (Llama 3.3)
 │   ├── generator.py               # RAG response generator
+│   ├── transcript.py              # YouTube transcript fetcher + cache
 │   └── image_recognizer.py        # Llama 4 Scout VLM image analysis
 │
 ├── database/
@@ -428,6 +432,8 @@ print(response.json())
 - [x] Image recognition with Llama 4 Scout VLM
 - [x] Voice input (Web Speech API + Whisper fallback)
 - [x] Smart semantic retrieval
+- [x] Transcript-grounded AI responses (answers based on actual video content)
+- [x] YouTube transcript fetching and caching
 - [x] Condition-based score boosting
 - [x] Emergency detection and warnings
 - [x] Text-to-speech output

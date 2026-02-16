@@ -13,6 +13,7 @@ class ProcedureRetriever:
         self.db = db
         self.top_k = config['database']['top_k']
         self.similarity_threshold = config['database']['similarity_threshold']
+        self.transcript_fetcher = None  # Set externally after init
     
     def cosine_similarity(self, a, b):
         """Compute cosine similarity between two vectors"""
@@ -99,47 +100,53 @@ class ProcedureRetriever:
         return self.multi_query_search(queries, weights)
     
     def format_results_for_context(self, results: List[Dict]) -> str:
-        """Format search results as context for AI model"""
+        """Format search results as context for AI model, including video transcripts"""
         if not results:
             return "No relevant procedures found in the database."
         
-        context_parts = ["Here are the relevant medical procedures from the database:\n"]
+        # ---- PRIMARY PROCEDURE (best match — include transcript) ----
+        top = results[0]
+        context_parts = ["PRIMARY PROCEDURE (base your answer on THIS one only):\n"]
+        context_parts.append(f"Title: {top['question']}")
+        context_parts.append(f"Relevance Score: {top['similarity_score']:.2%}")
         
-        for i, proc in enumerate(results, 1):
-            context_parts.append(f"\n{'='*60}")
-            context_parts.append(f"Procedure {i}: {proc['question']}")
-            context_parts.append(f"Relevance Score: {proc['similarity_score']:.2%}")
-            context_parts.append(f"{'='*60}")
-            
-            if proc.get('steps'):
-                context_parts.append("\nStep-by-Step Instructions:")
-                for j, step in enumerate(proc['steps']):
-                    # Handle both old format and HiREST format
-                    if 'description' in step:
-                        step_text = step['description']
-                    elif 'heading' in step:
-                        step_text = step['heading']
-                    else:
-                        step_text = f"Step {j+1}"
-                    
-                    # Handle timing info
-                    if 'absolute_bounds' in step:
-                        start = step['absolute_bounds'][0]
-                        end = step['absolute_bounds'][1] if len(step['absolute_bounds']) > 1 else start
-                        duration = end - start
-                        context_parts.append(f"\nStep {j + 1}: {step_text}")
-                        context_parts.append(f"  └─ Time: {start:.0f}s - {end:.0f}s ({duration:.0f}s)")
-                    elif 'duration' in step:
-                        context_parts.append(f"\nStep {j + 1}: {step['description']}")
-                        context_parts.append(f"  └─ Duration: {step['duration']:.0f}s")
-                    else:
-                        context_parts.append(f"\nStep {j + 1}: {step_text}")
-            
-            # Handle duration
-            if 'duration' in proc:
-                context_parts.append(f"\nTotal Duration: {proc['duration']:.0f} seconds")
-            elif 'v_duration' in proc:
-                context_parts.append(f"\nVideo Duration: {proc['v_duration']:.0f} seconds")
+        video_id = top.get('video_id')
+        answer_start = top.get('answer_start')
+        answer_end = top.get('answer_end')
+        
+        if self.transcript_fetcher and video_id:
+            transcript_text = self.transcript_fetcher.fetch(
+                video_id, start=answer_start, end=answer_end
+            )
+            if transcript_text:
+                context_parts.append(f"\nVideo Transcript (what the instructor actually says):")
+                context_parts.append(transcript_text)
+                if answer_start is not None and answer_end is not None:
+                    mins_s, secs_s = divmod(int(answer_start), 60)
+                    mins_e, secs_e = divmod(int(answer_end), 60)
+                    context_parts.append(f"\nRelevant video segment: {mins_s}:{secs_s:02d} to {mins_e}:{secs_e:02d}")
+        
+        if top.get('steps'):
+            for j, step in enumerate(top['steps']):
+                if 'description' in step:
+                    step_text = step['description']
+                elif 'heading' in step:
+                    step_text = step['heading']
+                else:
+                    step_text = f"Step {j+1}"
+                if 'absolute_bounds' in step:
+                    start = step['absolute_bounds'][0]
+                    end = step['absolute_bounds'][1] if len(step['absolute_bounds']) > 1 else start
+                    context_parts.append(f"\nTimestamp: {step_text}")
+        
+        if 'duration' in top:
+            context_parts.append(f"\nTotal Video Duration: {top['duration']:.0f} seconds")
+        
+        # ---- RELATED PROCEDURES (titles only, no transcripts) ----
+        if len(results) > 1:
+            context_parts.append(f"\n\nRelated procedures (for reference only, do NOT base your answer on these):")
+            for proc in results[1:]:
+                context_parts.append(f"  - {proc['question']} (match: {proc['similarity_score']:.0%})")
         
         return "\n".join(context_parts)
     

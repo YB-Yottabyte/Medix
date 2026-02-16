@@ -12,6 +12,7 @@ from database.retriever import ProcedureRetriever
 from models.llm import AIHandler
 from models.generator import ResponseGenerator
 from models.image_recognizer import MedicalImageRecognizer
+from models.transcript import TranscriptFetcher
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB max file size
@@ -40,6 +41,11 @@ else:
 retriever = ProcedureRetriever(config, db)
 ai_handler = AIHandler(config)
 response_generator = ResponseGenerator(config, retriever, ai_handler)
+
+# Initialize transcript fetcher so AI answers are grounded in video content
+print("\nInitializing YouTube Transcript Fetcher...")
+transcript_fetcher = TranscriptFetcher()
+retriever.transcript_fetcher = transcript_fetcher
 
 # Initialize image recognizer for visual queries
 print("\nInitializing Image Recognition System...")
