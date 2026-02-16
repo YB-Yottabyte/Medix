@@ -31,7 +31,7 @@ This Code of Conduct applies within all project spaces, including issues, pull r
 
 ## Enforcement
 
-Instances of unacceptable behavior may be reported to the project maintainer at [skkukunu@asu.edu](mailto:skkukunu@asu.edu). All complaints will be reviewed and investigated promptly and fairly.
+Instances of unacceptable behavior may be reported to the project maintainer at [skukunu1@asu.edu](mailto:skukunu1@asu.edu). All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 

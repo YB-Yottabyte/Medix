@@ -99,4 +99,4 @@ Before submitting a PR, verify:
 
 ## Questions?
 
-Open an issue or contact the maintainer at [skkukunu@asu.edu](mailto:skkukunu@asu.edu).
+Open an issue or contact the maintainer at [skukunu1@asu.edu](mailto:skukunu1@asu.edu).

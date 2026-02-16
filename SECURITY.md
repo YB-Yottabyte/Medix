@@ -13,7 +13,7 @@ If you discover a security vulnerability, please report it responsibly.
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, email: [skkukunu@asu.edu](mailto:skkukunu@asu.edu)
+Instead, email: [skukunu1@asu.edu](mailto:skukunu1@asu.edu)
 
 Include:
 - A description of the vulnerability
