@@ -19,24 +19,6 @@ _Arizona State University — CSE 492 Thesis Project — Spring 2026_
 
 ---
 
-## Table of Contents
-
-- [About](#-about)
-- [Features](#-features)
-- [Architecture](#-architecture)
-- [Tech Stack](#-tech-stack)
-- [Quick Start](#-quick-start)
-- [Configuration](#%EF%B8%8F-configuration)
-- [API Reference](#-api-reference)
-- [Project Structure](#-project-structure)
-- [Dataset](#-dataset)
-- [Usage Examples](#-usage-examples)
-- [Troubleshooting](#-troubleshooting)
-- [Roadmap](#-roadmap)
-- [License](#-license)
-
----
-
 ## 📖 About
 
 MedVidQA is a **multimodal AI-powered medical question-answering system** that combines voice input, image recognition, and video retrieval to provide step-by-step medical procedure guidance. It is designed to support non-expert users — such as family caregivers and community health aides — during essential medical procedures.
