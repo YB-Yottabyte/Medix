@@ -73,25 +73,9 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### System Flow
 
-```mermaid
-flowchart TD
-    A["🧑 User"] -->|Type a question| B["app.py — Flask Server"]
-    A -->|Speak a question| V["🎙 Whisper v3"]
-    A -->|Upload image or camera frame| I["👁 Llama 4 Scout VLM"]
-
-    V -->|Transcribed text| B
-    I -->|Body part + condition + search query| B
-
-    B -->|Query| C["🔍 Retriever\n database/retriever.py"]
-    C -->|Embed query → compare against\n319 procedure embeddings| D["📚 Top 5 Matching Procedures"]
-
-    D -->|Procedures as context| E["🤖 Llama 3.3 70B\n models/generator.py"]
-    E -->|Step-by-step guidance| F["📤 Response"]
-
-    F --> G["📝 AI Guidance"]
-    F --> H["🎬 YouTube Video\n jumps to exact timestamp"]
-    F --> J["🔊 Text-to-Speech"]
-```
+<p align="center">
+  <img src="docs/architecture.svg" alt="MedVidQA System Architecture" width="100%"/>
+</p>
 
 ### Which File Does What
 
