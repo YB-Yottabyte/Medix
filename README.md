@@ -499,15 +499,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 ---
 
-## 🙏 Acknowledgments
-
-- [MedVidQA Dataset](https://github.com/bbrfi/MedVidQA) — TREC 2024
-- [Groq](https://groq.com/) — Free API for Llama 3.3, Llama 4 Scout, and Whisper
-- [Sentence Transformers](https://www.sbert.net/) — Semantic search embeddings
-- Arizona State University — TEAL Research Lab
-
----
-
 <div align="center">
 
 **Arizona State University — CSE 492 Thesis — Spring 2026**
