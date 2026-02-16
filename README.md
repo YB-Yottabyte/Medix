@@ -98,15 +98,15 @@ The system is built on the **MedVidQA dataset** (TREC 2024) and uses a **Retriev
 
 ### Backend
 
-| Package               | Purpose                         |
-| --------------------- | ------------------------------- |
-| Flask 3.0             | Web server and REST API         |
-| Sentence Transformers | Semantic embedding for search   |
-| Groq SDK              | LLM, VLM, and Whisper API calls |
+| Package                | Purpose                         |
+| ---------------------- | ------------------------------- |
+| Flask 3.0              | Web server and REST API         |
+| Sentence Transformers  | Semantic embedding for search   |
+| Groq SDK               | LLM, VLM, and Whisper API calls |
 | youtube-transcript-api | Fetch YouTube video transcripts |
-| Pillow                | Image processing                |
-| NumPy                 | Vector similarity computation   |
-| PyYAML                | Configuration management        |
+| Pillow                 | Image processing                |
+| NumPy                  | Vector similarity computation   |
+| PyYAML                 | Configuration management        |
 
 ### Frontend
 
