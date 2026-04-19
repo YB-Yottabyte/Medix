@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Attachment } from "@/lib/types";
 import { Spinner } from "../ui/spinner";
 import { CrossSmallIcon } from "./icons";
@@ -19,11 +20,14 @@ export const PreviewAttachment = ({
       data-testid="input-attachment-preview"
     >
       {contentType?.startsWith("image") ? (
-        <img
+        <Image
           alt={name ?? "attachment"}
           className="size-full object-cover"
-          src={url}
           draggable={false}
+          fill
+          sizes="96px"
+          src={url}
+          unoptimized
         />
       ) : (
         <div className="flex size-full items-center justify-center text-muted-foreground text-xs">

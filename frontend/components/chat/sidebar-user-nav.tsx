@@ -35,7 +35,8 @@ export function SidebarUserNav({ user }: { user: User }) {
   const { setTheme, resolvedTheme } = useTheme();
 
   const isGuest =
-    isLocalAuthBypassed || guestRegex.test(data?.user?.email ?? user.email ?? "");
+    isLocalAuthBypassed ||
+    guestRegex.test(data?.user?.email ?? user.email ?? "");
 
   return (
     <SidebarMenu>

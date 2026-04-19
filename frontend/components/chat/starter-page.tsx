@@ -30,20 +30,17 @@ const capabilityPills = [
 const overviewCards = [
   {
     title: "Clinical Search",
-    copy:
-      "Search trusted MedVidQA procedures and jump straight into the most relevant treatment videos.",
+    copy: "Search trusted MedVidQA procedures and jump straight into the most relevant treatment videos.",
     icon: Search,
   },
   {
     title: "Visual Triage",
-    copy:
-      "Upload an image, add context, and turn what the model sees into a grounded retrieval query.",
+    copy: "Upload an image, add context, and turn what the model sees into a grounded retrieval query.",
     icon: ShieldPlus,
   },
   {
     title: "Conversation Flow",
-    copy:
-      "Stay in one thread for clarifications, follow-up questions, and procedure-specific guidance.",
+    copy: "Stay in one thread for clarifications, follow-up questions, and procedure-specific guidance.",
     icon: BrainCircuit,
   },
 ];
@@ -90,7 +87,9 @@ export function StarterPage() {
 
     if (typedPlaceholder.length < currentGreeting.length) {
       timeoutId = window.setTimeout(() => {
-        setTypedPlaceholder(currentGreeting.slice(0, typedPlaceholder.length + 1));
+        setTypedPlaceholder(
+          currentGreeting.slice(0, typedPlaceholder.length + 1)
+        );
       }, 42);
     } else {
       timeoutId = window.setTimeout(() => {
@@ -129,19 +128,33 @@ export function StarterPage() {
           </Link>
 
           <nav className="hidden items-center gap-10 text-[14px] tracking-[0.01em] text-muted-foreground lg:flex">
-            <a className="transition-colors hover:text-foreground" href="#overview">
+            <a
+              className="transition-colors hover:text-foreground"
+              href="#overview"
+            >
               Overview
             </a>
-            <a className="transition-colors hover:text-foreground" href="#features">
+            <a
+              className="transition-colors hover:text-foreground"
+              href="#features"
+            >
               Capabilities
             </a>
-            <a className="transition-colors hover:text-foreground" href="#footer">
+            <a
+              className="transition-colors hover:text-foreground"
+              href="#footer"
+            >
               Footer
             </a>
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button asChild className="hidden rounded-full md:inline-flex" size="sm" variant="outline">
+            <Button
+              asChild
+              className="hidden rounded-full md:inline-flex"
+              size="sm"
+              variant="outline"
+            >
               <a href={codeHref} rel="noreferrer" target="_blank">
                 <Github className="size-4" />
                 View code
@@ -178,16 +191,25 @@ export function StarterPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mx-auto max-w-4xl font-semibold text-4xl tracking-[-0.06em] leading-[0.94] text-balance text-slate-950 md:text-6xl"
               initial={{ opacity: 0, y: 14 }}
-              transition={{ delay: 0.05, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                delay: 0.05,
+                duration: 0.55,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
-              Ask medical procedure questions with a calmer, clearer starting point.
+              Ask medical procedure questions with a calmer, clearer starting
+              point.
             </motion.h1>
 
             <motion.p
               animate={{ opacity: 1, y: 0 }}
               className="mx-auto mt-6 max-w-3xl text-[16px] leading-8 tracking-[0.002em] text-slate-600 md:text-[17px]"
               initial={{ opacity: 0, y: 14 }}
-              transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                delay: 0.12,
+                duration: 0.55,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               MedVidQA blends multimodal input, grounded transcript retrieval,
               and step-aware video answers so users can get from uncertainty to
@@ -198,7 +220,11 @@ export function StarterPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mt-12 w-full"
               initial={{ opacity: 0, y: 16 }}
-              transition={{ delay: 0.18, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              transition={{
+                delay: 0.18,
+                duration: 0.55,
+                ease: [0.22, 1, 0.36, 1],
+              }}
             >
               <div className="mx-auto w-full max-w-4xl rounded-[1.8rem] border border-slate-200/80 bg-white/92 p-2.5 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.14)] backdrop-blur-xl">
                 <div className="w-full rounded-[1.35rem] border border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
@@ -226,7 +252,11 @@ export function StarterPage() {
                         <button
                           className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[12px] text-slate-600 transition-colors hover:border-sky-200 hover:text-slate-950"
                           key={pill}
-                          onClick={() => setPrompt((current) => (current ? `${current} ${pill}` : pill))}
+                          onClick={() =>
+                            setPrompt((current) =>
+                              current ? `${current} ${pill}` : pill
+                            )
+                          }
                           type="button"
                         >
                           {pill}
@@ -264,14 +294,10 @@ export function StarterPage() {
                 </div>
               </div>
             </motion.div>
-
           </div>
         </section>
 
-        <section
-          className="grid gap-6 pb-14 md:grid-cols-3"
-          id="overview"
-        >
+        <section className="grid gap-6 pb-14 md:grid-cols-3" id="overview">
           {overviewCards.map(({ title, copy, icon: Icon }, index) => (
             <motion.article
               animate={{ opacity: 1, y: 0 }}
@@ -290,7 +316,9 @@ export function StarterPage() {
               <h2 className="font-semibold text-2xl tracking-[-0.03em] text-slate-950">
                 {title}
               </h2>
-              <p className="mt-3 text-[15px] leading-7 text-slate-600">{copy}</p>
+              <p className="mt-3 text-[15px] leading-7 text-slate-600">
+                {copy}
+              </p>
             </motion.article>
           ))}
         </section>
@@ -307,13 +335,22 @@ export function StarterPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <a className="transition-colors hover:text-slate-900" href="#overview">
+            <a
+              className="transition-colors hover:text-slate-900"
+              href="#overview"
+            >
               Overview
             </a>
-            <a className="transition-colors hover:text-slate-900" href="#features">
+            <a
+              className="transition-colors hover:text-slate-900"
+              href="#features"
+            >
               Capabilities
             </a>
-            <a className="transition-colors hover:text-slate-900" href={codeHref}>
+            <a
+              className="transition-colors hover:text-slate-900"
+              href={codeHref}
+            >
               View code
             </a>
           </div>

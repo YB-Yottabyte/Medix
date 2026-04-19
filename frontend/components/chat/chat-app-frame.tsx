@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import type { User } from "next-auth";
+import { Suspense } from "react";
 import { Toaster } from "sonner";
 import { AppSidebar } from "@/components/chat/app-sidebar";
 import { ChatShell } from "@/components/chat/shell";

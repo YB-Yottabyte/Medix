@@ -42,7 +42,7 @@ export function ProcedureCard({ output }: { output: ProcedureOutput }) {
     );
   }
 
-  const { answer, videoId, startTime, endTime, matchedProcedure, similarity, steps } =
+  const { videoId, startTime, endTime, matchedProcedure, similarity, steps } =
     output;
   const embedSrc = videoId
     ? `https://www.youtube.com/embed/${videoId}?start=${Math.floor(startTime ?? 0)}${
@@ -82,7 +82,7 @@ export function ProcedureCard({ output }: { output: ProcedureOutput }) {
               Steps
             </summary>
             <ol className="mt-2 space-y-1 text-xs">
-              {steps.map((s, i) => {
+              {steps.map((s) => {
                 const stepTime =
                   typeof s.start_time === "number"
                     ? s.start_time
@@ -91,7 +91,10 @@ export function ProcedureCard({ output }: { output: ProcedureOutput }) {
                       : 0;
 
                 return (
-                  <li className="flex gap-2" key={`${stepTime}-${i}`}>
+                  <li
+                    className="flex gap-2"
+                    key={`${stepTime}-${s.end_time ?? "na"}-${s.description}`}
+                  >
                     <span className="shrink-0 font-mono text-muted-foreground">
                       {formatTime(stepTime)}
                     </span>

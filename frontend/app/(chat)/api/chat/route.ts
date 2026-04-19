@@ -12,7 +12,6 @@ import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import type { UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import { getAppSession } from "@/lib/dev-session";
 import {
   allowedModelIds,
   chatModels,
@@ -36,6 +35,7 @@ import {
   updateMessage,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
+import { getAppSession } from "@/lib/dev-session";
 import { ChatbotError } from "@/lib/errors";
 import { checkIpRateLimit } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
@@ -84,9 +84,7 @@ type AnalyzeImageResult =
 
 function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
   return (
-    typeof value === "object" &&
-    value !== null &&
-    Symbol.asyncIterator in value
+    typeof value === "object" && value !== null && Symbol.asyncIterator in value
   );
 }
 
@@ -103,7 +101,9 @@ async function enrichLatestUserMessageWithImageAnalysis(
     return uiMessages;
   }
 
-  const firstImage = fileParts.find((part) => part.mediaType?.startsWith("image/"));
+  const firstImage = fileParts.find((part) =>
+    part.mediaType?.startsWith("image/")
+  );
   if (!firstImage) {
     return uiMessages;
   }
@@ -154,7 +154,9 @@ async function enrichLatestUserMessageWithImageAnalysis(
         type: "text",
         text:
           `Attached medical image: ${firstImage.url}\n` +
-          (questionText ? `User question for the image: ${questionText}\n` : "") +
+          (questionText
+            ? `User question for the image: ${questionText}\n`
+            : "") +
           `${analysisText}`,
       },
     ],
@@ -163,7 +165,9 @@ async function enrichLatestUserMessageWithImageAnalysis(
   return [...uiMessages.slice(0, -1), enrichedMessage];
 }
 
-function prepareMessagesForLanguageModel(uiMessages: ChatMessage[]): ChatMessage[] {
+function prepareMessagesForLanguageModel(
+  uiMessages: ChatMessage[]
+): ChatMessage[] {
   return uiMessages.map((message) => {
     if (message.role !== "user") {
       return message;
@@ -333,8 +337,11 @@ export async function POST(request: Request) {
     const isReasoningModel = capabilities?.reasoning === true;
     const supportsTools = capabilities?.tools === true;
 
-    const imagePreparedMessages = await enrichLatestUserMessageWithImageAnalysis(uiMessages);
-    const modelReadyMessages = prepareMessagesForLanguageModel(imagePreparedMessages);
+    const imagePreparedMessages =
+      await enrichLatestUserMessageWithImageAnalysis(uiMessages);
+    const modelReadyMessages = prepareMessagesForLanguageModel(
+      imagePreparedMessages
+    );
     const modelMessages = await convertToModelMessages(modelReadyMessages);
 
     const stream = createUIMessageStream({

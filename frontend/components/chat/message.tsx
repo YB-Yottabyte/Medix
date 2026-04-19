@@ -15,7 +15,7 @@ import { ProcedureCard } from "./procedure-card";
 import { ResponseAudioButton } from "./response-audio-button";
 
 const PurePreviewMessage = ({
-  addToolApprovalResponse,
+  addToolApprovalResponse: _addToolApprovalResponse,
   chatId,
   message,
   vote,
@@ -87,14 +87,18 @@ const PurePreviewMessage = ({
   ) ?? { text: "", isStreaming: false, rendered: false };
 
   const assistantText = isAssistant
-    ? message.parts
+    ? (message.parts
         ?.filter(
-          (part): part is Extract<(typeof message.parts)[number], { type: "text" }> =>
-            part.type === "text" && part.text?.trim().length > 0
+          (
+            part
+          ): part is Extract<
+            (typeof message.parts)[number],
+            { type: "text" }
+          > => part.type === "text" && part.text?.trim().length > 0
         )
         .map((part) => part.text)
         .join("\n\n")
-        .trim() ?? ""
+        .trim() ?? "")
     : "";
 
   const orderedParts = isAssistant
@@ -108,7 +112,10 @@ const PurePreviewMessage = ({
             if (type === "text") {
               return 1;
             }
-            if (type === "tool-searchProcedure" || type === "tool-analyzeImage") {
+            if (
+              type === "tool-searchProcedure" ||
+              type === "tool-analyzeImage"
+            ) {
               return 2;
             }
             return 3;

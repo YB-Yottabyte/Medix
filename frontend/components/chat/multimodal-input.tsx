@@ -401,7 +401,10 @@ function PureMultimodalInput({
           }
         );
 
-        const data = (await response.json()) as { text?: string; error?: string };
+        const data = (await response.json()) as {
+          text?: string;
+          error?: string;
+        };
 
         if (!response.ok) {
           throw new Error(data.error || "Could not transcribe audio.");
@@ -498,9 +501,7 @@ function PureMultimodalInput({
       toast.success("Listening...");
     } catch (error) {
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Microphone access was denied."
+        error instanceof Error ? error.message : "Microphone access was denied."
       );
     }
   }, [transcribeAudio]);
@@ -685,7 +686,7 @@ function PureMultimodalInput({
                   if (isRecording) {
                     stopRecording();
                   } else {
-                    void startRecording();
+                    startRecording().catch(() => undefined);
                   }
                 }}
                 title={

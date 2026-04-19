@@ -15,6 +15,7 @@ Output:
 """
 
 import json
+import logging
 import re
 from collections import defaultdict
 from pathlib import Path
@@ -36,6 +37,7 @@ MIN_SIMILARITY_SCORE = 0.0  # not applicable at cleaning stage
 
 # YouTube video ID pattern
 YT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
+LOGGER = logging.getLogger(__name__)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -65,7 +67,7 @@ def is_valid_youtube_id(video_id: str) -> bool:
 # ── Cleaning Rules ─────────────────────────────────────────────────────────────
 
 
-def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[str]]:
+def clean_entry(entry: dict, _idx: int, _split: str) -> tuple[dict | None, list[str]]:
     """
     Clean a single MedVidQA entry.
     Returns (cleaned_entry, list_of_issues).
@@ -198,13 +200,13 @@ def clean_split(split: str) -> dict:
     dst_path = OUT_DIR / f"{split}.json"
 
     if not src_path.exists():
-        print(f"  ⚠️  {split}.json not found — skipping")
+        LOGGER.warning("%s.json not found; skipping", split)
         return {"split": split, "status": "missing"}
 
     raw = load_json(src_path)
-    print(f"\n{'─'*60}")
-    print(f"  Cleaning {split}.json  ({len(raw)} entries)")
-    print(f"{'─'*60}")
+    LOGGER.info("%s", "\n" + "─" * 60)
+    LOGGER.info("  Cleaning %s.json  (%s entries)", split, len(raw))
+    LOGGER.info("%s", "─" * 60)
 
     cleaned = []
     drop_reasons = defaultdict(int)
@@ -245,14 +247,14 @@ def clean_split(split: str) -> dict:
         "duration_stats": compute_duration_stats(cleaned),
     }
 
-    print(f"  Original : {len(raw)}")
-    print(f"  Cleaned  : {len(cleaned)}")
-    print(f"  Dropped  : {total_drops} ({report['drop_rate']})")
+    LOGGER.info("  Original : %s", len(raw))
+    LOGGER.info("  Cleaned  : %s", len(cleaned))
+    LOGGER.info("  Dropped  : %s (%s)", total_drops, report["drop_rate"])
     if drop_reasons:
         for reason, count in sorted(drop_reasons.items(), key=lambda x: -x[1]):
-            print(f"    • {reason}: {count}")
+            LOGGER.info("    • %s: %s", reason, count)
     if fix_log:
-        print(f"  Fixes    : {len(fix_log)}")
+        LOGGER.info("  Fixes    : %s", len(fix_log))
 
     return report
 
@@ -277,9 +279,10 @@ def compute_duration_stats(entries: list[dict]) -> dict:
 
 
 def main():
-    print("\n" + "=" * 60)
-    print("  MedVidQA Dataset Cleaner")
-    print("=" * 60)
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+    LOGGER.info("%s", "\n" + "=" * 60)
+    LOGGER.info("  MedVidQA Dataset Cleaner")
+    LOGGER.info("%s", "=" * 60)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -311,12 +314,16 @@ def main():
     report_path = OUT_DIR / "cleaning_report.json"
     save_json(summary, report_path)
 
-    print(f"\n{'='*60}")
-    print(f"  TOTAL: {total_original} → {total_cleaned} entries")
-    print(f"  Dropped: {total_original - total_cleaned} ({summary['overall_drop_rate']})")
-    print(f"\n  Output: {OUT_DIR}/")
-    print(f"  Report: {report_path}")
-    print("=" * 60 + "\n")
+    LOGGER.info("%s", "\n" + "=" * 60)
+    LOGGER.info("  TOTAL: %s → %s entries", total_original, total_cleaned)
+    LOGGER.info(
+        "  Dropped: %s (%s)",
+        total_original - total_cleaned,
+        summary["overall_drop_rate"],
+    )
+    LOGGER.info("  Output: %s/", OUT_DIR)
+    LOGGER.info("  Report: %s", report_path)
+    LOGGER.info("%s", "=" * 60 + "\n")
 
 
 if __name__ == "__main__":

@@ -38,13 +38,14 @@ export default function AuthLayout({
               MedVidQA
             </div>
             <h2 className="text-2xl font-semibold tracking-tight">
-              Verified medical guidance with retrieval, image analysis, and video support.
+              Verified medical guidance with retrieval, image analysis, and
+              video support.
             </h2>
             <p className="mt-4 text-sm leading-7 text-muted-foreground">
-              This workspace is tailored for MedVidQA rather than the original template’s
-              document and artifact tools. Sign in to access the streamlined chat
-              experience for procedure retrieval, multimodal questions, and video-backed
-              answers.
+              This workspace is tailored for MedVidQA rather than the original
+              template’s document and artifact tools. Sign in to access the
+              streamlined chat experience for procedure retrieval, multimodal
+              questions, and video-backed answers.
             </p>
           </div>
         </div>

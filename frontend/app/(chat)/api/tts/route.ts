@@ -33,19 +33,22 @@ export async function POST(request: Request) {
   }
 
   try {
-    const groqResponse = await fetch("https://api.groq.com/openai/v1/audio/speech", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "canopylabs/orpheus-v1-english",
-        voice: "hannah",
-        input: text,
-        response_format: "wav",
-      }),
-    });
+    const groqResponse = await fetch(
+      "https://api.groq.com/openai/v1/audio/speech",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "canopylabs/orpheus-v1-english",
+          voice: "hannah",
+          input: text,
+          response_format: "wav",
+        }),
+      }
+    );
 
     if (!groqResponse.ok) {
       const errorText = await groqResponse.text();

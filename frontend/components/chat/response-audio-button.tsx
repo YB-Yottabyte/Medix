@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { toast } from "./toast";
 import { PlayIcon, StopIcon } from "./icons";
+import { toast } from "./toast";
 
 export function ResponseAudioButton({ text }: { text: string }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -96,7 +96,10 @@ export function ResponseAudioButton({ text }: { text: string }) {
       let message = "Could not generate audio response.";
 
       try {
-        const error = (await response.json()) as { error?: string; cause?: string };
+        const error = (await response.json()) as {
+          error?: string;
+          cause?: string;
+        };
         message = error.error ?? error.cause ?? message;
       } catch {
         /* fall back to generic error */
@@ -115,7 +118,7 @@ export function ResponseAudioButton({ text }: { text: string }) {
 
       audio.onended = () => resolve();
       audio.onerror = () => reject(new Error("Audio playback failed."));
-      void audio.play().catch(() => reject(new Error("Audio playback failed.")));
+      audio.play().catch(() => reject(new Error("Audio playback failed.")));
     });
   };
 
@@ -166,7 +169,11 @@ export function ResponseAudioButton({ text }: { text: string }) {
       onClick={handleToggleSpeech}
       type="button"
     >
-      {isSpeaking || isLoading ? <StopIcon size={12} /> : <PlayIcon size={12} />}
+      {isSpeaking || isLoading ? (
+        <StopIcon size={12} />
+      ) : (
+        <PlayIcon size={12} />
+      )}
       <span>{isSpeaking || isLoading ? "Stop audio" : "Listen"}</span>
     </button>
   );

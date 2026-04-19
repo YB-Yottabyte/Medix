@@ -5,13 +5,13 @@ import { cookies } from "next/headers";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { titlePrompt } from "@/lib/ai/prompts";
 import { getTitleModel } from "@/lib/ai/providers";
-import { getAppSession } from "@/lib/dev-session";
 import {
   deleteMessagesByChatIdAfterTimestamp,
   getChatById,
   getMessageById,
   updateChatVisibilityById,
 } from "@/lib/db/queries";
+import { getAppSession } from "@/lib/dev-session";
 import { getTextFromMessage } from "@/lib/utils";
 
 export async function saveChatModelAsCookie(model: string) {

@@ -1,5 +1,5 @@
-import { getAppSession } from "@/lib/dev-session";
 import { getSuggestionsByDocumentId } from "@/lib/db/queries";
+import { getAppSession } from "@/lib/dev-session";
 import { ChatbotError } from "@/lib/errors";
 
 export async function GET(request: Request) {
