@@ -37,7 +37,6 @@ from qdrant_client.models import (
     VectorParams,
 )
 
-
 QDRANT_URL = "http://localhost:6333"
 COLLECTION_NAME = "medical_video_transcripts"
 CACHE_DIR = Path("data/cache_medvidqa_verified")
@@ -56,7 +55,7 @@ def load_cached_records(cache_dir: Path) -> list[dict[str, Any]]:
         raise FileNotFoundError(msg)
 
     with procedures_path.open("rb") as file:
-        procedures = pickle.load(file)  # noqa: S301 - trusted local cache created by this project
+        procedures = pickle.load(file)
 
     embeddings = np.load(embeddings_path)
 

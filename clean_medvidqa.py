@@ -16,30 +16,30 @@ Output:
 
 import json
 import re
-from pathlib import Path
 from collections import defaultdict
-
+from pathlib import Path
 
 # ── Configuration ─────────────────────────────────────────────────────────────
-DATA_DIR  = Path(__file__).parent / "MedVidQA"
-OUT_DIR   = DATA_DIR / "cleaned"
-SPLITS    = ["train", "val", "test"]
+DATA_DIR = Path(__file__).parent / "MedVidQA"
+OUT_DIR = DATA_DIR / "cleaned"
+SPLITS = ["train", "val", "test"]
 
 # Cleaning thresholds — justified by paper's Table 4:
 #   Minimum visual answer length in dataset = 3s (train), 10s (val), 4s (test)
 #   Mean visual answer length = 62.23s
 #   We use 10s minimum to filter clearly broken entries
-MIN_ANSWER_DURATION   = 10    # seconds — filters 4-second broken segments
-MAX_ANSWER_DURATION   = 600   # seconds — 10 min max (paper removed >20min videos)
-MIN_QUESTION_LENGTH   = 5     # words — paper reports min=5 tokens
-MAX_QUESTION_LENGTH   = 30    # words — paper reports max=25 tokens (slight buffer)
-MIN_SIMILARITY_SCORE  = 0.0   # not applicable at cleaning stage
+MIN_ANSWER_DURATION = 10  # seconds — filters 4-second broken segments
+MAX_ANSWER_DURATION = 600  # seconds — 10 min max (paper removed >20min videos)
+MIN_QUESTION_LENGTH = 5  # words — paper reports min=5 tokens
+MAX_QUESTION_LENGTH = 30  # words — paper reports max=25 tokens (slight buffer)
+MIN_SIMILARITY_SCORE = 0.0  # not applicable at cleaning stage
 
 # YouTube video ID pattern
-YT_ID_PATTERN = re.compile(r'^[A-Za-z0-9_-]{11}$')
+YT_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+
 
 def load_json(path: Path) -> list:
     with open(path, encoding="utf-8") as f:
@@ -64,6 +64,7 @@ def is_valid_youtube_id(video_id: str) -> bool:
 
 # ── Cleaning Rules ─────────────────────────────────────────────────────────────
 
+
 def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[str]]:
     """
     Clean a single MedVidQA entry.
@@ -74,7 +75,7 @@ def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[st
 
     # ── 1. Required fields ──────────────────────────────────────────────────
     required = ["video_id", "question", "answer_start_second", "answer_end_second"]
-    missing  = [f for f in required if f not in entry or entry[f] is None]
+    missing = [f for f in required if f not in entry or entry[f] is None]
     if missing:
         issues.append(f"DROPPED — missing fields: {missing}")
         return None, issues
@@ -92,13 +93,13 @@ def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[st
     # ── 4. Timestamp validation ─────────────────────────────────────────────
     try:
         start = float(e.get("answer_start_second") or e.get("answer_start", 0))
-        end   = float(e.get("answer_end_second")   or e.get("answer_end",   0))
+        end = float(e.get("answer_end_second") or e.get("answer_end", 0))
     except (ValueError, TypeError):
         issues.append("DROPPED — non-numeric timestamps")
         return None, issues
 
     e["answer_start"] = start
-    e["answer_end"]   = end
+    e["answer_end"] = end
 
     if start < 0:
         issues.append("FIXED — negative start timestamp → clamped to 0")
@@ -119,8 +120,8 @@ def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[st
         return None, issues
 
     e["answer_start"] = round(start, 2)
-    e["answer_end"]   = round(end,   2)
-    e["answer_duration"] = round(duration, 2)   # add computed field
+    e["answer_end"] = round(end, 2)
+    e["answer_duration"] = round(duration, 2)  # add computed field
 
     # ── 5. Question validation ──────────────────────────────────────────────
     question = str(e["question"]).strip()
@@ -137,7 +138,7 @@ def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[st
         issues.append(f"FIXED — question truncated from {wc} words (kept as-is, flagged)")
 
     # Normalize whitespace
-    question = re.sub(r'\s+', ' ', question)
+    question = re.sub(r"\s+", " ", question)
     e["question"] = question
 
     # ── 6. video_url normalization ──────────────────────────────────────────
@@ -149,7 +150,9 @@ def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[st
         try:
             vl = float(e["video_length"])
             if vl < end:
-                issues.append(f"FIXED — video_length ({vl}) < answer_end ({end}) → set to answer_end")
+                issues.append(
+                    f"FIXED — video_length ({vl}) < answer_end ({end}) → set to answer_end"
+                )
                 e["video_length"] = end
             else:
                 e["video_length"] = round(vl, 2)
@@ -166,13 +169,14 @@ def clean_entry(entry: dict, idx: int, split: str) -> tuple[dict | None, list[st
 
 # ── Duplicate Detection ────────────────────────────────────────────────────────
 
+
 def remove_duplicates(entries: list[dict]) -> tuple[list[dict], int]:
     """
     Remove duplicate entries based on (video_id, answer_start, answer_end).
     Keeps the first occurrence.
     """
-    seen    = set()
-    unique  = []
+    seen = set()
+    unique = []
     dropped = 0
 
     for e in entries:
@@ -188,9 +192,10 @@ def remove_duplicates(entries: list[dict]) -> tuple[list[dict], int]:
 
 # ── Per-split cleaning ─────────────────────────────────────────────────────────
 
+
 def clean_split(split: str) -> dict:
     src_path = DATA_DIR / f"{split}.json"
-    dst_path = OUT_DIR  / f"{split}.json"
+    dst_path = OUT_DIR / f"{split}.json"
 
     if not src_path.exists():
         print(f"  ⚠️  {split}.json not found — skipping")
@@ -201,10 +206,10 @@ def clean_split(split: str) -> dict:
     print(f"  Cleaning {split}.json  ({len(raw)} entries)")
     print(f"{'─'*60}")
 
-    cleaned      = []
+    cleaned = []
     drop_reasons = defaultdict(int)
-    fix_log      = []
-    total_drops  = 0
+    fix_log = []
+    total_drops = 0
 
     for i, entry in enumerate(raw):
         result, issues = clean_entry(entry, i, split)
@@ -230,13 +235,13 @@ def clean_split(split: str) -> dict:
 
     # Report
     report = {
-        "split":          split,
+        "split": split,
         "original_count": len(raw),
-        "cleaned_count":  len(cleaned),
-        "dropped_count":  total_drops,
-        "drop_rate":      f"{total_drops / max(len(raw),1) * 100:.1f}%",
-        "drop_reasons":   dict(drop_reasons),
-        "fixes_applied":  len(fix_log),
+        "cleaned_count": len(cleaned),
+        "dropped_count": total_drops,
+        "drop_rate": f"{total_drops / max(len(raw),1) * 100:.1f}%",
+        "drop_reasons": dict(drop_reasons),
+        "fixes_applied": len(fix_log),
         "duration_stats": compute_duration_stats(cleaned),
     }
 
@@ -254,6 +259,7 @@ def clean_split(split: str) -> dict:
 
 # ── Duration Statistics ────────────────────────────────────────────────────────
 
+
 def compute_duration_stats(entries: list[dict]) -> dict:
     if not entries:
         return {}
@@ -261,42 +267,43 @@ def compute_duration_stats(entries: list[dict]) -> dict:
     if not durations:
         return {}
     return {
-        "min_seconds":  round(min(durations),  1),
-        "max_seconds":  round(max(durations),  1),
+        "min_seconds": round(min(durations), 1),
+        "max_seconds": round(max(durations), 1),
         "mean_seconds": round(sum(durations) / len(durations), 1),
     }
 
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
+
 def main():
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("  MedVidQA Dataset Cleaner")
-    print("="*60)
+    print("=" * 60)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     all_reports = []
     total_original = 0
-    total_cleaned  = 0
+    total_cleaned = 0
 
     for split in SPLITS:
         report = clean_split(split)
         all_reports.append(report)
         total_original += report.get("original_count", 0)
-        total_cleaned  += report.get("cleaned_count",  0)
+        total_cleaned += report.get("cleaned_count", 0)
 
     # Save cleaning report
     summary = {
         "cleaning_thresholds": {
             "min_answer_duration_seconds": MIN_ANSWER_DURATION,
             "max_answer_duration_seconds": MAX_ANSWER_DURATION,
-            "min_question_words":          MIN_QUESTION_LENGTH,
-            "max_question_words":          MAX_QUESTION_LENGTH,
+            "min_question_words": MIN_QUESTION_LENGTH,
+            "max_question_words": MAX_QUESTION_LENGTH,
         },
         "total_original": total_original,
-        "total_cleaned":  total_cleaned,
-        "total_dropped":  total_original - total_cleaned,
+        "total_cleaned": total_cleaned,
+        "total_dropped": total_original - total_cleaned,
         "overall_drop_rate": f"{(total_original - total_cleaned) / max(total_original,1) * 100:.1f}%",
         "splits": all_reports,
     }
@@ -309,7 +316,7 @@ def main():
     print(f"  Dropped: {total_original - total_cleaned} ({summary['overall_drop_rate']})")
     print(f"\n  Output: {OUT_DIR}/")
     print(f"  Report: {report_path}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
 
 if __name__ == "__main__":

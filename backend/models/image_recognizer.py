@@ -11,7 +11,6 @@ Pipeline:
 
 import base64
 import io
-import os
 
 import numpy as np
 from groq import Groq
