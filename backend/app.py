@@ -10,6 +10,7 @@ import math
 import time
 from pathlib import Path
 
+import numpy as np
 import yaml
 from flask import Flask, jsonify, request
 from PIL import Image
@@ -20,6 +21,7 @@ from backend.models.generator import ResponseGenerator
 from backend.models.image_recognizer import MedicalImageRecognizer
 from backend.models.llm import AIHandler, get_groq_chat_api_key
 from backend.models.transcript import TranscriptFetcher
+from backend.segmentation.sam2_service import SAM2SegmentationService
 
 BACKEND_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BACKEND_DIR.parent
@@ -51,6 +53,7 @@ retriever.transcript_fetcher = transcript_fetcher
 
 # Initialize image recognizer for visual queries
 image_recognizer = MedicalImageRecognizer(config, db, retriever)
+segmentation_service = SAM2SegmentationService()
 
 
 def get_backend_groq_client():
@@ -172,6 +175,49 @@ def _build_video_steps(top_procedure: dict) -> list[dict]:
     return []
 
 
+def _describe_region(
+    image_width: int,
+    image_height: int,
+    bbox: tuple[int, int, int, int],
+) -> str:
+    """Describe the segmented region location using a simple 3x3 grid."""
+    x_min, y_min, x_max, y_max = bbox
+    center_x = (x_min + x_max) / 2
+    center_y = (y_min + y_max) / 2
+
+    horizontal_ratio = center_x / max(image_width, 1)
+    vertical_ratio = center_y / max(image_height, 1)
+
+    if horizontal_ratio < 1 / 3:
+        horizontal = "left"
+    elif horizontal_ratio > 2 / 3:
+        horizontal = "right"
+    else:
+        horizontal = "center"
+
+    if vertical_ratio < 1 / 3:
+        vertical = "top"
+    elif vertical_ratio > 2 / 3:
+        vertical = "bottom"
+    else:
+        vertical = "center"
+
+    if horizontal == "center" and vertical == "center":
+        return "center"
+    if horizontal == "center":
+        return vertical
+    if vertical == "center":
+        return horizontal
+    return f"{vertical}-{horizontal}"
+
+
+def _encode_image_to_base64(image_rgb: np.ndarray) -> str:
+    """Encode an RGB numpy image to a base64 PNG string."""
+    buffer = io.BytesIO()
+    Image.fromarray(image_rgb).save(buffer, format="PNG")
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+
 @app.route("/api/query_video", methods=["POST"])
 def query_video():
     """Handle video-enabled query requests"""
@@ -247,6 +293,54 @@ def health():
             "ai_provider": config["ai"]["provider"],
         }
     )
+
+
+@app.route("/api/segment", methods=["POST"])
+def segment():
+    """Segment a highlighted region in an uploaded image using SAM 2."""
+    try:
+        if "image" not in request.files:
+            return jsonify({"error": "No image file provided"}), 400
+
+        image_file = request.files["image"]
+        if image_file.filename == "":
+            return jsonify({"error": "No image file selected"}), 400
+
+        image_bytes = image_file.read()
+        if len(image_bytes) == 0:
+            return jsonify({"error": "Empty image file"}), 400
+
+        pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        image_np = np.array(pil_image)
+
+        x_value = request.form.get("x")
+        y_value = request.form.get("y")
+        point = None
+        if x_value is not None and y_value is not None:
+            point = (int(float(x_value)), int(float(y_value)))
+
+        result = segmentation_service.segment_image(image_np, point=point)
+        overlay = segmentation_service.create_overlay(image_np, result)
+
+        x_min, y_min, x_max, y_max = result.bounding_box
+        response = {
+            "highlighted_image": _encode_image_to_base64(overlay),
+            "mask_data": {
+                "x": x_min,
+                "y": y_min,
+                "width": x_max - x_min,
+                "height": y_max - y_min,
+            },
+            "region_description": _describe_region(
+                image_width=image_np.shape[1],
+                image_height=image_np.shape[0],
+                bbox=result.bounding_box,
+            ),
+        }
+        return jsonify(response)
+
+    except Exception as error:
+        return jsonify({"error": f"Segmentation failed: {error!s}"}), 500
 
 
 @app.route("/api/image_query", methods=["POST"])
