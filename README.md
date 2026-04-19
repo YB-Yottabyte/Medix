@@ -304,7 +304,7 @@ medical-video-qa/
 │
 ├── app.py                          # Flask server — all multimodal API endpoints
 ├── config.yaml                     # System configuration
-├── requirements.txt                # Python dependencies  
+├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
 ├── LICENSE                         # MIT license
 ├── .env.example                    # Environment variables template
@@ -339,7 +339,7 @@ medical-video-qa/
 ├── frontend/                       # Next.js frontend (optional deployment)
 │   └── src/
 │       └── app/
-│           ├── page.tsx           # Main page component  
+│           ├── page.tsx           # Main page component
 │           ├── layout.tsx         # App layout
 │           └── globals.css        # Global styles
 │
@@ -356,7 +356,7 @@ medical-video-qa/
 ├── MedVidQA/                       # Original research dataset
 │   ├── README.md                  # Dataset documentation
 │   ├── train.json                 # Training split (2,710 entries)
-│   ├── val.json                   # Validation split (145 entries) 
+│   ├── val.json                   # Validation split (145 entries)
 │   └── test.json                  # Test split (155 entries)
 │
 └── scripts/
@@ -447,6 +447,61 @@ print(response.json())
 | **Voice input not working**                | Use Chrome or Edge. Safari has limited Web Speech API support. The Whisper fallback activates automatically   |
 | **Image recognition wrong match**          | The VLM works best with clear, well-lit medical images                                                        |
 | **Slow first startup**                     | The embedding model downloads on first run (~90MB). Subsequent starts are fast                                |
+
+---
+
+## 🧹 Code Quality
+
+This repo enforces linting + formatting on both sides of the stack, with three gates.
+
+| Layer | Tool | Config |
+| --- | --- | --- |
+| Python (Flask backend, scripts) | **Ruff** (lint + format) | [pyproject.toml](pyproject.toml) |
+| TypeScript (Next.js frontend) | **Biome** (lint + format) | [frontend/biome.jsonc](frontend/biome.jsonc) |
+| Cross-stack orchestration | **pre-commit** | [.pre-commit-config.yaml](.pre-commit-config.yaml) |
+| CI | GitHub Actions | [.github/workflows/ci.yml](.github/workflows/ci.yml) |
+
+### First-time setup (after cloning)
+
+```bash
+# One-time install of the hook runner and Ruff
+pip install pre-commit ruff==0.8.6
+
+# Install git hooks (runs on every commit AND every push)
+pre-commit install --hook-type pre-commit --hook-type pre-push
+
+# Frontend deps (Biome ships inside package.json)
+cd frontend && pnpm install && cd ..
+```
+
+### Gates
+
+1. **Pre-commit hook** — auto-formats staged files; blocks commit if lint errors remain.
+2. **Pre-push hook** — re-runs the above plus `tsc --noEmit` on the frontend.
+3. **GitHub Actions CI** — re-runs everything on every PR and push to `main`. PRs are blocked if any job fails.
+
+### Run manually
+
+```bash
+# All hooks on all files (frontend + backend)
+pre-commit run --all-files
+
+# Just the backend
+ruff check .
+ruff format .
+
+# Just the frontend
+cd frontend
+pnpm exec biome check .
+pnpm exec biome check --write .   # auto-fix
+pnpm exec tsc --noEmit            # typecheck only
+```
+
+### Policy
+
+- **Ruff config** in [pyproject.toml](pyproject.toml) runs strict rules (`E`, `W`, `F`, `I`, `B`, `UP`, `N`, `SIM`, `TCH`, `ARG`, `RUF`, `PL`, `S`, `A`, `T20`, `RET`, `TRY`). Non-blocking stylistic rules (PTH pathlib migrations, PLR size thresholds) are ignored at the project level; tighten per-file as the codebase modernizes.
+- **Biome config** in [frontend/biome.jsonc](frontend/biome.jsonc) extends `ultracite/biome/core + next + react` — the strict preset shipped by the Vercel AI Chatbot template authors.
+- **Never** bypass hooks (`git commit --no-verify` / `git push --no-verify`). Fix the lint error instead.
 
 ---
 

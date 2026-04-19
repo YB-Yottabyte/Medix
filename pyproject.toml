@@ -1,0 +1,77 @@
+# Python code quality config for the MedVidQA Flask backend.
+# Ruff handles linting, import sorting, and formatting in one tool.
+# Docs: https://docs.astral.sh/ruff/
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+extend-exclude = [
+    ".venv",
+    "venv",
+    "__pycache__",
+    "frontend",          # frontend is linted by Biome, not Ruff
+    "MedVidQA",          # upstream dataset — do not touch
+    "data/cache_medvidqa_verified",
+    "data/transcript_cache",
+]
+
+[tool.ruff.lint]
+# Strict rule selection. Add/remove categories as needed.
+# See https://docs.astral.sh/ruff/rules/
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort (import ordering)
+    "B",    # flake8-bugbear (likely bugs & design)
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade (modern syntax)
+    "N",    # pep8-naming
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "RUF",  # ruff-specific
+    "PL",   # pylint subset
+    "S",    # bandit (security)
+    "A",    # flake8-builtins (shadowing)
+    "T20",  # flake8-print (warn on print() — use logging)
+    "RET",  # flake8-return
+    "TRY",  # tryceratops (exception handling smell)
+]
+
+ignore = [
+    "E501",    # line too long — formatter handles this
+    "PLR0911", # too many return statements — opinion, not a bug
+    "PLR0912", # too many branches — opinion, not a bug
+    "PLR0913", # too many arguments — domain models need them
+    "PLR0915", # too many statements — opinion, not a bug
+    "PLR2004", # magic values — fine in scripts
+    "PLW2901", # loop variable overwritten — sometimes intentional
+    "S101",    # assert used — common in ML code
+    "S110",    # silent except — allowed; log-when-needed is project choice
+    "TRY003",  # long exception messages — readability
+    "TRY300",  # consider moving to else — style preference
+    "TRY400",  # prefer logging.exception — log-when-needed is project choice
+    "RET504",  # unnecessary assignment before return — readability
+    # Pathlib modernization (mechanical rewrites). Re-enable per-file as modernized.
+    "PTH100", "PTH101", "PTH102", "PTH103", "PTH104", "PTH105", "PTH106",
+    "PTH107", "PTH108", "PTH109", "PTH110", "PTH111", "PTH112", "PTH113",
+    "PTH114", "PTH115", "PTH116", "PTH117", "PTH118", "PTH119", "PTH120",
+    "PTH121", "PTH122", "PTH123", "PTH124",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["T20", "S"]          # scripts may print and read files
+"app.py" = ["S104"]                 # Flask bind 0.0.0.0 is intentional for dev
+"**/__init__.py" = ["F401"]         # re-exports
+
+[tool.ruff.lint.isort]
+known-first-party = ["database", "models", "scripts"]
+combine-as-imports = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true

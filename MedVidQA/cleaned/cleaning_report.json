@@ -1,0 +1,75 @@
+{
+  "cleaning_thresholds": {
+    "min_answer_duration_seconds": 10,
+    "max_answer_duration_seconds": 600,
+    "min_question_words": 5,
+    "max_question_words": 30
+  },
+  "total_original": 3010,
+  "total_cleaned": 2866,
+  "total_dropped": 144,
+  "overall_drop_rate": "4.8%",
+  "splits": [
+    {
+      "split": "train",
+      "original_count": 2710,
+      "cleaned_count": 2574,
+      "dropped_count": 136,
+      "drop_rate": "5.0%",
+      "drop_reasons": {
+        "non-numeric timestamps": 7,
+        "question too short: 4 words": 5,
+        "segment too short: 5.0s < 10s": 19,
+        "segment too short: 8.0s < 10s": 14,
+        "segment too short: 3.0s < 10s": 3,
+        "segment too short: 6.0s < 10s": 12,
+        "segment too short: 9.0s < 10s": 28,
+        "segment too short: 7.0s < 10s": 21,
+        "segment too short: 4.0s < 10s": 8,
+        "duplicate entry": 19
+      },
+      "fixes_applied": 0,
+      "duration_stats": {
+        "min_seconds": 10.0,
+        "max_seconds": 298.0,
+        "mean_seconds": 64.6
+      }
+    },
+    {
+      "split": "val",
+      "original_count": 145,
+      "cleaned_count": 142,
+      "dropped_count": 3,
+      "drop_rate": "2.1%",
+      "drop_reasons": {
+        "non-numeric timestamps": 3
+      },
+      "fixes_applied": 0,
+      "duration_stats": {
+        "min_seconds": 10.0,
+        "max_seconds": 267.0,
+        "mean_seconds": 67.1
+      }
+    },
+    {
+      "split": "test",
+      "original_count": 155,
+      "cleaned_count": 150,
+      "dropped_count": 5,
+      "drop_rate": "3.2%",
+      "drop_reasons": {
+        "question too short: 4 words": 1,
+        "segment too short: 5.0s < 10s": 1,
+        "segment too short: 7.0s < 10s": 1,
+        "segment too short: 9.0s < 10s": 1,
+        "segment too short: 4.0s < 10s": 1
+      },
+      "fixes_applied": 0,
+      "duration_stats": {
+        "min_seconds": 10.0,
+        "max_seconds": 243.0,
+        "mean_seconds": 58.4
+      }
+    }
+  ]
+}

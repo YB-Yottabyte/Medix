@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Procedure Q&A</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">MedVidQA Research</div>
+            <div class="navbar-links">
+                <a href="#home">Home</a>
+                <a href="#about">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero" id="home">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+        <div class="hero-content">
+            <h1>AI-Powered Medical Video Q&A</h1>
+            <p>Leveraging the MedVidQA dataset and advanced NLP to provide intelligent, video-based answers to medical procedure questions</p>
+            <a href="#query" class="cta-button" onclick="document.getElementById('queryInput').focus(); return false;">Try It Now →</a>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">784</span>
+                    <span class="stat-label">Medical Videos</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">2,714</span>
+                    <span class="stat-label">Q&A Procedures</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">AI</span>
+                    <span class="stat-label">Powered Answers</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="container" id="query">
+        <div class="query-card">
+            <h2>Ask a Medical Question</h2>
+            <div class="query-section">
+                <label for="queryInput">Ask about a medical procedure:</label>
+                <div class="query-input-wrapper">
+                    <textarea id="queryInput" placeholder="Example: How to perform CPR? How to treat vertigo?"></textarea>
+                    <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceInput()" title="Speak your question">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="voice-status" id="voiceStatus" style="display: none;">
+                    <span class="voice-dot"></span>
+                    <span id="voiceStatusText">Listening...</span>
+                </div>
+
+                <div class="examples">
+                    <p>Try these:</p>
+                    <span class="example-btn" onclick="setQuery('How to perform epley maneuver for vertigo?')">Vertigo</span>
+                    <span class="example-btn" onclick="setQuery('How to give CPR to a child?')">CPR</span>
+                    <span class="example-btn" onclick="setQuery('How to use an AED?')">AED</span>
+                    <span class="example-btn" onclick="setQuery('How to stop severe bleeding?')">Bleeding</span>
+                    <span class="example-btn" onclick="setQuery('How to treat someone in shock?')">Shock</span>
+                </div>
+            </div>
+
+            <div class="divider">
+                <span>OPTIONAL IMAGE</span>
+            </div>
+
+            <div class="query-section">
+                <label for="imageInput">Upload an image (works together with your question):</label>
+                <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Click to upload or drag and drop</p>
+                    <p class="upload-hint">PNG, JPG, JPEG (Max 10MB)</p>
+                </div>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event)">
+                <div id="imagePreview" style="display: none;">
+                    <img id="previewImg" src="" alt="Preview">
+                    <button class="remove-image-btn" onclick="clearImage()" title="Remove image">✕</button>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; margin-bottom: 20px;">
+                <button class="submit-btn" onclick="submitQuery()" id="submitBtn">Get Answer</button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Finding video and generating response...</p>
+            </div>
+
+            <div class="response-section" id="responseSection">
+                <div class="content-grid">
+                    <div class="video-section" id="videoSection" style="display: none;">
+                        <div class="segment-info" id="segmentInfo">
+                            <strong>Playing segment:</strong> <span id="segmentTime">0:00 - 0:00</span>
+                            <br><small>Video will automatically stop at the end of the relevant segment</small>
+                            <br><button class="replay-btn" onclick="replaySegment()">Replay Segment</button>
+                        </div>
+
+                        <div class="video-container">
+                            <div id="player"></div>
+                        </div>
+
+                        <div class="video-info">
+                            <h3 style="color: #2563eb; font-weight: 600;">Timeline</h3>
+                            <div id="videoSteps"></div>
+                        </div>
+                    </div>
+
+                    <div class="response-card">
+                        <button class="audio-icon-btn" id="audioIconBtn" onclick="toggleAudioPlayback()" title="Listen to response">
+                            <svg id="audioSvgIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                            </svg>
+                        </button>
+                        <div id="responseContent"></div>
+                    </div>
+                </div>
+
+                <div class="warning-box">
+                    <p><strong>Important:</strong> These videos are from the MedVidQA research dataset. Always consult healthcare professionals for medical advice.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="about-section" id="about">
+        <div class="about-header">
+            <h2>About This Project</h2>
+            <p class="about-description">A cutting-edge research project combining artificial intelligence, natural language processing, and medical video analysis to provide accurate, video-supported answers to medical procedure questions.</p>
+        </div>
+
+        <div class="about-grid">
+            <div class="about-image">
+                <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=800&q=80" alt="Medical AI Technology" />
+            </div>
+            <div class="about-content">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Research Focus</h3>
+                    <p>This system demonstrates the application of natural language processing and video understanding for medical question answering, utilizing the MedVidQA dataset.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎬</div>
+                    <h3>Video Integration</h3>
+                    <p>Each answer is accompanied by relevant video segments from verified medical procedures, providing visual guidance alongside textual explanations.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-content">
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>Multimodal AI Pipeline</h3>
+                <p>Powered by Llama 4 Scout (vision), Whisper (voice), and Llama 3.3 (language). Smart semantic retrieval ensures accurate, contextually relevant answers.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Dataset Excellence</h3>
+                <p>Built on the comprehensive MedVidQA dataset containing 784 verified medical videos with 2,714 detailed question-answer pairs covering diverse medical procedures and step-by-step guidance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🥽</div>
+                <h3>AR-Ready Pipeline</h3>
+                <p>Designed for Meta Quest 3 integration with hands-free voice input, real-time camera frame analysis, and step-by-step AR guidance overlays for medical procedures.</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="scroll-top" id="scrollTop" onclick="scrollToTop()">
+        ↑
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>MedVidQA Project</h3>
+                <p>A research project leveraging AI and video understanding for medical question answering.</p>
+                <p style="margin-top: 20px;">Arizona State University<br>Spring 2026</p>
+            </div>
+            <div class="footer-section">
+                <h3>Resources</h3>
+                <a href="https://github.com/bbrfi/MedVidQA" target="_blank">MedVidQA Dataset</a>
+                <a href="#about">About the Project</a>
+                <a href="#home">Try the System</a>
+            </div>
+            <div class="footer-section">
+                <h3>Technology</h3>
+                <p>Multimodal RAG Pipeline v2.0</p>
+                <p>Llama 4 Scout (Vision) + Whisper (Voice)</p>
+                <p>Llama 3.3 70B (Language) via Groq</p>
+            </div>
+            <div class="footer-section">
+                <h3>Disclaimer</h3>
+                <p>This is a research project using the MedVidQA dataset. Always consult healthcare professionals for medical advice.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Sai Rithwik Kukunuri. All rights reserved.</p>
+            <p style="margin-top: 5px; font-size: 0.9em; opacity: 0.8;">MedVidQA Research Project - Educational purposes only.</p>
+        </div>
+    </footer>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260323003"></script>
+</body>
+</html>
