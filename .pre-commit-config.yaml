@@ -1,0 +1,64 @@
+# Pre-commit hooks for MedVidQA.
+# Enforces: Ruff (Python lint + format), Biome (TS/TSX lint + format via pnpm),
+# and baseline file hygiene. Runs on commit AND on push.
+#
+# First-time setup (after clone):
+#   pip install pre-commit
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+#
+# Manual run across all files:
+#   pre-commit run --all-files
+
+repos:
+  # Baseline file hygiene (large files, merge conflicts, invalid JSON/YAML, etc.)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: "^frontend/pnpm-lock\\.yaml$"
+      - id: end-of-file-fixer
+        exclude: "^frontend/pnpm-lock\\.yaml$"
+      - id: check-yaml
+      - id: check-json
+        exclude: "^frontend/tsconfig\\.json$|^frontend/components\\.json$|^frontend/biome\\.jsonc$|^frontend/vercel\\.json$|^frontend/vercel-template\\.json$"
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  # Ruff — Python lint + format for the Flask backend
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.6
+    hooks:
+      - id: ruff
+        name: ruff (lint, autofix)
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+        name: ruff (format)
+
+  # Biome — TS/TSX lint + format for the Next.js frontend.
+  # We shell out to the locally-installed Biome inside frontend/
+  # so version is pinned in frontend/package.json, not duplicated here.
+  - repo: local
+    hooks:
+      - id: biome-check
+        name: biome check (frontend)
+        language: system
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json|jsonc|css)$
+        exclude: ^frontend/(node_modules|\.next|pnpm-lock\.yaml)
+        entry: bash -c 'cd frontend && pnpm exec biome check --write --no-errors-on-unmatched "$@"' --
+        pass_filenames: true
+
+  # Pre-push only: run the heavyweight typecheck. Not on every commit.
+  - repo: local
+    hooks:
+      - id: tsc-noemit
+        name: tsc --noEmit (frontend)
+        language: system
+        entry: bash -c 'cd frontend && pnpm exec tsc --noEmit'
+        pass_filenames: false
+        files: ^frontend/.*\.(ts|tsx)$
+        stages: [pre-push]
