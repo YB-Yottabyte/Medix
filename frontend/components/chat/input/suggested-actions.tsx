@@ -3,10 +3,10 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { motion } from "framer-motion";
 import { memo } from "react";
+import { Suggestion } from "@/components/ai-elements/suggestion";
+import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { suggestions } from "@/lib/constants";
 import type { ChatMessage } from "@/lib/types";
-import { Suggestion } from "../ai-elements/suggestion";
-import type { VisibilityType } from "./visibility-selector";
 
 type SuggestedActionsProps = {
   chatId: string;

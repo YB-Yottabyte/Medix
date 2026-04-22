@@ -1,4 +1,4 @@
-import { StarterPage } from "@/components/chat/starter-page";
+import { StarterPage } from "@/components/chat/landing/starter-page";
 
 export default function Page() {
   return <StarterPage />;

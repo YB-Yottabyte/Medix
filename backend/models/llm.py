@@ -41,7 +41,9 @@ class AIHandler:
     def generate_multimodal_response(self, query: str, context: str) -> str:
         """Generate a conversational multimodal response (text + image context)."""
         if self.provider == "groq":
-            return self._format_response_markdown(self._generate_groq_multimodal(query, context))
+            raw_response = self._generate_groq_multimodal(query, context)
+            normalized = self._normalize_multimodal_response_style(raw_response)
+            return self._format_response_markdown(normalized)
         # Fallback to default for other providers
         return self.generate_response(query, context)
 
@@ -79,6 +81,31 @@ class AIHandler:
             )
 
         return formatted
+
+    @staticmethod
+    def _normalize_multimodal_response_style(response_text: str) -> str:
+        """
+        Remove legacy multimodal section headings so image-assisted answers match
+        the cleaner professional style used elsewhere in the app.
+        """
+        if not response_text or response_text.startswith("Error"):
+            return response_text
+
+        normalized = response_text.strip()
+
+        normalized = re.sub(
+            r"(?im)^\s*\*?\*?(Analysis|Steps|Video)\*?\*?\s*:?\s*$",
+            "",
+            normalized,
+        )
+        normalized = re.sub(
+            r"(?im)^\s*A verified (MedVidQA|Medix) video is available in the player\.?\s*$",
+            "",
+            normalized,
+        )
+        normalized = re.sub(r"\n{3,}", "\n\n", normalized).strip()
+
+        return normalized
 
     def _create_system_prompt(self) -> str:
         """Create system prompt for medical Q&A"""
@@ -139,40 +166,32 @@ Guidelines:
 Your direct, transcript-grounded response:"""
 
     def _create_multimodal_system_prompt(self) -> str:
-        """System prompt for professional multimodal responses."""
-        return """You are a professional first-aid assistant.
+        """System prompt for professional but human multimodal responses."""
+        return """You are a clear, supportive medical guide.
 
-    PRIMARY GOAL:
-    Answer the user's exact question clearly and directly using both text question and image findings.
+PRIMARY GOAL:
+Answer the user's exact question directly using both the selected image region and the retrieved medical procedure context.
 
-    TONE:
-    1. Professional, calm, and direct.
-    2. Keep language simple, concrete, and actionable.
-    3. Avoid filler phrases and avoid sounding casual.
-    4. Do not use emojis.
+IMPORTANT RULES:
+1. Do NOT use headings like Analysis, Steps, or Video unless the user explicitly asks for sections.
+2. Do NOT include a separate metadata line about the video player.
+3. Do NOT mention YouTube IDs, raw timestamps, or backend metadata unless the user explicitly asks.
+4. Do NOT use filler phrases, casual greetings, or emojis.
+5. Do NOT claim certainty from the image alone. Use careful wording like "appears to show" when needed.
 
-    SAFETY:
-    1. Give first-aid guidance only.
-    2. Do not claim certainty from image alone.
-    3. Include clear 'what to avoid' items relevant to this specific injury.
-    4. If severe/emergency signs appear, advise urgent care.
+STYLE:
+1. Sound like a real person helping the user, not a clinical report.
+2. Professional, direct, warm, and concise.
+3. If instructions are needed, present them as one numbered list.
+4. Start with a brief natural explanation, then move straight into the steps.
+5. Prefer phrases like "From what I can see" or "Here's what to do first" over detached phrasing like "The image appears to show" or "Based on the provided information".
+6. Talk to the user directly using "you" when giving guidance.
 
-    REQUIRED OUTPUT STRUCTURE:
-    1. Start with the heading: Analysis
-    2. Then give 1-3 concise sentences describing what the image appears to show and answer the user's main question.
-    3. Then add the heading: Steps
-    4. Then give 3-4 numbered action steps.
-    5. Then add the heading: Video
-    6. Then give at most one short sentence such as "A verified MedVidQA video is available in the player." Do not include IDs or raw timestamps.
-    7. Use markdown bold for the three headings and for urgent warnings when appropriate.
-
-    LENGTH:
-    Keep total response concise and scan-friendly.
-
-    IMPORTANT:
-    Make the steps specific to the detected condition and the user's ask.
-    Do not give generic advice unless it truly matches the context.
-    If hospital care may be needed, say so clearly in the Analysis section with concrete red flags."""
+SAFETY:
+1. Give first-aid guidance only.
+2. Include urgent care guidance only when clearly relevant.
+3. Keep steps specific to the detected condition and the user's question.
+4. Avoid generic advice when the image and retrieval context support something more specific."""
 
     def _create_multimodal_user_prompt(self, query: str, context: str) -> str:
         """User prompt that enforces image + text grounding."""
@@ -188,17 +207,16 @@ REQUIREMENTS:
 1. Directly answer the exact user question.
 2. Use BOTH the image findings and transcript/procedure context.
 3. Include specific immediate actions.
-4. Use the section headings exactly as:
-Analysis
-Steps
-Video
-5. Keep it professional and non-generic.
-6. DO NOT include any line that starts with: You said:
-7. Keep Steps to 3-4 concise numbered steps.
-8. If the user asks "Should I go to hospital?", answer it clearly in the Analysis section.
-9. Prefer concrete words over vague phrases.
-10. Do NOT include YouTube video IDs, raw timestamps, or a separate metadata line in the answer unless the user explicitly asks for them.
-11. Use markdown bold for headings and urgent warning phrases when helpful.
+4. Keep it professional and non-generic.
+5. DO NOT include any line that starts with: You said:
+6. After the opening explanation, give 3-5 concise numbered steps when actionable instructions are needed.
+7. If the user asks whether hospital care is needed, answer it clearly and directly in the opening explanation.
+8. Prefer concrete words over vague phrases.
+9. Do NOT include section headings like Analysis, Steps, or Video.
+10. Do NOT include YouTube video IDs, raw timestamps, or a separate metadata sentence about the player.
+11. Match the tone of a polished text-only medical response.
+12. Make the opening sentence feel personal and natural, as if you are directly helping the user in the moment.
+13. Avoid robotic lead-ins such as "The image appears to show", "Based on the provided information", or "It is not possible to determine with certainty" unless uncertainty itself is the key point.
 
 Now produce the final response."""
 

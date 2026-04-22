@@ -1,13 +1,16 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { ArrowDownIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useDataStream } from "@/components/chat/data-stream-provider";
+import {
+  PreviewMessage,
+  ThinkingMessage,
+} from "@/components/chat/messages/message";
+import { Greeting } from "@/components/chat/shared/greeting";
 import { useMessages } from "@/hooks/use-messages";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useDataStream } from "./data-stream-provider";
-import { Greeting } from "./greeting";
-import { PreviewMessage, ThinkingMessage } from "./message";
 
 type MessagesProps = {
   addToolApprovalResponse: UseChatHelpers<ChatMessage>["addToolApprovalResponse"];

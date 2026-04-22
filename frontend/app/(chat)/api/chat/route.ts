@@ -66,7 +66,6 @@ type AnalyzeImageResult =
       videoId?: never;
       startTime?: never;
       endTime?: never;
-      answer?: never;
       confidence?: never;
     }
   | {
@@ -78,7 +77,6 @@ type AnalyzeImageResult =
       videoId: string | null;
       startTime: number | null;
       endTime: number | null;
-      answer: string | null;
       confidence: number | null;
     };
 
@@ -138,12 +136,11 @@ async function enrichLatestUserMessageWithImageAnalysis(
     analysisText = `Image analysis failed: ${analysis.error}`;
   } else if (analysis) {
     analysisText =
-      "Image analysis result:\n" +
+      "Image findings to use when answering:\n" +
       `- Body part: ${analysis.bodyPart ?? "unknown"}\n` +
       `- Condition: ${analysis.condition ?? "unknown"}\n` +
       `- Severity: ${analysis.severity ?? "unknown"}\n` +
-      `- Suggested procedure: ${analysis.matchedProcedure ?? "unknown"}\n` +
-      `- Backend answer: ${analysis.answer ?? "none"}`;
+      `- Closest verified procedure: ${analysis.matchedProcedure ?? "unknown"}`;
   }
 
   const enrichedMessage: ChatMessage = {

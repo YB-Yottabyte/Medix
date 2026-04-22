@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { Suspense } from "react";
-import { ChatAppFrame } from "@/components/chat/chat-app-frame";
+import { ChatAppFrame } from "@/components/chat/layout/chat-app-frame";
 import { DataStreamProvider } from "@/components/chat/data-stream-provider";
 import { getAppSession } from "@/lib/dev-session";
 

@@ -11,12 +11,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ChatHeader } from "@/components/chat/chat-header";
+import { MultimodalInput } from "@/components/chat/input/multimodal-input";
+import { submitEditedMessage } from "@/components/chat/messages/message-editor";
+import { Messages } from "@/components/chat/messages/messages";
 import { useActiveChat } from "@/hooks/use-active-chat";
 import type { Attachment, ChatMessage } from "@/lib/types";
-import { ChatHeader } from "./chat-header";
-import { submitEditedMessage } from "./message-editor";
-import { Messages } from "./messages";
-import { MultimodalInput } from "./multimodal-input";
 
 export function ChatShell() {
   const {

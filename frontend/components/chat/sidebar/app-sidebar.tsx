@@ -16,8 +16,8 @@ import { unstable_serialize } from "swr/infinite";
 import {
   getChatHistoryPaginationKey,
   SidebarHistory,
-} from "@/components/chat/sidebar-history";
-import { SidebarUserNav } from "@/components/chat/sidebar-user-nav";
+} from "@/components/chat/sidebar/sidebar-history";
+import { SidebarUserNav } from "@/components/chat/sidebar/sidebar-user-nav";
 import {
   Sidebar,
   SidebarContent,
@@ -41,8 +41,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();

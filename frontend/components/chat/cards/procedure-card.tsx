@@ -1,5 +1,4 @@
 type ProcedureOutput = {
-  answer?: string | null;
   videoId?: string | null;
   videoUrl?: string | null;
   startTime?: number | null;

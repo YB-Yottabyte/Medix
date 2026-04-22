@@ -1,6 +1,6 @@
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
-import { SparklesIcon } from "@/components/chat/icons";
+import { SparklesIcon } from "@/components/chat/shared/icons";
 
 export default function AuthLayout({
   children,

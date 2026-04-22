@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 import type { User } from "next-auth";
 import { Suspense } from "react";
 import { Toaster } from "sonner";
-import { AppSidebar } from "@/components/chat/app-sidebar";
-import { ChatShell } from "@/components/chat/shell";
+import { ChatShell } from "@/components/chat/layout/shell";
+import { AppSidebar } from "@/components/chat/sidebar/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { ActiveChatProvider } from "@/hooks/use-active-chat";
 

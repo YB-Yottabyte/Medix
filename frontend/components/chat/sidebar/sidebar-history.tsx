@@ -24,10 +24,10 @@ import {
   SidebarMenu,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { LoaderIcon } from "@/components/chat/shared/icons";
 import type { Chat } from "@/lib/db/schema";
 import { fetcher } from "@/lib/utils";
-import { LoaderIcon } from "./icons";
-import { ChatItem } from "./sidebar-history-item";
+import { ChatItem } from "@/components/chat/sidebar/sidebar-history-item";
 
 type GroupedChats = {
   today: Chat[];

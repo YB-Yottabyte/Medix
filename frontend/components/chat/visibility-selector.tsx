@@ -15,7 +15,7 @@ import {
   ChevronDownIcon,
   GlobeIcon,
   LockIcon,
-} from "./icons";
+} from "@/components/chat/shared/icons";
 
 export type VisibilityType = "private" | "public";
 

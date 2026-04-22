@@ -218,6 +218,28 @@ def _encode_image_to_base64(image_rgb: np.ndarray) -> str:
     return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
+def _parse_region_point_from_request() -> tuple[int, int] | None:
+    """Extract optional x/y point prompt from multipart form or JSON payload."""
+    x_value = None
+    y_value = None
+
+    if request.content_type and "multipart" in request.content_type:
+        x_value = request.form.get("x")
+        y_value = request.form.get("y")
+    elif request.is_json:
+        payload = request.get_json(silent=True) or {}
+        x_value = payload.get("x")
+        y_value = payload.get("y")
+
+    if x_value in {None, ""} or y_value in {None, ""}:
+        return None
+
+    try:
+        return int(float(x_value)), int(float(y_value))
+    except (TypeError, ValueError):
+        return None
+
+
 @app.route("/api/query_video", methods=["POST"])
 def query_video():
     """Handle video-enabled query requests"""
@@ -313,17 +335,22 @@ def segment():
         pil_image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         image_np = np.array(pil_image)
 
-        x_value = request.form.get("x")
-        y_value = request.form.get("y")
-        point = None
-        if x_value is not None and y_value is not None:
-            point = (int(float(x_value)), int(float(y_value)))
+        point = _parse_region_point_from_request()
+        if point is None:
+            return jsonify(
+                {
+                    "status": "need_user_input",
+                    "message": "Please select the region of interest on the image",
+                    "instruction": "Tap or click on the area you want to analyze",
+                }
+            ), 200
 
         result = segmentation_service.segment_image(image_np, point=point)
         overlay = segmentation_service.create_overlay(image_np, result)
 
         x_min, y_min, x_max, y_max = result.bounding_box
         response = {
+            "status": "success",
             "highlighted_image": _encode_image_to_base64(overlay),
             "mask_data": {
                 "x": x_min,
@@ -451,6 +478,7 @@ def multimodal_query():
         t0 = time.time()
         text_query = ""
         visual_context = None
+        region_point = _parse_region_point_from_request()
 
         # --- Extract text query ---
         if request.content_type and "multipart" in request.content_type:
@@ -490,34 +518,164 @@ def multimodal_query():
             if "image" in request.files:
                 img_bytes = request.files["image"].read()
                 if img_bytes:
+                    if region_point is None:
+                        return jsonify(
+                            {
+                                "status": "need_user_input",
+                                "message": "Please select the region of interest on the image",
+                                "instruction": "Tap or click on the area you want to analyze",
+                            }
+                        ), 200
+
                     image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                    image_answer = image_recognizer.analyze_image(
-                        image, question=text_query or None
+                    image_np = np.array(image)
+                    global_analysis = {
+                        "analysis_text": image_recognizer.analyze_image(
+                            image,
+                            question=text_query or None,
+                        ),
+                    }
+                    global_analysis["parsed"] = image_recognizer._parse_response(
+                        global_analysis["analysis_text"]
                     )
-                    visual_context = image_recognizer.recognize_from_image(
-                        image,
+                    segmentation = segmentation_service.segment_image(
+                        image_np,
+                        point=region_point,
+                    )
+                    overlay = segmentation_service.create_overlay(image_np, segmentation)
+                    x_min, y_min, x_max, y_max = segmentation.bounding_box
+                    region_description = _describe_region(
+                        image_width=image_np.shape[1],
+                        image_height=image_np.shape[0],
+                        bbox=segmentation.bounding_box,
+                    )
+                    region_analysis = image_recognizer.analyze_segmented_region(
+                        image=image,
+                        bounding_box=segmentation.bounding_box,
                         question=text_query or None,
-                        analysis_text=image_answer,
                     )
-                    visual_context["analysis_text"] = image_answer
+                    use_region_analysis = not image_recognizer.region_is_too_small(
+                        image.size,
+                        segmentation.bounding_box,
+                    )
+                    query_plan = image_recognizer.build_fused_search_plan(
+                        global_analysis=global_analysis,
+                        region_analysis=region_analysis,
+                        question=text_query or None,
+                        include_region=use_region_analysis,
+                    )
+                    parsed_region = region_analysis["parsed"]
+                    parsed_global = global_analysis["parsed"]
+                    visual_context = {
+                        "success": True,
+                        "region_description": region_description,
+                        "cropped_region_analysis": region_analysis["analysis_text"],
+                        "global_image_analysis": global_analysis["analysis_text"],
+                        "body_part": parsed_region.get("body_part"),
+                        "condition": parsed_region.get("condition"),
+                        "severity": parsed_region.get("severity"),
+                        "first_aid_topic": parsed_region.get("first_aid_topic"),
+                        "global_body_part": parsed_global.get("body_part"),
+                        "global_condition": parsed_global.get("condition"),
+                        "global_severity": parsed_global.get("severity"),
+                        "global_first_aid_topic": parsed_global.get("first_aid_topic"),
+                        "mask_data": {
+                            "x": x_min,
+                            "y": y_min,
+                            "width": x_max - x_min,
+                            "height": y_max - y_min,
+                        },
+                        "highlighted_image": _encode_image_to_base64(overlay),
+                        "region_too_small": not use_region_analysis,
+                        "search_query": query_plan["fused_query"],
+                        "global_query": query_plan["global_query"],
+                        "region_query": query_plan["region_query"],
+                        "medical_terms": query_plan["medical_terms"],
+                    }
         else:
             # JSON request
             data = request.get_json() or {}
             text_query = data.get("query", "").strip()
 
             if data.get("frame_base64"):
+                if region_point is None:
+                    return jsonify(
+                        {
+                            "status": "need_user_input",
+                            "message": "Please select the region of interest on the image",
+                            "instruction": "Tap or click on the area you want to analyze",
+                        }
+                    ), 200
+
                 b64 = data["frame_base64"]
                 if "," in b64:
                     b64 = b64.split(",", 1)[1]
                 img_bytes = base64.b64decode(b64)
                 image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-                image_answer = image_recognizer.analyze_image(image, question=text_query or None)
-                visual_context = image_recognizer.recognize_from_image(
-                    image,
-                    question=text_query or None,
-                    analysis_text=image_answer,
+                image_np = np.array(image)
+                global_analysis = {
+                    "analysis_text": image_recognizer.analyze_image(
+                        image,
+                        question=text_query or None,
+                    ),
+                }
+                global_analysis["parsed"] = image_recognizer._parse_response(
+                    global_analysis["analysis_text"]
                 )
-                visual_context["analysis_text"] = image_answer
+                segmentation = segmentation_service.segment_image(
+                    image_np,
+                    point=region_point,
+                )
+                overlay = segmentation_service.create_overlay(image_np, segmentation)
+                x_min, y_min, x_max, y_max = segmentation.bounding_box
+                region_description = _describe_region(
+                    image_width=image_np.shape[1],
+                    image_height=image_np.shape[0],
+                    bbox=segmentation.bounding_box,
+                )
+                region_analysis = image_recognizer.analyze_segmented_region(
+                    image=image,
+                    bounding_box=segmentation.bounding_box,
+                    question=text_query or None,
+                )
+                use_region_analysis = not image_recognizer.region_is_too_small(
+                    image.size,
+                    segmentation.bounding_box,
+                )
+                query_plan = image_recognizer.build_fused_search_plan(
+                    global_analysis=global_analysis,
+                    region_analysis=region_analysis,
+                    question=text_query or None,
+                    include_region=use_region_analysis,
+                )
+                parsed_region = region_analysis["parsed"]
+                parsed_global = global_analysis["parsed"]
+                visual_context = {
+                    "success": True,
+                    "region_description": region_description,
+                    "cropped_region_analysis": region_analysis["analysis_text"],
+                    "global_image_analysis": global_analysis["analysis_text"],
+                    "body_part": parsed_region.get("body_part"),
+                    "condition": parsed_region.get("condition"),
+                    "severity": parsed_region.get("severity"),
+                    "first_aid_topic": parsed_region.get("first_aid_topic"),
+                    "global_body_part": parsed_global.get("body_part"),
+                    "global_condition": parsed_global.get("condition"),
+                    "global_severity": parsed_global.get("severity"),
+                    "global_first_aid_topic": parsed_global.get("first_aid_topic"),
+                    "mask_data": {
+                        "x": x_min,
+                        "y": y_min,
+                        "width": x_max - x_min,
+                        "height": y_max - y_min,
+                    },
+                    "highlighted_image": _encode_image_to_base64(overlay),
+                    "region_too_small": not use_region_analysis,
+                    "search_query": query_plan["fused_query"],
+                    "global_query": query_plan["global_query"],
+                    "region_query": query_plan["region_query"],
+                    "medical_terms": query_plan["medical_terms"],
+                }
 
         if not text_query and not visual_context:
             return jsonify({"error": "No query, audio, or image provided"}), 400
@@ -525,45 +683,45 @@ def multimodal_query():
         # --- Build enriched query from text + visual context ---
         enriched_query = text_query
         if visual_context and visual_context.get("success"):
-            vc = visual_context
-            visual_desc = vc.get("analysis_text") or vc.get("description", "")
+            fused_query = (visual_context.get("search_query") or "").strip()
+            region_analysis_text = visual_context.get("cropped_region_analysis", "").strip()
+            global_analysis_text = visual_context.get("global_image_analysis", "").strip()
             if text_query:
-                enriched_query = f"{text_query}. Image analysis: {visual_desc}"
+                enriched_query = fused_query or text_query
             else:
-                enriched_query = vc.get("search_query", visual_desc)
+                enriched_query = fused_query or region_analysis_text or global_analysis_text
 
         # --- RAG: multi-query search ---
         queries = [enriched_query]
-        weights = [0.6]
+        weights = [0.5]
         if text_query and text_query != enriched_query:
             queries.append(text_query)
+            weights.append(0.15)
+        if visual_context and visual_context.get("region_query"):
+            queries.append(visual_context["region_query"])
             weights.append(0.2)
-        if visual_context and visual_context.get("search_query"):
-            queries.append(visual_context["search_query"])
-            weights.append(0.2)
+        if visual_context and visual_context.get("global_query"):
+            queries.append(visual_context["global_query"])
+            weights.append(0.15)
 
-        if visual_context and visual_context.get("success"):
-            body_part = visual_context.get("detected_body_part")
-            condition = visual_context.get("detected_condition")
-            text_retrieved = retriever.search_with_context(
-                enriched_query,
-                body_part=body_part,
-                condition=condition,
-            )
-        else:
-            text_retrieved = retriever.multi_query_search(queries, weights) if text_query else []
+        text_retrieved = retriever.multi_query_search(queries, weights) if queries else []
         retrieved = text_retrieved
 
         # --- Generate AI response (explicitly grounded in both text and vision) ---
         context = retriever.format_results_for_context(retrieved)
         if visual_context and visual_context.get("success"):
             visual_context_block = (
-                "\n\nVISUAL FINDINGS (from uploaded image):\n"
-                f"- Body part: {visual_context.get('detected_body_part', 'unknown')}\n"
-                f"- Condition: {visual_context.get('detected_condition', 'unknown')}\n"
-                f"- Severity: {visual_context.get('detected_severity', 'unknown')}\n"
-                f"- Description: {visual_context.get('analysis_text', visual_context.get('description', ''))}\n"
-                "Use these visual findings together with the user's question and transcript context."
+                "\n\nSELECTED IMAGE REGION:\n"
+                f"- Region description: {visual_context.get('region_description', 'unknown')}\n"
+                f"- Global image analysis: {visual_context.get('global_image_analysis', 'unknown')}\n"
+                f"- Cropped injury analysis: {visual_context.get('cropped_region_analysis', 'unknown')}\n"
+                f"- Body part: {visual_context.get('body_part', 'unknown')}\n"
+                f"- Condition: {visual_context.get('condition', 'unknown')}\n"
+                f"- Severity: {visual_context.get('severity', 'unknown')}\n"
+                f"- First-aid topic: {visual_context.get('first_aid_topic', 'unknown')}\n"
+                f"- Fused retrieval query: {visual_context.get('search_query', 'unknown')}\n"
+                f"- Bounding box: {visual_context.get('mask_data')}\n"
+                "Use this selected image region together with the user's question and transcript context."
             )
             context = f"{context}{visual_context_block}"
 
@@ -610,14 +768,31 @@ def multimodal_query():
                 "answer_end": answer_end,
                 "retrieved_procedures": retrieved,
                 "visual_analysis": {
-                    "body_part": visual_context.get("detected_body_part")
+                    "region_description": visual_context.get("region_description")
                     if visual_context
                     else None,
-                    "condition": visual_context.get("detected_condition")
+                    "cropped_region_analysis": visual_context.get("cropped_region_analysis")
                     if visual_context
                     else None,
-                    "severity": visual_context.get("detected_severity") if visual_context else None,
-                    "description": visual_context.get("description") if visual_context else None,
+                    "global_image_analysis": visual_context.get("global_image_analysis")
+                    if visual_context
+                    else None,
+                    "body_part": visual_context.get("body_part") if visual_context else None,
+                    "condition": visual_context.get("condition") if visual_context else None,
+                    "severity": visual_context.get("severity") if visual_context else None,
+                    "first_aid_topic": visual_context.get("first_aid_topic")
+                    if visual_context
+                    else None,
+                    "global_query": visual_context.get("global_query") if visual_context else None,
+                    "region_query": visual_context.get("region_query") if visual_context else None,
+                    "search_query": visual_context.get("search_query") if visual_context else None,
+                    "region_too_small": visual_context.get("region_too_small")
+                    if visual_context
+                    else None,
+                    "mask_data": visual_context.get("mask_data") if visual_context else None,
+                    "highlighted_image": visual_context.get("highlighted_image")
+                    if visual_context
+                    else None,
                 }
                 if visual_context
                 else None,

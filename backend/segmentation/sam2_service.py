@@ -81,15 +81,17 @@ class SAM2SegmentationService:
     def segment_image(
         self,
         image: np.ndarray,
-        point: tuple[int, int] | None = None,
+        point: tuple[int, int],
     ) -> SegmentationResult:
         """
         Segment an image using a positive point prompt.
-
-        If no point is supplied, the center of the image is used.
         """
         if image.ndim != 3 or image.shape[2] != 3:
             msg = "segment_image expects an RGB image shaped as HxWx3."
+            raise ValueError(msg)
+
+        if point is None:
+            msg = "segment_image requires an explicit point prompt."
             raise ValueError(msg)
 
         prompt_x, prompt_y = self._normalize_point(image, point)

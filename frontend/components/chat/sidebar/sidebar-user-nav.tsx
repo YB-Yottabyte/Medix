@@ -17,9 +17,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { LoaderIcon } from "@/components/chat/shared/icons";
+import { toast } from "@/components/chat/shared/toast";
 import { guestRegex, isLocalAuthBypassed } from "@/lib/constants";
-import { LoaderIcon } from "./icons";
-import { toast } from "./toast";
 
 function emailToHue(email: string): number {
   let hash = 0;

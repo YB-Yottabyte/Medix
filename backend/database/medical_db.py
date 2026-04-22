@@ -34,7 +34,6 @@ FETCH_PROCEDURES_BY_VIDEO_IDS_SQL = (
     "FROM procedures WHERE video_id = ANY(%s)"
 )
 
-
 class MedicalDatabase:
     def __init__(self, config):
         """Initialize metadata database and embedding model configuration."""

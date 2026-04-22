@@ -11,6 +11,7 @@ import {
   MicIcon,
   WrenchIcon,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
@@ -27,6 +28,13 @@ import { toast } from "sonner";
 import useSWR from "swr";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import {
+  PromptInput,
+  PromptInputFooter,
+  PromptInputSubmit,
+  PromptInputTextarea,
+  PromptInputTools,
+} from "@/components/ai-elements/prompt-input";
+import {
   ModelSelector,
   ModelSelectorContent,
   ModelSelectorGroup,
@@ -37,6 +45,16 @@ import {
   ModelSelectorName,
   ModelSelectorTrigger,
 } from "@/components/ai-elements/model-selector";
+import { PreviewAttachment } from "@/components/chat/input/preview-attachment";
+import {
+  type SlashCommand,
+  SlashCommandMenu,
+  slashCommands,
+} from "@/components/chat/input/slash-commands";
+import { SuggestedActions } from "@/components/chat/input/suggested-actions";
+import { PaperclipIcon, StopIcon } from "@/components/chat/shared/icons";
+import type { VisibilityType } from "@/components/chat/visibility-selector";
+import { Button } from "@/components/ui/button";
 import {
   type ChatModel,
   chatModels,
@@ -44,29 +62,221 @@ import {
   type ModelCapabilities,
 } from "@/lib/ai/models";
 import type { Attachment, ChatMessage } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import {
-  PromptInput,
-  PromptInputFooter,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputTools,
-} from "../ai-elements/prompt-input";
-import { Button } from "../ui/button";
-import { PaperclipIcon, StopIcon } from "./icons";
-import { PreviewAttachment } from "./preview-attachment";
-import {
-  type SlashCommand,
-  SlashCommandMenu,
-  slashCommands,
-} from "./slash-commands";
-import { SuggestedActions } from "./suggested-actions";
-import type { VisibilityType } from "./visibility-selector";
+import { cn, generateUUID } from "@/lib/utils";
+
+const RegionSelectorDialog = dynamic(
+  () =>
+    import("@/components/chat/cards/region-selector-dialog").then(
+      (module) => module.RegionSelectorDialog
+    ),
+  { ssr: false }
+);
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;
   // biome-ignore lint/suspicious/noDocumentCookie: needed for client-side cookie setting
   document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}`;
+}
+
+type RegionPoint = {
+  x: number;
+  y: number;
+};
+
+type MultimodalQueryResponse = {
+  status?: "need_user_input" | "success";
+  message?: string;
+  instruction?: string;
+  error?: string;
+  success?: boolean;
+  response?: string | null;
+  video_id?: string | null;
+  video_url?: string | null;
+  answer_start?: number | null;
+  answer_end?: number | null;
+  retrieved_procedures?: Array<{
+    question?: string | null;
+    similarity_score?: number | null;
+    video_id?: string | null;
+    video_url?: string | null;
+    answer_start?: number | null;
+    answer_end?: number | null;
+    steps?: Array<{
+      time?: number;
+      start_time?: number;
+      end_time?: number | null;
+      description: string;
+    }>;
+  }>;
+  visual_analysis?: {
+    region_description?: string | null;
+    body_part?: string | null;
+    condition?: string | null;
+    severity?: string | null;
+    first_aid_topic?: string | null;
+    search_query?: string | null;
+    global_query?: string | null;
+    region_query?: string | null;
+    mask_data?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null;
+    highlighted_image?: string | null;
+  } | null;
+};
+
+const MIN_MULTIMODAL_VIDEO_MATCH = 0.35;
+
+const GENERIC_QUERY_TERMS = new Set([
+  "help",
+  "me",
+  "please",
+  "can",
+  "you",
+  "what",
+  "do",
+  "i",
+]);
+
+const SKIN_PROCEDURE_TERMS = [
+  "skin",
+  "precancerous",
+  "cancer",
+  "melanoma",
+  "eczema",
+  "rash",
+];
+
+function tokenizeForMatch(text: string | null | undefined): string[] {
+  return (
+    (text ?? "")
+      .toLowerCase()
+      .match(/[a-z0-9]+/g)
+      ?.filter(Boolean) ?? []
+  );
+}
+
+function hasMeaningfulUserQuery(text: string): boolean {
+  const tokens = tokenizeForMatch(text).filter(
+    (token) => !GENERIC_QUERY_TERMS.has(token)
+  );
+  return tokens.length >= 2;
+}
+
+function containsAnyTerm(
+  text: string | null | undefined,
+  terms: string[]
+): boolean {
+  const haystack = ` ${text?.toLowerCase() ?? ""} `;
+  return terms.some(
+    (term) => haystack.includes(` ${term} `) || haystack.includes(term)
+  );
+}
+
+function isTopProcedureObviouslyMismatched(
+  matchedProcedure: string | null | undefined,
+  submittedInput: string,
+  visualAnalysis: MultimodalQueryResponse["visual_analysis"]
+): boolean {
+  if (!matchedProcedure) {
+    return false;
+  }
+
+  const procedureText = matchedProcedure.toLowerCase();
+  const contextualText = [
+    submittedInput,
+    visualAnalysis?.search_query,
+    visualAnalysis?.global_query,
+    visualAnalysis?.region_query,
+    visualAnalysis?.body_part,
+    visualAnalysis?.condition,
+    visualAnalysis?.first_aid_topic,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    containsAnyTerm(procedureText, SKIN_PROCEDURE_TERMS) &&
+    !containsAnyTerm(contextualText, SKIN_PROCEDURE_TERMS)
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function revokeAttachmentUrls(attachments: Attachment[]) {
+  for (const attachment of attachments) {
+    if (attachment.file && attachment.url.startsWith("blob:")) {
+      URL.revokeObjectURL(attachment.url);
+    }
+    if (attachment.file && attachment.originalUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(attachment.originalUrl);
+    }
+  }
+}
+
+function normalizeMultimodalAssistantText(text: string): string {
+  if (!text.trim()) {
+    return text;
+  }
+
+  return text
+    .replace(/^\s*\*?\*?(Analysis|Steps|Video)\*?\*?\s*:?\s*$/gim, "")
+    .replace(
+      /^\s*A verified (MedVidQA|Medix) video is available in the player\.?\s*$/gim,
+      ""
+    )
+    .replace(
+      /\bThe image appears to show\b/gi,
+      "From what I can see, this looks like"
+    )
+    .replace(
+      /\bBased on the provided information,?\b/gi,
+      "Based on what I can see here,"
+    )
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function revealAssistantText(
+  text: string,
+  pendingAssistantId: string,
+  setMessages: UseChatHelpers<ChatMessage>["setMessages"]
+) {
+  const words = text.split(/(\s+)/).filter((part) => part.length > 0);
+  if (words.length === 0) {
+    return;
+  }
+
+  const chunkSize = 1;
+  let visibleText = "";
+
+  for (let index = 0; index < words.length; index += chunkSize) {
+    visibleText += words.slice(index, index + chunkSize).join("");
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === pendingAssistantId
+          ? {
+              ...message,
+              parts: [
+                {
+                  type: "text",
+                  text: visibleText,
+                } as ChatMessage["parts"][number],
+                ...message.parts.filter((part) => part.type !== "text"),
+              ],
+            }
+          : message
+      )
+    );
+
+    await new Promise((resolve) => window.setTimeout(resolve, 18));
+  }
 }
 
 function PureMultimodalInput({
@@ -111,6 +321,7 @@ function PureMultimodalInput({
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const attachmentsRef = useRef<Attachment[]>([]);
   const { width } = useWindowSize();
   const hasAutoFocused = useRef(false);
   useEffect(() => {
@@ -220,6 +431,11 @@ function PureMultimodalInput({
   const [slashIndex, setSlashIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [regionSelectorOpen, setRegionSelectorOpen] = useState(false);
+  const [activeRegionAttachmentUrl, setActiveRegionAttachmentUrl] = useState<
+    string | null
+  >(null);
+  const [isSubmittingRegionQuery, setIsSubmittingRegionQuery] = useState(false);
 
   const submitForm = useCallback(() => {
     window.history.pushState(
@@ -262,60 +478,90 @@ function PureMultimodalInput({
     chatId,
   ]);
 
-  const uploadFile = useCallback(async (file: File) => {
+  const requestRegionSelection = useCallback(async (file: File) => {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("image", file, file.name);
 
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/files/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const { url, pathname, contentType } = data;
-
-        return {
-          url,
-          name: pathname,
-          contentType,
-        };
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/segment`,
+      {
+        method: "POST",
+        body: formData,
       }
-      const { error } = await response.json();
-      toast.error(error);
-    } catch (_error) {
-      toast.error("Failed to upload file, please try again!");
+    );
+
+    const data = (await response.json()) as {
+      status?: string;
+      error?: string;
+      message?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(data.error ?? "Could not initialize segmentation.");
     }
+
+    if (data.status !== "need_user_input") {
+      throw new Error(data.message ?? "Segmentation did not request a region.");
+    }
+
+    return data;
+  }, []);
+
+  const buildLocalAttachment = useCallback((file: File): Attachment => {
+    const objectUrl = URL.createObjectURL(file);
+    return {
+      url: objectUrl,
+      originalUrl: objectUrl,
+      name: file.name,
+      contentType: file.type,
+      file,
+      segmentationStatus: file.type.startsWith("image/")
+        ? "needs-selection"
+        : "idle",
+      selectedRegion: null,
+    };
   }, []);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
 
+      if (files.length === 0) {
+        return;
+      }
+
       setUploadQueue(files.map((file) => file.name));
 
       try {
-        const uploadPromises = files.map((file) => uploadFile(file));
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined
-        );
-
+        const localAttachments = files.map(buildLocalAttachment);
         setAttachments((currentAttachments) => [
           ...currentAttachments,
-          ...successfullyUploadedAttachments,
+          ...localAttachments,
         ]);
+
+        const firstImageAttachment = localAttachments.find((attachment) =>
+          attachment.contentType.startsWith("image/")
+        );
+
+        if (firstImageAttachment?.file) {
+          const segmentationState = await requestRegionSelection(
+            firstImageAttachment.file
+          );
+          toast.info(
+            segmentationState.message ??
+              "Please click on the region you want Medix to analyze."
+          );
+          setActiveRegionAttachmentUrl(firstImageAttachment.url);
+          setRegionSelectorOpen(true);
+        }
       } catch (_error) {
-        toast.error("Failed to upload files");
+        toast.error("Failed to prepare the image for region selection.");
       } finally {
         setUploadQueue([]);
+        event.target.value = "";
       }
     },
-    [setAttachments, uploadFile]
+    [buildLocalAttachment, requestRegionSelection, setAttachments]
   );
 
   const handlePaste = useCallback(
@@ -338,30 +584,32 @@ function PureMultimodalInput({
       setUploadQueue((prev) => [...prev, "Pasted image"]);
 
       try {
-        const uploadPromises = imageItems
+        const files = imageItems
           .map((item) => item.getAsFile())
-          .filter((file): file is File => file !== null)
-          .map((file) => uploadFile(file));
+          .filter((file): file is File => file !== null);
+        const localAttachments = files.map(buildLocalAttachment);
 
-        const uploadedAttachments = await Promise.all(uploadPromises);
-        const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) =>
-            attachment !== undefined &&
-            attachment.url !== undefined &&
-            attachment.contentType !== undefined
-        );
+        setAttachments((curr) => [...curr, ...localAttachments]);
 
-        setAttachments((curr) => [
-          ...curr,
-          ...(successfullyUploadedAttachments as Attachment[]),
-        ]);
+        const firstImageAttachment = localAttachments[0];
+        if (firstImageAttachment?.file) {
+          const segmentationState = await requestRegionSelection(
+            firstImageAttachment.file
+          );
+          toast.info(
+            segmentationState.message ??
+              "Please click on the region you want Medix to analyze."
+          );
+          setActiveRegionAttachmentUrl(firstImageAttachment.url);
+          setRegionSelectorOpen(true);
+        }
       } catch (_error) {
         toast.error("Failed to upload pasted image(s)");
       } finally {
         setUploadQueue([]);
       }
     },
-    [setAttachments, uploadFile]
+    [buildLocalAttachment, requestRegionSelection, setAttachments]
   );
 
   useEffect(() => {
@@ -375,6 +623,10 @@ function PureMultimodalInput({
   }, [handlePaste]);
 
   useEffect(() => {
+    attachmentsRef.current = attachments;
+  }, [attachments]);
+
+  useEffect(() => {
     return () => {
       mediaRecorderRef.current?.stop();
       if (recordingStreamRef.current) {
@@ -382,6 +634,7 @@ function PureMultimodalInput({
           track.stop();
         }
       }
+      revokeAttachmentUrls(attachmentsRef.current);
     };
   }, []);
 
@@ -506,6 +759,393 @@ function PureMultimodalInput({
     }
   }, [transcribeAudio]);
 
+  const primaryImageAttachment =
+    attachments.find((attachment) => attachment.file) ?? null;
+  const activeRegionAttachment =
+    attachments.find(
+      (attachment) => attachment.url === activeRegionAttachmentUrl
+    ) ?? primaryImageAttachment;
+  const hasPendingRegionSelection = attachments.some(
+    (attachment) =>
+      attachment.file &&
+      attachment.contentType.startsWith("image/") &&
+      !attachment.selectedRegion
+  );
+
+  const updateAttachmentRegion = useCallback(
+    (attachmentUrl: string, point: RegionPoint, previewUrl?: string | null) => {
+      setAttachments((currentAttachments) =>
+        currentAttachments.map((attachment) => {
+          if (attachment.url !== attachmentUrl) {
+            return attachment;
+          }
+
+          if (
+            previewUrl &&
+            attachment.url !== previewUrl &&
+            attachment.url.startsWith("blob:")
+          ) {
+            URL.revokeObjectURL(attachment.url);
+          }
+
+          return {
+            ...attachment,
+            url: previewUrl ?? attachment.url,
+            selectedRegion: point,
+            segmentationStatus: "ready",
+          };
+        })
+      );
+    },
+    [setAttachments]
+  );
+
+  const prepareSegmentedPreview = useCallback(
+    async (attachment: Attachment, point: RegionPoint) => {
+      if (!attachment.file) {
+        return null;
+      }
+
+      const formData = new FormData();
+      formData.append("image", attachment.file, attachment.name);
+      formData.append("x", String(point.x));
+      formData.append("y", String(point.y));
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/segment`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = (await response.json()) as {
+        status?: "need_user_input" | "success";
+        error?: string;
+        highlighted_image?: string;
+        message?: string;
+      };
+
+      if (!response.ok || data.error) {
+        throw new Error(
+          data.error ?? "Could not generate the selected region preview."
+        );
+      }
+
+      if (data.status === "need_user_input") {
+        throw new Error(
+          data.message ?? "Please select the region of interest on the image."
+        );
+      }
+
+      return data.highlighted_image
+        ? `data:image/png;base64,${data.highlighted_image}`
+        : null;
+    },
+    []
+  );
+
+  const submitMultimodalImageQuery = useCallback(
+    async (attachment: Attachment, point: RegionPoint) => {
+      if (!attachment.file) {
+        return;
+      }
+
+      const submittedFile = attachment.file;
+      const submittedInput = input.trim();
+      const submittedAttachment = { ...attachment };
+
+      const formData = new FormData();
+      formData.append("image", submittedFile, submittedAttachment.name);
+      formData.append("x", String(point.x));
+      formData.append("y", String(point.y));
+      if (submittedInput) {
+        formData.append("query", submittedInput);
+      }
+
+      const userMessage: ChatMessage = {
+        id: generateUUID(),
+        role: "user",
+        metadata: {
+          createdAt: new Date().toISOString(),
+        },
+        parts: [
+          {
+            type: "file",
+            url: submittedAttachment.url,
+            filename: submittedAttachment.name,
+            mediaType: submittedAttachment.contentType,
+          } as ChatMessage["parts"][number],
+          ...(submittedInput
+            ? [
+                {
+                  type: "text",
+                  text: submittedInput,
+                } as ChatMessage["parts"][number],
+              ]
+            : []),
+        ],
+      };
+
+      const pendingAssistantId = generateUUID();
+
+      setMessages((currentMessages) => [
+        ...currentMessages,
+        userMessage,
+        {
+          id: pendingAssistantId,
+          role: "assistant",
+          metadata: {
+            createdAt: new Date().toISOString(),
+          },
+          parts: [
+            {
+              type: "text",
+              text: "Analyzing the selected region and searching Medix procedures…",
+            } as ChatMessage["parts"][number],
+            {
+              type: "tool-searchProcedure",
+              toolCallId: `manual-search-pending-${generateUUID()}`,
+              state: "input-streaming",
+              input: {
+                query: submittedInput || "medical image query",
+                visualContext: "selected image region",
+              },
+            } as ChatMessage["parts"][number],
+          ],
+        },
+      ]);
+
+      // Clear the composer immediately after send so the UI behaves like normal chat.
+      setLocalStorageInput("");
+      setInput("");
+      setAttachments([]);
+      setRegionSelectorOpen(false);
+      setActiveRegionAttachmentUrl(null);
+
+      setIsSubmittingRegionQuery(true);
+
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/multimodal-query`,
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        const data = (await response.json()) as MultimodalQueryResponse;
+
+        if (!response.ok || data.error) {
+          throw new Error(data.error ?? "Multimodal analysis failed.");
+        }
+
+        if (data.status === "need_user_input") {
+          toast.info(
+            data.message ?? "Please click on the region you want to analyze."
+          );
+          setMessages((currentMessages) =>
+            currentMessages.filter(
+              (message) => message.id !== pendingAssistantId
+            )
+          );
+          setRegionSelectorOpen(true);
+          return;
+        }
+
+        const topProcedure = data.retrieved_procedures?.[0] ?? null;
+        const topSimilarity =
+          typeof topProcedure?.similarity_score === "number"
+            ? topProcedure.similarity_score
+            : null;
+        const userQueryHasSignal = hasMeaningfulUserQuery(submittedInput);
+        const obviousMismatch = isTopProcedureObviouslyMismatched(
+          topProcedure?.question,
+          submittedInput,
+          data.visual_analysis
+        );
+        const hasVerifiedProcedureMatch =
+          Boolean(
+            topProcedure?.question ||
+              topProcedure?.video_id ||
+              data.video_id ||
+              data.video_url
+          ) &&
+          !obviousMismatch &&
+          (topSimilarity === null ||
+            topSimilarity >= MIN_MULTIMODAL_VIDEO_MATCH ||
+            (topSimilarity >= 0.28 && userQueryHasSignal));
+        const normalizedResponse = normalizeMultimodalAssistantText(
+          data.response?.trim() ??
+            "I analyzed the selected region, but no response text was returned."
+        );
+        await revealAssistantText(
+          normalizedResponse,
+          pendingAssistantId,
+          setMessages
+        );
+
+        setMessages((currentMessages) =>
+          currentMessages.map((message) =>
+            message.id === pendingAssistantId
+              ? {
+                  ...message,
+                  parts: hasVerifiedProcedureMatch
+                    ? [
+                        {
+                          type: "text",
+                          text: normalizedResponse,
+                        } as ChatMessage["parts"][number],
+                        {
+                          type: "tool-searchProcedure",
+                          toolCallId: `manual-search-${generateUUID()}`,
+                          state: "output-available",
+                          input: {
+                            query:
+                              submittedInput ||
+                              data.visual_analysis?.region_description ||
+                              "medical image query",
+                            visualContext:
+                              data.visual_analysis?.region_description ??
+                              undefined,
+                          },
+                          output: {
+                            videoId:
+                              data.video_id ?? topProcedure?.video_id ?? null,
+                            videoUrl:
+                              data.video_url ?? topProcedure?.video_url ?? null,
+                            startTime:
+                              data.answer_start ??
+                              topProcedure?.answer_start ??
+                              null,
+                            endTime:
+                              data.answer_end ??
+                              topProcedure?.answer_end ??
+                              null,
+                            steps: topProcedure?.steps ?? [],
+                            matchedProcedure: topProcedure?.question ?? null,
+                            similarity: topProcedure?.similarity_score ?? null,
+                            retrievedCount:
+                              data.retrieved_procedures?.length ?? 0,
+                            unavailable: false,
+                          },
+                        } as ChatMessage["parts"][number],
+                      ]
+                    : [
+                        {
+                          type: "text",
+                          text: normalizedResponse,
+                        } as ChatMessage["parts"][number],
+                      ],
+                }
+              : message
+          )
+        );
+
+        const finalAssistantMessage: ChatMessage = {
+          id: pendingAssistantId,
+          role: "assistant",
+          metadata: {
+            createdAt: new Date().toISOString(),
+          },
+          parts: hasVerifiedProcedureMatch
+            ? [
+                {
+                  type: "text",
+                  text: normalizedResponse,
+                } as ChatMessage["parts"][number],
+                {
+                  type: "tool-searchProcedure",
+                  toolCallId: `manual-search-persisted-${generateUUID()}`,
+                  state: "output-available",
+                  input: {
+                    query:
+                      submittedInput ||
+                      data.visual_analysis?.region_description ||
+                      "medical image query",
+                    visualContext:
+                      data.visual_analysis?.region_description ?? undefined,
+                  },
+                  output: {
+                    videoId: data.video_id ?? topProcedure?.video_id ?? null,
+                    videoUrl: data.video_url ?? topProcedure?.video_url ?? null,
+                    startTime:
+                      data.answer_start ?? topProcedure?.answer_start ?? null,
+                    endTime:
+                      data.answer_end ?? topProcedure?.answer_end ?? null,
+                    steps: topProcedure?.steps ?? [],
+                    matchedProcedure: topProcedure?.question ?? null,
+                    similarity: topProcedure?.similarity_score ?? null,
+                    retrievedCount: data.retrieved_procedures?.length ?? 0,
+                    unavailable: false,
+                  },
+                } as ChatMessage["parts"][number],
+              ]
+            : [
+                {
+                  type: "text",
+                  text: normalizedResponse,
+                } as ChatMessage["parts"][number],
+              ],
+        };
+
+        await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/manual-message`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chatId,
+              visibility: selectedVisibilityType,
+              userMessage,
+              assistantMessage: finalAssistantMessage,
+            }),
+          }
+        );
+
+        if (width && width > 768) {
+          textareaRef.current?.focus();
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Multimodal analysis failed.";
+        toast.error(message);
+
+        setMessages((currentMessages) =>
+          currentMessages.map((currentMessage) =>
+            currentMessage.id === pendingAssistantId
+              ? {
+                  ...currentMessage,
+                  parts: [
+                    {
+                      type: "text",
+                      text: `Image analysis failed: ${message}`,
+                    } as ChatMessage["parts"][number],
+                  ],
+                }
+              : currentMessage
+          )
+        );
+      } finally {
+        setIsSubmittingRegionQuery(false);
+      }
+    },
+    [
+      chatId,
+      input,
+      selectedVisibilityType,
+      setAttachments,
+      setInput,
+      setLocalStorageInput,
+      setMessages,
+      width,
+    ]
+  );
+
   return (
     <div className={cn("relative flex w-full flex-col gap-4", className)}>
       {editingMessage && onCancelEdit && (
@@ -571,8 +1211,31 @@ function PureMultimodalInput({
           if (!input.trim() && attachments.length === 0) {
             return;
           }
+          if (hasPendingRegionSelection) {
+            const unresolvedAttachment =
+              attachments.find(
+                (attachment) =>
+                  attachment.file &&
+                  attachment.contentType.startsWith("image/") &&
+                  !attachment.selectedRegion
+              ) ?? null;
+            setActiveRegionAttachmentUrl(unresolvedAttachment?.url ?? null);
+            setRegionSelectorOpen(true);
+            toast.info("Please click on the region you want to analyze first.");
+            return;
+          }
           if (status === "ready" || status === "error") {
-            submitForm();
+            if (
+              primaryImageAttachment?.file &&
+              primaryImageAttachment.selectedRegion
+            ) {
+              submitMultimodalImageQuery(
+                primaryImageAttachment,
+                primaryImageAttachment.selectedRegion
+              ).catch(() => undefined);
+            } else {
+              submitForm();
+            }
           } else {
             toast.error("Please wait for the model to finish its response!");
           }
@@ -587,10 +1250,23 @@ function PureMultimodalInput({
               <PreviewAttachment
                 attachment={attachment}
                 key={attachment.url}
+                onClick={
+                  attachment.file && attachment.contentType.startsWith("image/")
+                    ? () => {
+                        setActiveRegionAttachmentUrl(attachment.url);
+                        setRegionSelectorOpen(true);
+                      }
+                    : undefined
+                }
                 onRemove={() => {
+                  revokeAttachmentUrls([attachment]);
                   setAttachments((currentAttachments) =>
                     currentAttachments.filter((a) => a.url !== attachment.url)
                   );
+                  if (activeRegionAttachmentUrl === attachment.url) {
+                    setActiveRegionAttachmentUrl(null);
+                    setRegionSelectorOpen(false);
+                  }
                   if (fileInputRef.current) {
                     fileInputRef.current.value = "";
                   }
@@ -649,11 +1325,21 @@ function PureMultimodalInput({
             }
           }}
           placeholder={
-            editingMessage ? "Edit your message..." : "Ask anything..."
+            editingMessage
+              ? "Edit your message..."
+              : hasPendingRegionSelection
+                ? "Pick a region in the uploaded image to continue..."
+                : "Ask anything..."
           }
           ref={textareaRef}
           value={input}
         />
+        {hasPendingRegionSelection && (
+          <div className="px-4 pb-1 text-[12px] text-amber-700">
+            Please click the uploaded image and choose the exact region you want
+            Medix to analyze before sending.
+          </div>
+        )}
         <PromptInputFooter className="px-3 pb-3">
           <PromptInputTools>
             <AttachmentsButton
@@ -715,7 +1401,9 @@ function PureMultimodalInput({
                 data-testid="send-button"
                 disabled={
                   (!input.trim() && attachments.length === 0) ||
-                  uploadQueue.length > 0
+                  uploadQueue.length > 0 ||
+                  hasPendingRegionSelection ||
+                  isSubmittingRegionQuery
                 }
                 status={status}
                 variant="secondary"
@@ -726,6 +1414,51 @@ function PureMultimodalInput({
           )}
         </PromptInputFooter>
       </PromptInput>
+
+      <RegionSelectorDialog
+        attachment={activeRegionAttachment ?? null}
+        isSubmitting={isSubmittingRegionQuery}
+        onConfirm={async (point) => {
+          if (!activeRegionAttachment) {
+            return;
+          }
+
+          setIsSubmittingRegionQuery(true);
+
+          try {
+            const previewUrl = await prepareSegmentedPreview(
+              activeRegionAttachment,
+              point
+            );
+            updateAttachmentRegion(
+              activeRegionAttachment.url,
+              point,
+              previewUrl
+            );
+            setRegionSelectorOpen(false);
+            setActiveRegionAttachmentUrl(null);
+            toast.success(
+              "Region selected. Add a question if you want, then press Send."
+            );
+            textareaRef.current?.focus();
+          } catch (error) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Could not prepare the selected region."
+            );
+          } finally {
+            setIsSubmittingRegionQuery(false);
+          }
+        }}
+        onOpenChange={(open) => {
+          setRegionSelectorOpen(open);
+          if (!open && !isSubmittingRegionQuery) {
+            setActiveRegionAttachmentUrl(null);
+          }
+        }}
+        open={regionSelectorOpen}
+      />
     </div>
   );
 }

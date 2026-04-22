@@ -1,18 +1,40 @@
 "use client";
 import type { UseChatHelpers } from "@ai-sdk/react";
+import {
+  MessageContent,
+  MessageResponse,
+} from "@/components/ai-elements/message";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import {
+  Tool,
+  ToolContent,
+  ToolHeader,
+  ToolInput,
+} from "@/components/ai-elements/tool";
+import { ProcedureCard } from "@/components/chat/cards/procedure-card";
+import { PreviewAttachment } from "@/components/chat/input/preview-attachment";
+import { MessageActions } from "@/components/chat/messages/message-actions";
+import { MessageReasoning } from "@/components/chat/messages/message-reasoning";
+import { ResponseAudioButton } from "@/components/chat/response-audio-button";
+import { SparklesIcon } from "@/components/chat/shared/icons";
 import type { Vote } from "@/lib/db/schema";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
-import { MessageContent, MessageResponse } from "../ai-elements/message";
-import { Shimmer } from "../ai-elements/shimmer";
-import { Tool, ToolContent, ToolHeader, ToolInput } from "../ai-elements/tool";
-import { SparklesIcon } from "./icons";
-import { ImageAnalysisCard } from "./image-analysis-card";
-import { MessageActions } from "./message-actions";
-import { MessageReasoning } from "./message-reasoning";
-import { PreviewAttachment } from "./preview-attachment";
-import { ProcedureCard } from "./procedure-card";
-import { ResponseAudioButton } from "./response-audio-button";
+
+function normalizeAssistantText(text: string): string {
+  if (!text.trim()) {
+    return text;
+  }
+
+  return text
+    .replace(/^\s*\*?\*?(Analysis|Steps|Video)\*?\*?\s*:?\s*$/gim, "")
+    .replace(
+      /^\s*A verified (MedVidQA|Medix) video is available in the player\.?\s*$/gim,
+      ""
+    )
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 const PurePreviewMessage = ({
   addToolApprovalResponse: _addToolApprovalResponse,
@@ -101,6 +123,10 @@ const PurePreviewMessage = ({
         .trim() ?? "")
     : "";
 
+  const normalizedAssistantText = isAssistant
+    ? normalizeAssistantText(assistantText)
+    : "";
+
   const orderedParts = isAssistant
     ? (message.parts ?? [])
         .map((part, index) => ({ part, index }))
@@ -147,6 +173,11 @@ const PurePreviewMessage = ({
     }
 
     if (type === "text") {
+      const displayText =
+        message.role === "assistant"
+          ? normalizeAssistantText(part.text)
+          : part.text;
+
       return (
         <MessageContent
           className={cn("text-[13px] leading-[1.65]", {
@@ -156,7 +187,7 @@ const PurePreviewMessage = ({
           data-testid="message-content"
           key={key}
         >
-          <MessageResponse>{sanitizeText(part.text)}</MessageResponse>
+          <MessageResponse>{sanitizeText(displayText)}</MessageResponse>
         </MessageContent>
       );
     }
@@ -167,8 +198,37 @@ const PurePreviewMessage = ({
 
       if (state === "output-available") {
         return (
-          <div className={widthClass} key={toolCallId}>
+          <div
+            className={cn(
+              widthClass,
+              "animate-[fade-up_0.32s_cubic-bezier(0.22,1,0.36,1)]"
+            )}
+            key={toolCallId}
+          >
             <ProcedureCard output={part.output} />
+          </div>
+        );
+      }
+
+      if (state === "input-streaming") {
+        return (
+          <div className={widthClass} key={toolCallId}>
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <div className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className="h-3 w-24 rounded bg-muted" />
+                    <div className="h-4 w-3/4 rounded bg-muted/80" />
+                  </div>
+                  <div className="h-5 w-16 rounded-full bg-muted" />
+                </div>
+                <div className="h-3 w-40 rounded bg-muted/70" />
+                <div className="pt-2">
+                  <div className="mb-2 h-3 w-12 rounded bg-muted" />
+                  <div className="aspect-video w-full rounded-lg bg-muted/80" />
+                </div>
+              </div>
+            </div>
           </div>
         );
       }
@@ -186,27 +246,7 @@ const PurePreviewMessage = ({
     }
 
     if (type === "tool-analyzeImage") {
-      const { toolCallId, state } = part;
-      const widthClass = "w-[min(100%,560px)]";
-
-      if (state === "output-available") {
-        return (
-          <div className={widthClass} key={toolCallId}>
-            <ImageAnalysisCard output={part.output} />
-          </div>
-        );
-      }
-
-      return (
-        <div className={widthClass} key={toolCallId}>
-          <Tool className="w-full" defaultOpen={true}>
-            <ToolHeader state={state} type="tool-analyzeImage" />
-            <ToolContent>
-              {state === "input-available" && <ToolInput input={part.input} />}
-            </ToolContent>
-          </Tool>
-        </div>
-      );
+      return null;
     }
 
     return null;
@@ -233,9 +273,9 @@ const PurePreviewMessage = ({
     <>
       {attachments}
       {parts}
-      {isAssistant && assistantText && (
+      {isAssistant && normalizedAssistantText && (
         <div className="pt-1">
-          <ResponseAudioButton text={assistantText} />
+          <ResponseAudioButton text={normalizedAssistantText} />
         </div>
       )}
       {actions}

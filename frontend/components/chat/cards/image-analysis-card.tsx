@@ -1,6 +1,6 @@
 "use client";
 
-import { ResponseAudioButton } from "./response-audio-button";
+import { ResponseAudioButton } from "@/components/chat/response-audio-button";
 
 type ImageAnalysisOutput = {
   bodyPart?: string | null;
