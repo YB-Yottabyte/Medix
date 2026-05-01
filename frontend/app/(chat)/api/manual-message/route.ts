@@ -51,6 +51,7 @@ async function generateTitle(message: z.infer<typeof messageSchema>) {
     model: getTitleModel(),
     system: titlePrompt,
     prompt: text,
+    maxOutputTokens: 32,
   });
 
   return (

@@ -7,8 +7,11 @@ import {
   ArrowUpIcon,
   BrainIcon,
   EyeIcon,
+  AlertTriangleIcon,
   LockIcon,
   MicIcon,
+  ListChecksIcon,
+  SparklesIcon,
   WrenchIcon,
 } from "lucide-react";
 import dynamic from "next/dynamic";
@@ -25,7 +28,8 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
+import { unstable_serialize } from "swr/infinite";
 import { useLocalStorage, useWindowSize } from "usehooks-ts";
 import {
   PromptInput,
@@ -53,6 +57,7 @@ import {
 } from "@/components/chat/input/slash-commands";
 import { SuggestedActions } from "@/components/chat/input/suggested-actions";
 import { PaperclipIcon, StopIcon } from "@/components/chat/shared/icons";
+import { getChatHistoryPaginationKey } from "@/components/chat/sidebar/sidebar-history";
 import type { VisibilityType } from "@/components/chat/visibility-selector";
 import { Button } from "@/components/ui/button";
 import {
@@ -82,6 +87,55 @@ type RegionPoint = {
   x: number;
   y: number;
 };
+
+type CareFocus = "immediate-steps" | "red-flags" | "simple-language";
+
+const CARE_FOCUS_OPTIONS: Array<{
+  id: CareFocus;
+  label: string;
+  icon: typeof ListChecksIcon;
+  instruction: string;
+}> = [
+  {
+    id: "immediate-steps",
+    label: "Immediate steps",
+    icon: ListChecksIcon,
+    instruction:
+      "Start with immediate first-aid actions in the first section of the answer.",
+  },
+  {
+    id: "red-flags",
+    label: "Red flags",
+    icon: AlertTriangleIcon,
+    instruction:
+      "Include warning signs that mean the person should seek urgent or emergency care.",
+  },
+  {
+    id: "simple-language",
+    label: "Simple language",
+    icon: SparklesIcon,
+    instruction:
+      "Use simple, non-technical language that a non-clinician can follow quickly.",
+  },
+];
+
+function applyCareFocusToInput(input: string, focuses: CareFocus[]) {
+  if (focuses.length === 0) {
+    return input;
+  }
+
+  const instructions = CARE_FOCUS_OPTIONS.filter((option) =>
+    focuses.includes(option.id)
+  ).map((option) => `- ${option.instruction}`);
+
+  const normalizedInput = input.trim();
+
+  return [
+    normalizedInput || "Please help with this medical question.",
+    "Response preferences:",
+    ...instructions,
+  ].join("\n");
+}
 
 type MultimodalQueryResponse = {
   status?: "need_user_input" | "success";
@@ -320,6 +374,7 @@ function PureMultimodalInput({
 }) {
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
+  const { mutate } = useSWRConfig();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const attachmentsRef = useRef<Attachment[]>([]);
   const { width } = useWindowSize();
@@ -367,9 +422,11 @@ function PureMultimodalInput({
   const handleSlashSelect = (cmd: SlashCommand) => {
     setSlashOpen(false);
     setInput("");
+    const newChatPath = `/chat/new?fresh=${generateUUID()}`;
+
     switch (cmd.action) {
       case "new":
-        router.push("/");
+        router.push(newChatPath);
         break;
       case "clear":
         setMessages(() => []);
@@ -391,12 +448,13 @@ function PureMultimodalInput({
         toast("Delete this chat?", {
           action: {
             label: "Delete",
-            onClick: () => {
-              fetch(
+            onClick: async () => {
+              await fetch(
                 `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatId}`,
                 { method: "DELETE" }
               );
-              router.push("/");
+              await mutate(unstable_serialize(getChatHistoryPaginationKey));
+              router.push(newChatPath);
               toast.success("Chat deleted");
             },
           },
@@ -406,11 +464,12 @@ function PureMultimodalInput({
         toast("Delete all chats?", {
           action: {
             label: "Delete all",
-            onClick: () => {
-              fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
+            onClick: async () => {
+              await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
                 method: "DELETE",
               });
-              router.push("/");
+              await mutate(unstable_serialize(getChatHistoryPaginationKey));
+              router.push(newChatPath);
               toast.success("All chats deleted");
             },
           },
@@ -429,6 +488,7 @@ function PureMultimodalInput({
   const [slashOpen, setSlashOpen] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
   const [slashIndex, setSlashIndex] = useState(0);
+  const [careFocuses, setCareFocuses] = useState<CareFocus[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [regionSelectorOpen, setRegionSelectorOpen] = useState(false);
@@ -438,6 +498,8 @@ function PureMultimodalInput({
   const [isSubmittingRegionQuery, setIsSubmittingRegionQuery] = useState(false);
 
   const submitForm = useCallback(() => {
+    const preparedInput = applyCareFocusToInput(input, careFocuses);
+
     window.history.pushState(
       {},
       "",
@@ -455,7 +517,7 @@ function PureMultimodalInput({
         })),
         {
           type: "text",
-          text: input,
+          text: preparedInput,
         },
       ],
     });
@@ -469,6 +531,7 @@ function PureMultimodalInput({
     }
   }, [
     input,
+    careFocuses,
     setInput,
     attachments,
     sendMessage,
@@ -852,7 +915,7 @@ function PureMultimodalInput({
       }
 
       const submittedFile = attachment.file;
-      const submittedInput = input.trim();
+      const submittedInput = applyCareFocusToInput(input, careFocuses).trim();
       const submittedAttachment = { ...attachment };
 
       const formData = new FormData();
@@ -1136,6 +1199,7 @@ function PureMultimodalInput({
     },
     [
       chatId,
+      careFocuses,
       input,
       selectedVisibilityType,
       setAttachments,
@@ -1241,6 +1305,43 @@ function PureMultimodalInput({
           }
         }}
       >
+        {!editingMessage && (
+          <div className="flex flex-wrap items-center gap-2 px-3 pt-3">
+            <div className="pr-1 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/70">
+              Care focus
+            </div>
+            {CARE_FOCUS_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              const isActive = careFocuses.includes(option.id);
+
+              return (
+                <Button
+                  className={cn(
+                    "h-7 rounded-full border px-2.5 text-[12px] transition-colors",
+                    isActive
+                      ? "border-foreground/15 bg-foreground !text-background hover:bg-foreground/90 hover:!text-background"
+                      : "border-border/50 bg-background/70 text-muted-foreground hover:border-border hover:bg-muted/60 hover:text-foreground dark:border-border/60 dark:bg-background/60 dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground"
+                  )}
+                  key={option.id}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    setCareFocuses((current) =>
+                      current.includes(option.id)
+                        ? current.filter((focus) => focus !== option.id)
+                        : [...current, option.id]
+                    );
+                  }}
+                  type="button"
+                  variant="ghost"
+                >
+                  <Icon className="mr-1.5 size-3.5" />
+                  {option.label}
+                </Button>
+              );
+            })}
+          </div>
+        )}
+
         {(attachments.length > 0 || uploadQueue.length > 0) && (
           <div
             className="flex w-full self-start flex-row gap-2 overflow-x-auto px-3 pt-3 no-scrollbar"

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/sidebar";
 import { LoaderIcon } from "@/components/chat/shared/icons";
 import type { Chat } from "@/lib/db/schema";
-import { fetcher } from "@/lib/utils";
+import { fetcher, generateUUID } from "@/lib/utils";
 import { ChatItem } from "@/components/chat/sidebar/sidebar-history-item";
 
 type GroupedChats = {
@@ -101,6 +101,7 @@ export function getChatHistoryPaginationKey(
 export function SidebarHistory({ user }: { user: User | undefined }) {
   const { setOpenMobile } = useSidebar();
   const pathname = usePathname();
+  const router = useRouter();
   const id = pathname?.startsWith("/chat/") ? pathname.split("/")[2] : null;
 
   const {
@@ -115,7 +116,6 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     { fallbackData: [], revalidateOnFocus: false }
   );
 
-  const router = useRouter();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
@@ -127,31 +127,46 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
     ? paginatedChatHistories.every((page) => page.chats.length === 0)
     : false;
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     const chatToDelete = deleteId;
-    const isCurrentChat = pathname === `/chat/${chatToDelete}`;
+    const isDeletingActiveChat = pathname === `/chat/${chatToDelete}`;
 
     setShowDeleteDialog(false);
 
-    if (isCurrentChat) {
-      router.replace("/");
+    if (!chatToDelete) {
+      return;
     }
 
-    mutate((chatHistories) => {
+    const previousHistory = mutate((chatHistories) => {
       if (chatHistories) {
         return chatHistories.map((chatHistory) => ({
           ...chatHistory,
           chats: chatHistory.chats.filter((chat) => chat.id !== chatToDelete),
         }));
       }
-    });
+    }, { revalidate: false });
 
-    fetch(
-      `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatToDelete}`,
-      { method: "DELETE" }
-    );
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/chat?id=${chatToDelete}`,
+        { method: "DELETE" }
+      );
 
-    toast.success("Chat deleted");
+      if (!response.ok) {
+        throw new Error("Failed to delete chat");
+      }
+
+      await mutate();
+      if (isDeletingActiveChat) {
+        router.push(`/chat/new?fresh=${generateUUID()}`);
+      }
+      toast.success("Chat deleted");
+    } catch (error) {
+      await mutate(await previousHistory, { revalidate: false });
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete chat"
+      );
+    }
   };
 
   if (!user) {

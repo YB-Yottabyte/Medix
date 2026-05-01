@@ -62,11 +62,7 @@ export function ChatShell() {
     <>
       <div className="flex h-dvh w-full flex-row overflow-hidden">
         <div className="flex min-w-0 flex-1 flex-col bg-sidebar">
-          <ChatHeader
-            chatId={chatId}
-            isReadonly={isReadonly}
-            selectedVisibilityType={visibilityType}
-          />
+          <ChatHeader />
 
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:rounded-tl-[12px] md:border-t md:border-l md:border-border/40">
             <Messages

@@ -731,6 +731,11 @@ def multimodal_query():
             else "Please give first-aid guidance based on the image findings and retrieved context."
         )
 
+        # Cap total context to keep request under Groq's per-request token window.
+        max_context_chars = 6000
+        if len(context) > max_context_chars:
+            context = context[:max_context_chars].rstrip() + " ...[truncated]"
+
         ai_response = ai_handler.generate_multimodal_response(combined_query, context)
 
         # Extract video info from top result
@@ -752,7 +757,7 @@ def multimodal_query():
             is_emergency = True
         if is_emergency:
             emergency_warning = (
-                "⚠️ EMERGENCY DETECTED: This appears to be a life-threatening situation. "
+                "EMERGENCY DETECTED: This appears to be a life-threatening situation. "
                 "If this is a real emergency, CALL 911 IMMEDIATELY."
             )
 

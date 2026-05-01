@@ -3,7 +3,7 @@
 import type { UseChatHelpers } from "@ai-sdk/react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   createContext,
   type Dispatch,
@@ -52,24 +52,30 @@ type ActiveChatContextValue = {
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
 
 function extractChatId(pathname: string): string | null {
+  if (pathname === "/chat/new") {
+    return null;
+  }
+
   const match = pathname.match(/\/chat\/([^/]+)/);
   return match ? match[1] : null;
 }
 
 export function ActiveChatProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { setDataStream } = useDataStream();
   const { mutate } = useSWRConfig();
+  const routeKey = `${pathname}?${searchParams.toString()}`;
 
   const chatIdFromUrl = extractChatId(pathname);
   const isNewChat = !chatIdFromUrl;
   const newChatIdRef = useRef(generateUUID());
-  const prevPathnameRef = useRef(pathname);
+  const prevRouteKeyRef = useRef(routeKey);
 
-  if (isNewChat && prevPathnameRef.current !== pathname) {
+  if (isNewChat && prevRouteKeyRef.current !== routeKey) {
     newChatIdRef.current = generateUUID();
   }
-  prevPathnameRef.current = pathname;
+  prevRouteKeyRef.current = routeKey;
 
   const chatId = chatIdFromUrl ?? newChatIdRef.current;
 

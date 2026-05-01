@@ -202,6 +202,12 @@ class ProcedureRetriever:
                 video_id, start=answer_start, end=answer_end
             )
             if transcript_text:
+                # Cap transcript to keep total prompt under Groq's per-request token window.
+                max_transcript_chars = 3500
+                if len(transcript_text) > max_transcript_chars:
+                    transcript_text = (
+                        transcript_text[:max_transcript_chars].rstrip() + " ...[truncated]"
+                    )
                 context_parts.append("\nVideo Transcript (what the instructor actually says):")
                 context_parts.append(transcript_text)
                 if answer_start is not None and answer_end is not None:
@@ -237,7 +243,13 @@ class ProcedureRetriever:
                     f"  - {proc['question']} (match: {proc['similarity_score']:.0%})"
                 )
 
-        return "\n".join(context_parts)
+        full_context = "\n".join(context_parts)
+        # Final safety cap: keep total context under Groq's per-request token window
+        # regardless of which endpoint built it.
+        max_total_context_chars = 5000
+        if len(full_context) > max_total_context_chars:
+            full_context = full_context[:max_total_context_chars].rstrip() + " ...[truncated]"
+        return full_context
 
     def get_procedure_summary(self, question: str) -> dict:
         """Get summary of a specific procedure"""

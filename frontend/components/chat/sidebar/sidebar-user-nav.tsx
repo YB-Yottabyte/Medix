@@ -87,43 +87,38 @@ export function SidebarUserNav({ user }: { user: User }) {
             >
               {`Toggle ${resolvedTheme === "light" ? "dark" : "light"} mode`}
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild data-testid="user-nav-item-auth">
-              <button
-                className="w-full cursor-pointer text-[13px]"
-                onClick={() => {
-                  if (status === "loading") {
-                    toast({
-                      type: "error",
-                      description:
-                        "Checking authentication status, please try again!",
-                    });
+            {!isLocalAuthBypassed && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild data-testid="user-nav-item-auth">
+                  <button
+                    className="w-full cursor-pointer text-[13px]"
+                    onClick={() => {
+                      if (status === "loading") {
+                        toast({
+                          type: "error",
+                          description:
+                            "Checking authentication status, please try again!",
+                        });
 
-                    return;
-                  }
+                        return;
+                      }
 
-                  if (isLocalAuthBypassed) {
-                    toast({
-                      type: "success",
-                      description: "Local dev auth bypass is enabled.",
-                    });
-                  } else if (isGuest) {
-                    router.push("/login");
-                  } else {
-                    signOut({
-                      redirectTo: "/",
-                    });
-                  }
-                }}
-                type="button"
-              >
-                {isLocalAuthBypassed
-                  ? "Local dev mode"
-                  : isGuest
-                    ? "Login to your account"
-                    : "Sign out"}
-              </button>
-            </DropdownMenuItem>
+                      if (isGuest) {
+                        router.push("/login");
+                      } else {
+                        signOut({
+                          redirectTo: "/",
+                        });
+                      }
+                    }}
+                    type="button"
+                  >
+                    {isGuest ? "Login to your account" : "Sign out"}
+                  </button>
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

@@ -1,12 +1,11 @@
 "use client";
 
 import {
-  MessageSquareIcon,
   PanelLeftIcon,
   PenSquareIcon,
+  StethoscopeIcon,
   TrashIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "next-auth";
 import { useState } from "react";
@@ -18,6 +17,16 @@ import {
   SidebarHistory,
 } from "@/components/chat/sidebar/sidebar-history";
 import { SidebarUserNav } from "@/components/chat/sidebar/sidebar-user-nav";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Sidebar,
   SidebarContent,
@@ -33,20 +42,11 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { generateUUID } from "@/lib/utils";
 
 export function AppSidebar({ user }: { user: User | undefined }) {
   const router = useRouter();
@@ -54,18 +54,46 @@ export function AppSidebar({ user }: { user: User | undefined }) {
   const { mutate } = useSWRConfig();
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
 
-  const handleDeleteAll = () => {
+  const goToNewChat = () => {
+    router.push(`/chat/new?fresh=${generateUUID()}`);
+  };
+
+  const handleDeleteAll = async () => {
     setShowDeleteAllDialog(false);
-    router.replace("/");
-    mutate(unstable_serialize(getChatHistoryPaginationKey), [], {
-      revalidate: false,
-    });
 
-    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`, {
-      method: "DELETE",
-    });
+    const previousHistory = mutate(
+      unstable_serialize(getChatHistoryPaginationKey),
+      [],
+      {
+        revalidate: false,
+      }
+    );
 
-    toast.success("All chats deleted");
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete chats");
+      }
+
+      await mutate(unstable_serialize(getChatHistoryPaginationKey));
+      goToNewChat();
+      toast.success("All chats deleted");
+    } catch (error) {
+      await mutate(
+        unstable_serialize(getChatHistoryPaginationKey),
+        await previousHistory,
+        { revalidate: false }
+      );
+      toast.error(
+        error instanceof Error ? error.message : "Failed to delete chats"
+      );
+    }
   };
 
   return (
@@ -76,13 +104,16 @@ export function AppSidebar({ user }: { user: User | undefined }) {
             <SidebarMenuItem className="flex flex-row items-center justify-between">
               <div className="group/logo relative flex items-center justify-center">
                 <SidebarMenuButton
-                  asChild
                   className="size-8 !px-0 items-center justify-center group-data-[collapsible=icon]:group-hover/logo:opacity-0"
-                  tooltip="Chatbot"
+                  onClick={() => {
+                    setOpenMobile(false);
+                    router.push("/");
+                  }}
+                  tooltip="Go to homepage"
                 >
-                  <Link href="/" onClick={() => setOpenMobile(false)}>
-                    <MessageSquareIcon className="size-4 text-sidebar-foreground/50" />
-                  </Link>
+                  <span className="flex size-6 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
+                    <StethoscopeIcon className="size-3.5" />
+                  </span>
                 </SidebarMenuButton>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -113,7 +144,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                     className="h-8 rounded-lg border border-sidebar-border text-[13px] text-sidebar-foreground/70 transition-colors duration-150 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     onClick={() => {
                       setOpenMobile(false);
-                      router.push("/");
+                      goToNewChat();
                     }}
                     tooltip="New Chat"
                   >

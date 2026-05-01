@@ -143,6 +143,12 @@ async function enrichLatestUserMessageWithImageAnalysis(
       `- Closest verified procedure: ${analysis.matchedProcedure ?? "unknown"}`;
   }
 
+  // Avoid pasting raw data: URLs (often hundreds of KB of base64) into the
+  // prompt — they blow past Groq's per-request token budget. Only include a
+  // short reference for non-data URLs.
+  const imageRef = firstImage.url.startsWith("data:")
+    ? "(uploaded image)"
+    : firstImage.url;
   const enrichedMessage: ChatMessage = {
     ...lastMessage,
     parts: [
@@ -150,7 +156,7 @@ async function enrichLatestUserMessageWithImageAnalysis(
       {
         type: "text",
         text:
-          `Attached medical image: ${firstImage.url}\n` +
+          `Attached medical image: ${imageRef}\n` +
           (questionText
             ? `User question for the image: ${questionText}\n`
             : "") +
@@ -165,6 +171,13 @@ async function enrichLatestUserMessageWithImageAnalysis(
 function prepareMessagesForLanguageModel(
   uiMessages: ChatMessage[]
 ): ChatMessage[] {
+  // The latest user message has already been handled by
+  // enrichLatestUserMessageWithImageAnalysis (file parts removed, findings
+  // injected). For older messages, file parts are stale: the assistant's
+  // prior reply in the conversation history already contains the answer
+  // about that image, so we just drop the file parts. We never paste raw
+  // data: URLs into the prompt — they alone can exceed Groq's per-request
+  // token budget and confuse the model into asking for a re-upload.
   return uiMessages.map((message) => {
     if (message.role !== "user") {
       return message;
@@ -176,26 +189,9 @@ function prepareMessagesForLanguageModel(
     }
 
     const nonFileParts = message.parts.filter((part) => part.type !== "file");
-    const attachmentSummary = fileParts
-      .map((part, index) => {
-        const label = part.mediaType?.startsWith("image/")
-          ? "Attached medical image"
-          : "Attached file";
-        return `${label} ${index + 1}: ${part.url}`;
-      })
-      .join("\n");
-
     return {
       ...message,
-      parts: [
-        {
-          type: "text",
-          text:
-            `${attachmentSummary}\n` +
-            "Use the analyzeImage tool on the attached image URL before answering.\n",
-        },
-        ...nonFileParts,
-      ],
+      parts: nonFileParts,
     };
   });
 }
@@ -339,7 +335,15 @@ export async function POST(request: Request) {
     const modelReadyMessages = prepareMessagesForLanguageModel(
       imagePreparedMessages
     );
-    const modelMessages = await convertToModelMessages(modelReadyMessages);
+    // Cap conversation history sent to the model to avoid Groq's per-request
+    // token-window error ("Please reduce the length of the messages or completion").
+    // Keep the most recent N turns; the system prompt is added separately by streamText.
+    const MAX_HISTORY_MESSAGES = 12;
+    const trimmedReadyMessages =
+      modelReadyMessages.length > MAX_HISTORY_MESSAGES
+        ? modelReadyMessages.slice(-MAX_HISTORY_MESSAGES)
+        : modelReadyMessages;
+    const modelMessages = await convertToModelMessages(trimmedReadyMessages);
 
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
@@ -349,6 +353,11 @@ export async function POST(request: Request) {
           system: systemPrompt({ requestHints, supportsTools }),
           messages: modelMessages,
           temperature: 0.3,
+          // Cap completion size so input + output stays under Groq's per-request
+          // token budget (otherwise Groq returns "Please reduce the length of
+          // the messages or completion."). Reasoning models include reasoning
+          // tokens in this budget, so leave room for them.
+          maxOutputTokens: 2048,
           stopWhen: stepCountIs(5),
           experimental_activeTools:
             isReasoningModel && !supportsTools

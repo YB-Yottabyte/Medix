@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+
 type ProcedureOutput = {
   videoId?: string | null;
   videoUrl?: string | null;
@@ -17,6 +21,31 @@ type ProcedureOutput = {
 };
 
 export function ProcedureCard({ output }: { output: ProcedureOutput }) {
+  const { videoId, startTime, endTime, matchedProcedure, similarity, steps } =
+    output;
+  const autoplayKey = useMemo(
+    () =>
+      videoId
+        ? `medix-video-autoplayed:${videoId}:${Math.floor(startTime ?? 0)}:${Math.floor(endTime ?? 0)}`
+        : null,
+    [endTime, startTime, videoId]
+  );
+  const [shouldAutoplay, setShouldAutoplay] = useState(false);
+
+  useEffect(() => {
+    if (!autoplayKey) {
+      setShouldAutoplay(false);
+      return;
+    }
+
+    const hasAutoplayed = window.localStorage.getItem(autoplayKey) === "true";
+    setShouldAutoplay(!hasAutoplayed);
+
+    if (!hasAutoplayed) {
+      window.localStorage.setItem(autoplayKey, "true");
+    }
+  }, [autoplayKey]);
+
   if (output?.unavailable) {
     return (
       <div className="w-full max-w-[560px] rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-800 text-sm">
@@ -41,12 +70,10 @@ export function ProcedureCard({ output }: { output: ProcedureOutput }) {
     );
   }
 
-  const { videoId, startTime, endTime, matchedProcedure, similarity, steps } =
-    output;
   const embedSrc = videoId
     ? `https://www.youtube.com/embed/${videoId}?start=${Math.floor(startTime ?? 0)}${
         endTime ? `&end=${Math.floor(endTime)}` : ""
-      }&rel=0&modestbranding=1`
+      }&autoplay=${shouldAutoplay ? "1" : "0"}&mute=1&rel=0&modestbranding=1&playsinline=1`
     : null;
 
   return (
