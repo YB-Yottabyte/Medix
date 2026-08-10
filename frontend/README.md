@@ -1,10 +1,10 @@
 <a href="https://chatbot.ai-sdk.dev/demo">
   <img alt="Chatbot" src="app/(chat)/opengraph-image.png">
-  <h1 align="center">Chatbot</h1>
+  <h1 align="center">Medix Chat</h1>
 </a>
 
 <p align="center">
-    Chatbot (formerly AI Chatbot) is a free, open-source template built with Next.js and the AI SDK that helps you quickly build powerful chatbot applications.
+    Medix Chat is the hands-free medical-procedure QA interface for the Medix research prototype.
 </p>
 
 <p align="center">
@@ -16,6 +16,15 @@
 </p>
 <br/>
 
+## Medix Integration
+
+The chat agent can search the MedVidQA procedure corpus and analyze an attached
+medical image through the companion FastAPI backend. Copy `.env.example` to
+`.env.local`, set `MEDIX_API_URL` to the backend address, and start the FastAPI
+service before asking procedure questions. This research software is not a
+medical device and is not a substitute for emergency services or professional
+medical advice.
+
 ## Features
 
 - [Next.js](https://nextjs.org) App Router
@@ -24,27 +33,29 @@
 - [AI SDK](https://ai-sdk.dev/docs/introduction)
   - Unified API for generating text, structured objects, and tool calls with LLMs
   - Hooks for building dynamic chat and generative user interfaces
-  - Supports OpenAI, Anthropic, Google, xAI, and other model providers via AI Gateway
+  - Direct Groq integration for reproducible Medix model evaluation
 - [shadcn/ui](https://ui.shadcn.com)
   - Styling with [Tailwind CSS](https://tailwindcss.com)
   - Component primitives from [Radix UI](https://radix-ui.com) for accessibility and flexibility
 - Data Persistence
   - [Neon Serverless Postgres](https://vercel.com/marketplace/neon) for saving chat history and user data
   - [Vercel Blob](https://vercel.com/storage/blob) for efficient file storage
-- [Auth.js](https://authjs.dev)
-  - Simple and secure authentication
+- [Clerk](https://clerk.com/docs/nextjs/getting-started/quickstart)
+  - Registered-user authentication with the existing Medix login and sign-up UI
+  - Auth.js remains scoped to anonymous guest-chat sessions during migration
 
 ## Model Providers
 
-This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) to access multiple AI models through a unified interface. Models are configured in `lib/ai/models.ts` with per-model provider routing. Included models: Mistral, Moonshot, DeepSeek, OpenAI, and xAI.
+Medix calls Groq directly through `@ai-sdk/groq`. The current chat and title
+model is `openai/gpt-oss-20b`. GPT-OSS 120B can be added as a comparison after
+it is enabled in the Groq project's model limits. Set `GROQ_API_KEY` in
+`.env.local`. Spoken responses are generated locally by Kokoro through the
+FastAPI backend and never use the Groq API key.
 
-### AI Gateway Authentication
-
-**For Vercel deployments**: Authentication is handled automatically via OIDC tokens.
-
-**For non-Vercel deployments**: You need to provide an AI Gateway API key by setting the `AI_GATEWAY_API_KEY` environment variable in your `.env.local` file.
-
-With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
+The model picker also offers local `Qwen 3.5 9B` through Ollama. Set
+`OLLAMA_BASE_URL` and `OLLAMA_CHAT_MODEL` in `.env.local`; the defaults are
+`http://127.0.0.1:11434` and `qwen3.5:9b-q4_K_M`. Both selectable models use
+the same Medix system prompt and canonical evidence-retrieval tool.
 
 ## Deploy Your Own
 
@@ -54,13 +65,16 @@ You can deploy your own version of Chatbot to Vercel with one click:
 
 ## Running locally
 
-You will need to use the environment variables [defined in `.env.example`](.env.example) to run Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
+Use the environment variables [defined in `.env.example`](.env.example) to run
+Medix locally.
+
+Create a Clerk development application, enable email/password with email-code
+verification, and optionally enable Apple, GitHub, and Google social
+connections. Then set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and
+`CLERK_SECRET_KEY` in `.env.local`. Clerk users are linked on first request to
+the existing Medix UUID user record, preserving saved-chat ownership.
 
 > Note: You should not commit your `.env` file or it will expose secrets that will allow others to control access to your various AI and authentication provider accounts.
-
-1. Install Vercel CLI: `npm i -g vercel`
-2. Link local instance with Vercel and GitHub accounts (creates `.vercel` directory): `vercel link`
-3. Download your environment variables: `vercel env pull`
 
 ```bash
 pnpm install

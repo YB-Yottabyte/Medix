@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Medical Procedure Q&A</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/styles.css') }}">
 </head>
 <body>
     <nav class="navbar">
@@ -217,6 +217,6 @@
     </footer>
 
     <script src="https://www.youtube.com/iframe_api"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}?v=20260323003"></script>
+    <script src="{{ url_for('static', path='js/app.js') }}?v=20260323003"></script>
 </body>
 </html>

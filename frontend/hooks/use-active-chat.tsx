@@ -45,8 +45,6 @@ type ActiveChatContextValue = {
   votes: Vote[] | undefined;
   currentModelId: string;
   setCurrentModelId: (id: string) => void;
-  showCreditCardAlert: boolean;
-  setShowCreditCardAlert: Dispatch<SetStateAction<boolean>>;
 };
 
 const ActiveChatContext = createContext<ActiveChatContextValue | null>(null);
@@ -80,7 +78,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   }, [currentModelId]);
 
   const [input, setInput] = useState("");
-  const [showCreditCardAlert, setShowCreditCardAlert] = useState(false);
 
   const { data: chatData, isLoading } = useSWR(
     isNewChat
@@ -158,9 +155,7 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       mutate(unstable_serialize(getChatHistoryPaginationKey));
     },
     onError: (error) => {
-      if (error.message?.includes("AI Gateway requires a valid credit card")) {
-        setShowCreditCardAlert(true);
-      } else if (error instanceof ChatbotError) {
+      if (error instanceof ChatbotError) {
         toast({ type: "error", description: error.message });
       } else {
         toast({
@@ -191,11 +186,14 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (prevChatIdRef.current !== chatId) {
       prevChatIdRef.current = chatId;
-      if (isNewChat) {
-        setMessages([]);
-      }
+      // Clear on every switch, not only for the "/" route: navigating to a
+      // fresh /chat/<id> must not inherit the previous conversation or its
+      // evidence workspace. Existing chats are repopulated from chatData.
+      setMessages([]);
+      setInput("");
+      setDataStream([]);
     }
-  }, [chatId, isNewChat, setMessages]);
+  }, [chatId, setMessages, setDataStream]);
 
   useEffect(() => {
     if (chatData && !isNewChat) {
@@ -262,8 +260,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       votes,
       currentModelId,
       setCurrentModelId,
-      showCreditCardAlert,
-      setShowCreditCardAlert,
     }),
     [
       chatId,
@@ -281,7 +277,6 @@ export function ActiveChatProvider({ children }: { children: ReactNode }) {
       isLoading,
       votes,
       currentModelId,
-      showCreditCardAlert,
     ]
   );
 

@@ -1,10 +1,12 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthStateProvider } from "@/components/chat/auth-state-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { isClerkConfigured } from "@/lib/auth/config";
 
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("http://localhost:3000"),
@@ -53,6 +55,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clerkEnabled = isClerkConfigured();
+  const application = (
+    <AuthStateProvider clerkEnabled={clerkEnabled}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        disableTransitionOnChange
+        enableSystem
+      >
+        <TooltipProvider>{children}</TooltipProvider>
+      </ThemeProvider>
+    </AuthStateProvider>
+  );
+
   return (
     <html
       className={`${geist.variable} ${geistMono.variable}`}
@@ -68,18 +84,18 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          disableTransitionOnChange
-          enableSystem
-        >
-          <SessionProvider
-            basePath={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/auth`}
+        {clerkEnabled ? (
+          <ClerkProvider
+            signInFallbackRedirectUrl="/"
+            signInUrl="/login"
+            signUpFallbackRedirectUrl="/"
+            signUpUrl="/register"
           >
-            <TooltipProvider>{children}</TooltipProvider>
-          </SessionProvider>
-        </ThemeProvider>
+            {application}
+          </ClerkProvider>
+        ) : (
+          application
+        )}
       </body>
     </html>
   );

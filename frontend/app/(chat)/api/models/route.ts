@@ -1,20 +1,18 @@
-import { getAllGatewayModels, getCapabilities, isDemo } from "@/lib/ai/models";
+import { chatModels, getCapabilities, SOL_CHAT_MODEL } from "@/lib/ai/models";
+import { isSolAvailable } from "@/lib/ai/sol";
 
 export async function GET() {
-  const headers = {
-    "Cache-Control": "public, max-age=86400, s-maxage=86400",
-  };
+  const capabilities = await getCapabilities();
 
-  const curatedCapabilities = await getCapabilities();
+  // Sol depends on a live SSH tunnel and GPU job, so its reachability is
+  // probed per request and never cached. Everything else is static.
+  const solOnline = await isSolAvailable();
+  const models = chatModels.map((model) =>
+    model.id === SOL_CHAT_MODEL ? { ...model, offline: !solOnline } : model
+  );
 
-  if (isDemo) {
-    const models = await getAllGatewayModels();
-    const capabilities = Object.fromEntries(
-      models.map((m) => [m.id, curatedCapabilities[m.id] ?? m.capabilities])
-    );
-
-    return Response.json({ capabilities, models }, { headers });
-  }
-
-  return Response.json(curatedCapabilities, { headers });
+  return Response.json(
+    { capabilities, models },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

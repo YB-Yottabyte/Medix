@@ -3,7 +3,6 @@
 import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
 import { motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
-import type { User } from "next-auth";
 import { useState } from "react";
 import { toast } from "sonner";
 import useSWRInfinite from "swr/infinite";
@@ -20,11 +19,11 @@ import {
 import {
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { Chat } from "@/lib/db/schema";
+import type { AppUser } from "@/lib/auth/types";
 import { fetcher } from "@/lib/utils";
 import { LoaderIcon } from "./icons";
 import { ChatItem } from "./sidebar-history-item";
@@ -98,7 +97,13 @@ export function getChatHistoryPaginationKey(
   return `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/history?ending_before=${firstChatFromPage.id}&limit=${PAGE_SIZE}`;
 }
 
-export function SidebarHistory({ user }: { user: User | undefined }) {
+export function SidebarHistory({
+  user,
+  searchQuery = "",
+}: {
+  user: AppUser | undefined;
+  searchQuery?: string;
+}) {
   const { setOpenMobile } = useSidebar();
   const pathname = usePathname();
   const id = pathname?.startsWith("/chat/") ? pathname.split("/")[2] : null;
@@ -155,28 +160,17 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   };
 
   if (!user) {
-    return (
-      <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-        <SidebarGroupContent>
-          <div className="flex w-full flex-row items-center justify-center gap-2 px-2 text-[13px] text-sidebar-foreground/60">
-            Login to save and revisit previous chats!
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    );
+    return null;
   }
 
   if (isLoading) {
     return (
-      <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
-          History
-        </SidebarGroupLabel>
+      <SidebarGroup className="px-3 pt-2 group-data-[collapsible=icon]:hidden">
         <SidebarGroupContent>
           <div className="flex flex-col gap-0.5 px-1">
-            {[44, 32, 28, 64, 52].map((item) => (
+            {[58, 42, 66, 48].map((item) => (
               <div
-                className="flex h-8 items-center gap-2 rounded-lg px-2"
+                className="flex h-9 items-center gap-2 rounded-lg px-2"
                 key={item}
               >
                 <div
@@ -196,41 +190,40 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
   }
 
   if (hasEmptyChatHistory) {
-    return (
-      <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
-          History
-        </SidebarGroupLabel>
-        <SidebarGroupContent>
-          <div className="flex w-full flex-row items-center justify-center gap-2 px-2 text-[13px] text-sidebar-foreground/60">
-            Your conversations will appear here once you start chatting!
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    );
+    return null;
   }
 
   return (
     <>
-      <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-        <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
-          History
-        </SidebarGroupLabel>
+      <SidebarGroup className="px-3 pt-2 pb-3 group-data-[collapsible=icon]:hidden">
         <SidebarGroupContent>
           <SidebarMenu>
             {paginatedChatHistories &&
               (() => {
-                const chatsFromHistory = paginatedChatHistories.flatMap(
-                  (paginatedChatHistory) => paginatedChatHistory.chats
-                );
+                const normalizedSearch = searchQuery.trim().toLowerCase();
+                const chatsFromHistory = paginatedChatHistories
+                  .flatMap((paginatedChatHistory) => paginatedChatHistory.chats)
+                  .filter(
+                    (chat) =>
+                      !normalizedSearch ||
+                      chat.title.toLowerCase().includes(normalizedSearch)
+                  );
+
+                if (chatsFromHistory.length === 0) {
+                  return (
+                    <div className="px-2 py-3 text-[11.5px] text-sidebar-foreground/50">
+                      No chats found
+                    </div>
+                  );
+                }
 
                 const groupedChats = groupChatsByDate(chatsFromHistory);
 
                 return (
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3">
                     {groupedChats.today.length > 0 && (
                       <div>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                        <div className="px-2 pt-1 pb-1.5 text-[12px] font-medium text-sidebar-foreground/55">
                           Today
                         </div>
                         {groupedChats.today.map((chat) => (
@@ -250,7 +243,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                     {groupedChats.yesterday.length > 0 && (
                       <div>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                        <div className="px-2 pt-1 pb-1.5 text-[12px] font-medium text-sidebar-foreground/55">
                           Yesterday
                         </div>
                         {groupedChats.yesterday.map((chat) => (
@@ -270,7 +263,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                     {groupedChats.lastWeek.length > 0 && (
                       <div>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                        <div className="px-2 pt-1 pb-1.5 text-[12px] font-medium text-sidebar-foreground/55">
                           Last 7 days
                         </div>
                         {groupedChats.lastWeek.map((chat) => (
@@ -290,7 +283,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                     {groupedChats.lastMonth.length > 0 && (
                       <div>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                        <div className="px-2 pt-1 pb-1.5 text-[12px] font-medium text-sidebar-foreground/55">
                           Last 30 days
                         </div>
                         {groupedChats.lastMonth.map((chat) => (
@@ -310,7 +303,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
 
                     {groupedChats.older.length > 0 && (
                       <div>
-                        <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                        <div className="px-2 pt-1 pb-1.5 text-[12px] font-medium text-sidebar-foreground/55">
                           Older
                         </div>
                         {groupedChats.older.map((chat) => (

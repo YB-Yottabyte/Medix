@@ -1,0 +1,60 @@
+web:
+  host: "0.0.0.0"
+  port: 5001
+  debug: true
+  max_content_length: 10485760
+
+database:
+  embedding_model: "all-MiniLM-L6-v2"
+  top_k: 5
+  similarity_threshold: 0.25
+  lexical_weight: 0.15
+  qdrant_url: "http://localhost:6333"
+  qdrant_collection: "medical_video_transcripts"
+
+ai:
+  provider: "groq"
+  groq:
+    api_key: ""
+    model: "openai/gpt-oss-20b"
+    temperature: 0.3
+    max_tokens: 800
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "qwen3.5:9b-q4_K_M"
+    temperature: 0.3
+    max_tokens: 512
+  huggingface:
+    api_key: ""
+    model: "mistralai/Mistral-7B-Instruct-v0.2"
+    temperature: 0.3
+    max_tokens: 800
+
+vision:
+  model: "qwen/qwen3.6-27b"
+  max_image_size: 10485760
+  top_k_matches: 5
+
+# Canonical retrieval -> localization -> evidence -> answer runtime.
+# It fails closed when required local evidence or configured models are unavailable.
+research_pipeline:
+  enabled: true
+  top_k: 5
+  retrieval_weight: 0.0
+  lexical_weight: 0.15
+  transcript_weight: 0.5
+  window_seconds: 90
+  stride_seconds: 45
+  frames_per_window: 3
+  frames_per_bundle: 3
+  # extractive | structured_groq | structured_ollama
+  answer_model: "structured_ollama"
+  # transcript_window | multimodal_window | ccal
+  localizer_strategy: "multimodal_window"
+  # Restrict the live demo to locally validated video/transcript evidence.
+  supported_collection_only: true
+  ccal_cycle_weight: 0.25
+
+safety:
+  # Tune on validation data. Do not select this threshold using the test set.
+  answer_confidence_threshold: 0.35

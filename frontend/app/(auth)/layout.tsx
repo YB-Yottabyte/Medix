@@ -1,7 +1,6 @@
 import { ArrowLeftIcon } from "lucide-react";
 import Link from "next/link";
-import { SparklesIcon } from "@/components/chat/icons";
-import { Preview } from "@/components/chat/preview";
+import { Toaster } from "sonner";
 
 export default function AuthLayout({
   children,
@@ -9,34 +8,47 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-dvh w-screen bg-sidebar">
-      <div className="flex w-full flex-col bg-background p-8 xl:w-[600px] xl:shrink-0 xl:rounded-r-2xl xl:border-r xl:border-border/40 md:p-16">
+    <div className="relative min-h-dvh overflow-hidden bg-white font-sans text-slate-950">
+      <Toaster
+        position="top-center"
+        theme="light"
+        toastOptions={{
+          className:
+            "!bg-white !text-slate-950 !border-slate-200 !shadow-[0_16px_40px_rgba(15,23,42,0.12)]",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-[-18rem] left-1/2 h-[34rem] w-[54rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(186,230,253,0.24)_0%,rgba(224,242,254,0.1)_42%,transparent_72%)] blur-2xl"
+      />
+
+      <header className="absolute inset-x-0 top-0 z-10 flex h-20 items-center justify-between px-5 sm:px-8 lg:px-10">
         <Link
-          className="flex w-fit items-center gap-1.5 text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          aria-label="Medix home"
+          className="text-[19px] font-semibold tracking-[-0.045em] text-slate-950 transition-opacity hover:opacity-65"
+          href="/"
+        >
+          Medix
+        </Link>
+        <Link
+          className="flex h-9 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-normal text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-950"
           href="/"
         >
           <ArrowLeftIcon className="size-3.5" />
-          Back
+          Back to Medix
         </Link>
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-10">
-          <div className="flex flex-col gap-2">
-            <div className="mb-2 flex size-9 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground ring-1 ring-border/50">
-              <SparklesIcon size={14} />
-            </div>
-            {children}
-          </div>
-        </div>
-      </div>
+      </header>
 
-      <div className="hidden flex-1 flex-col overflow-hidden pl-12 xl:flex">
-        <div className="flex items-center gap-1.5 pt-8 text-[13px] text-muted-foreground/50">
-          <span className="font-medium text-muted-foreground">MedVidQA</span>
-          <span>multimodal medical assistant</span>
-        </div>
-        <div className="flex-1 pt-4">
-          <Preview />
-        </div>
-      </div>
+      <main className="relative z-[1] grid min-h-dvh place-items-center px-5 pt-24 pb-20 sm:px-8">
+        <section className="w-full max-w-[390px] animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {children}
+        </section>
+      </main>
+
+      <footer className="absolute inset-x-0 bottom-0 z-10 px-5 pb-6 text-center text-[10.5px] text-slate-400 sm:px-8">
+        Medix is research software and is not a substitute for professional
+        medical care.
+      </footer>
     </div>
   );
 }

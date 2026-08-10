@@ -6,23 +6,40 @@ import {
   generateId,
   stepCountIs,
   streamText,
+  type UIMessageStreamWriter,
 } from "ai";
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import type { UserType } from "@/app/(auth)/auth";
+import type { UserType } from "@/lib/auth/types";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import { getAppSession } from "@/lib/dev-session";
 import {
   allowedModelIds,
   chatModels,
   DEFAULT_CHAT_MODEL,
   getCapabilities,
+  QWEN_CHAT_MODEL,
 } from "@/lib/ai/models";
 import { type RequestHints, systemPrompt } from "@/lib/ai/prompts";
-import { getLanguageModel } from "@/lib/ai/providers";
-import { analyzeImage } from "@/lib/ai/tools/analyze-image";
-import { searchProcedure } from "@/lib/ai/tools/search-procedure";
+import {
+  getFollowUpModel,
+  getLanguageModel,
+  providerOptionsKey,
+} from "@/lib/ai/providers";
+import { isSmallTalk, SMALL_TALK_PROMPT } from "@/lib/ai/small-talk";
+import {
+  isSolAvailable,
+  isSolConnectivityError,
+  isSolModel,
+  SOL_UNAVAILABLE_MESSAGE,
+  solFallbackEnabled,
+} from "@/lib/ai/sol";
+import { contextualizeMedicalQuery } from "@/lib/ai/query-contextualizer";
+import {
+  generateVerifiedFollowUp,
+  linkFollowUpTimestamps,
+} from "@/lib/ai/medical-follow-up";
+import { createSearchProcedureTool } from "@/lib/ai/tools/search-procedure";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -36,14 +53,37 @@ import {
   updateMessage,
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
+import { getAppSession } from "@/lib/dev-session";
 import { ChatbotError } from "@/lib/errors";
 import { checkIpRateLimit } from "@/lib/ratelimit";
 import type { ChatMessage } from "@/lib/types";
-import { convertToUIMessages, generateUUID } from "@/lib/utils";
+import {
+  convertToUIMessages,
+  generateUUID,
+  getTextFromMessage,
+} from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
 import { type PostRequestBody, postRequestBodySchema } from "./schema";
 
 export const maxDuration = 60;
+
+async function writeProgressiveAnswer(
+  writer: UIMessageStreamWriter<ChatMessage>,
+  answer: string
+) {
+  const textId = generateUUID();
+  const words = answer.match(/\S+\s*/g) ?? [answer];
+  writer.write({ type: "text-start", id: textId });
+  for (let index = 0; index < words.length; index += 4) {
+    writer.write({
+      type: "text-delta",
+      id: textId,
+      delta: words.slice(index, index + 4).join(""),
+    });
+    await new Promise((resolve) => setTimeout(resolve, 18));
+  }
+  writer.write({ type: "text-end", id: textId });
+}
 
 function getStreamContext() {
   try {
@@ -52,8 +92,6 @@ function getStreamContext() {
     return null;
   }
 }
-
-export { getStreamContext };
 
 export async function POST(request: Request) {
   let requestBody: PostRequestBody;
@@ -178,36 +216,155 @@ export async function POST(request: Request) {
       });
     }
 
-    const modelConfig = chatModels.find((m) => m.id === chatModel);
     const modelCapabilities = await getCapabilities();
     const capabilities = modelCapabilities[chatModel];
     const isReasoningModel = capabilities?.reasoning === true;
     const supportsTools = capabilities?.tools === true;
 
     const modelMessages = await convertToModelMessages(uiMessages);
+    const latestUserMessage = [...uiMessages]
+      .reverse()
+      .find((currentMessage) => currentMessage.role === "user");
+    const latestQuestion = latestUserMessage
+      ? getTextFromMessage(latestUserMessage)
+      : "";
+    const history =
+      latestUserMessage && uiMessages.at(-1)?.id === latestUserMessage.id
+        ? uiMessages.slice(0, -1)
+        : uiMessages;
+    // A Sol-backed selection depends on a live SSH tunnel and GPU job. Probe
+    // once, cheaply, so an expired session becomes a clear message instead of
+    // a hang or a raw connection error.
+    let effectiveChatModel = chatModel;
+    let solUnavailable = false;
+    if (isSolModel(chatModel) && !(await isSolAvailable())) {
+      solUnavailable = true;
+      if (solFallbackEnabled()) {
+        effectiveChatModel = QWEN_CHAT_MODEL;
+      }
+    }
+    const languageModel = getLanguageModel(effectiveChatModel);
+    const modelConfig = chatModels.find((m) => m.id === effectiveChatModel);
+    // Greetings, thanks, and "what can you do" never reach retrieval.
+    const smallTalk = isSmallTalk(latestQuestion);
+    const queryContext = await contextualizeMedicalQuery({
+      history,
+      latestQuestion,
+      rewriteModel: languageModel,
+    });
+    const searchProcedure = createSearchProcedureTool({
+      retrievalQuery: queryContext.query,
+      queryWasContextualized: queryContext.wasContextualized,
+      activeEvidence:
+        queryContext.retrievalDecision === "continue_current_evidence"
+          ? queryContext.context.activeEvidence
+          : null,
+      continueCurrentEvidenceFirst:
+        queryContext.retrievalDecision === "continue_current_evidence",
+      followUpQuestion: latestQuestion,
+    });
 
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
+        if (solUnavailable && !solFallbackEnabled()) {
+          await writeProgressiveAnswer(dataStream, SOL_UNAVAILABLE_MESSAGE);
+          return;
+        }
+
+        const activeEvidence = queryContext.context.activeEvidence;
+        if (
+          queryContext.retrievalDecision === "continue_current_evidence" &&
+          activeEvidence
+        ) {
+          // The local model runs three passes before any text appears, so tell
+          // the interface what this turn is doing instead of leaving a bare
+          // "Thinking..." for the whole time.
+          dataStream.write({
+            type: "data-follow-up-status",
+            data: "Checking the current video",
+          });
+
+          // A same-topic follow-up is answered here as text only: no tool call,
+          // no /api/query, no new media workspace, and always on local Qwen
+          // rather than the model selected in the interface.
+          const followUp = await generateVerifiedFollowUp({
+            model: getFollowUpModel(),
+            question: latestQuestion,
+            activeEvidence,
+            recentConversation: queryContext.context.recentTranscript,
+          });
+          const answer = activeEvidence.evidenceBundleId
+            ? linkFollowUpTimestamps(
+                followUp.answer,
+                activeEvidence.evidenceBundleId
+              )
+            : followUp.answer;
+          await writeProgressiveAnswer(dataStream, answer);
+
+          // Provenance for the answer just written. Spoken transcript text and
+          // timestamps only: no cue IDs, no bundle internals.
+          if (followUp.citedCues.length > 0) {
+            dataStream.write({
+              type: "data-follow-up-evidence",
+              data: {
+                evidenceBundleId: activeEvidence.evidenceBundleId,
+                cues: followUp.citedCues,
+              },
+            });
+          }
+
+          if (titlePromise) {
+            const title = await titlePromise;
+            dataStream.write({ type: "data-chat-title", data: title });
+            updateChatTitleById({ chatId: id, title });
+          }
+          return;
+        }
+
         const result = streamText({
-          model: getLanguageModel(chatModel),
-          system: systemPrompt({ requestHints, supportsTools }),
+          model: languageModel,
+          system: smallTalk
+            ? `${systemPrompt({ requestHints, supportsTools })}\n\n${SMALL_TALK_PROMPT}`
+            : systemPrompt({
+                requestHints,
+                supportsTools,
+                retrievalQuery: queryContext.query,
+                retrievalDecision: queryContext.retrievalDecision,
+                activeProcedure: queryContext.context.activeProcedure,
+              }),
           messages: modelMessages,
           temperature: 0.3,
           stopWhen: stepCountIs(5),
           experimental_activeTools:
-            isReasoningModel && !supportsTools
+            smallTalk || (isReasoningModel && !supportsTools)
               ? []
-              : ["searchProcedure", "analyzeImage"],
+              : ["searchProcedure"],
           providerOptions: {
             ...(modelConfig?.reasoningEffort && {
-              openai: { reasoningEffort: modelConfig.reasoningEffort },
+              [providerOptionsKey(effectiveChatModel)]: {
+                reasoningEffort: modelConfig.reasoningEffort,
+              },
             }),
           },
           tools: {
             searchProcedure,
-            analyzeImage,
           },
+          prepareStep:
+            !smallTalk &&
+            supportsTools &&
+            queryContext.retrievalDecision === "continue_current_evidence"
+              ? ({ stepNumber }) =>
+                  stepNumber === 0
+                    ? {
+                        activeTools: ["searchProcedure"],
+                        toolChoice: {
+                          type: "tool" as const,
+                          toolName: "searchProcedure" as const,
+                        },
+                      }
+                    : undefined
+              : undefined,
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
@@ -263,14 +420,10 @@ export async function POST(request: Request) {
         }
       },
       onError: (error) => {
-        if (
-          error instanceof Error &&
-          error.message?.includes(
-            "AI Gateway requires a valid credit card on file to service requests"
-          )
-        ) {
-          return "AI Gateway requires a valid credit card on file to service requests. Please visit https://vercel.com/d?to=%2F%5Bteam%5D%2F%7E%2Fai%3Fmodal%3Dadd-credit-card to add a card and unlock your free credits.";
+        if (isSolModel(effectiveChatModel) && isSolConnectivityError(error)) {
+          return SOL_UNAVAILABLE_MESSAGE;
         }
+        console.error("Chat stream error:", error);
         return "Oops, an error occurred!";
       },
     });
@@ -301,15 +454,6 @@ export async function POST(request: Request) {
 
     if (error instanceof ChatbotError) {
       return error.toResponse();
-    }
-
-    if (
-      error instanceof Error &&
-      error.message?.includes(
-        "AI Gateway requires a valid credit card on file to service requests"
-      )
-    ) {
-      return new ChatbotError("bad_request:activate_gateway").toResponse();
     }
 
     console.error("Unhandled error in chat API:", error, { vercelId });

@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { QWEN_CHAT_MODEL } from "@/lib/ai/models";
 
-const MODEL_BUTTON_REGEX = /Kimi|Codestral|Mistral|DeepSeek|GPT|Grok/i;
+const MODEL_BUTTON_REGEX = /GPT-OSS|Qwen/i;
+const CHAT_URL = "/chat/00000000-0000-4000-8000-000000000001";
 
 test.describe("Model Selector", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto(CHAT_URL);
   });
 
   test("displays a model button", async ({ page }) => {
@@ -20,6 +22,7 @@ test.describe("Model Selector", () => {
       .locator("button")
       .filter({ hasText: MODEL_BUTTON_REGEX })
       .first();
+    await expect(modelButton).toHaveAttribute("type", "button");
     await modelButton.click();
 
     await expect(page.getByPlaceholder("Search models...")).toBeVisible();
@@ -33,9 +36,9 @@ test.describe("Model Selector", () => {
     await modelButton.click();
 
     const searchInput = page.getByPlaceholder("Search models...");
-    await searchInput.fill("Mistral");
+    await searchInput.fill("Qwen");
 
-    await expect(page.getByText("Mistral Small").first()).toBeVisible();
+    await expect(page.getByText("Qwen 3.5 9B").first()).toBeVisible();
   });
 
   test("can close model selector by clicking outside", async ({ page }) => {
@@ -52,15 +55,16 @@ test.describe("Model Selector", () => {
     await expect(page.getByPlaceholder("Search models...")).not.toBeVisible();
   });
 
-  test("shows model provider groups", async ({ page }) => {
+  test("shows available models and their providers", async ({ page }) => {
     const modelButton = page
       .locator("button")
       .filter({ hasText: MODEL_BUTTON_REGEX })
       .first();
     await modelButton.click();
 
-    await expect(page.getByText("Mistral")).toBeVisible();
-    await expect(page.getByText("Moonshot")).toBeVisible();
+    await expect(page.getByText("Available")).toBeVisible();
+    await expect(page.getByText("Provider: Groq")).toBeVisible();
+    await expect(page.getByText(/Provider: Ollama/)).toBeVisible();
   });
 
   test("can select a different model", async ({ page }) => {
@@ -70,12 +74,24 @@ test.describe("Model Selector", () => {
       .first();
     await modelButton.click();
 
-    await page.getByText("Mistral Small").first().click();
+    await page.getByText("Qwen 3.5 9B").first().click();
 
     await expect(page.getByPlaceholder("Search models...")).not.toBeVisible();
 
     await expect(
-      page.locator("button").filter({ hasText: "Mistral Small" }).first()
+      page.locator("button").filter({ hasText: "Qwen 3.5 9B" }).first()
     ).toBeVisible();
+
+    await page.getByTestId("model-selector").filter({ visible: true }).click();
+    await expect(
+      page.getByRole("option", {
+        name: "Use Qwen 3.5 9B, currently selected",
+      })
+    ).toHaveAttribute("data-active-model", "true");
+
+    const modelCookie = (await page.context().cookies()).find(
+      (cookie) => cookie.name === "chat-model"
+    );
+    expect(decodeURIComponent(modelCookie?.value ?? "")).toBe(QWEN_CHAT_MODEL);
   });
 });

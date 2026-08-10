@@ -1,12 +1,47 @@
 import { compare } from "bcrypt-ts";
 import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
+import Apple from "next-auth/providers/apple";
 import Credentials from "next-auth/providers/credentials";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
 import { DUMMY_PASSWORD } from "@/lib/constants";
-import { createGuestUser, getUser } from "@/lib/db/queries";
+import {
+  createGuestUser,
+  getOrCreateOAuthUser,
+  getUser,
+} from "@/lib/db/queries";
+import type { UserType } from "@/lib/auth/types";
 import { authConfig } from "./auth.config";
 
-export type UserType = "guest" | "regular";
+export type { UserType } from "@/lib/auth/types";
+
+const oauthProviders = [
+  ...(process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET
+    ? [
+        Apple({
+          clientId: process.env.AUTH_APPLE_ID,
+          clientSecret: process.env.AUTH_APPLE_SECRET,
+        }),
+      ]
+    : []),
+  ...(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET
+    ? [
+        GitHub({
+          clientId: process.env.AUTH_GITHUB_ID,
+          clientSecret: process.env.AUTH_GITHUB_SECRET,
+        }),
+      ]
+    : []),
+  ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
+    ? [
+        Google({
+          clientId: process.env.AUTH_GOOGLE_ID,
+          clientSecret: process.env.AUTH_GOOGLE_SECRET,
+        }),
+      ]
+    : []),
+];
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -77,12 +112,30 @@ export const {
         return { ...guestUser, type: "guest" };
       },
     }),
+    ...oauthProviders,
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id as string;
-        token.type = user.type;
+        if (
+          account &&
+          account.provider !== "credentials" &&
+          account.provider !== "guest"
+        ) {
+          if (!user.email) {
+            throw new Error("OAuth provider did not return an email address");
+          }
+          const databaseUser = await getOrCreateOAuthUser({
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          });
+          token.id = databaseUser.id;
+          token.type = "regular";
+        } else {
+          token.id = user.id as string;
+          token.type = user.type;
+        }
       }
 
       return token;

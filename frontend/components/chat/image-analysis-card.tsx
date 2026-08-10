@@ -1,7 +1,5 @@
 "use client";
 
-import { ResponseAudioButton } from "./response-audio-button";
-
 type ImageAnalysisOutput = {
   bodyPart?: string | null;
   condition?: string | null;
@@ -68,11 +66,8 @@ export function ImageAnalysisCard({ output }: { output: ImageAnalysisOutput }) {
 
       {output.answer && (
         <div className="rounded-lg border border-border/60 bg-background p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="text-muted-foreground text-xs uppercase tracking-wide">
-              Response
-            </div>
-            <ResponseAudioButton text={output.answer} />
+          <div className="mb-2 text-muted-foreground text-xs uppercase tracking-wide">
+            Response
           </div>
           <div className="whitespace-pre-wrap text-sm leading-6">
             {output.answer}

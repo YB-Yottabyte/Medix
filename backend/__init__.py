@@ -1,1 +1,3 @@
-"""Backend package for the MedVidQA Flask application."""
+"""Backend package for the Medix FastAPI application."""
+
+"""Medix multimodal medical-procedure QA backend."""

@@ -1,14 +1,12 @@
 "use client";
 
 import type { UseChatHelpers } from "@ai-sdk/react";
-import type { UIMessage } from "ai";
 import equal from "fast-deep-equal";
 import {
   ArrowUpIcon,
-  BrainIcon,
-  EyeIcon,
+  CheckIcon,
+  ChevronDownIcon,
   LockIcon,
-  WrenchIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -46,12 +44,11 @@ import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import {
   PromptInput,
-  PromptInputFooter,
   PromptInputSubmit,
   PromptInputTextarea,
-  PromptInputTools,
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
+import { DictationButton } from "./dictation-button";
 import { PaperclipIcon, StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import {
@@ -59,8 +56,6 @@ import {
   SlashCommandMenu,
   slashCommands,
 } from "./slash-commands";
-import { SuggestedActions } from "./suggested-actions";
-import type { VisibilityType } from "./visibility-selector";
 
 function setCookie(name: string, value: string) {
   const maxAge = 60 * 60 * 24 * 365;
@@ -76,16 +71,12 @@ function PureMultimodalInput({
   stop,
   attachments,
   setAttachments,
-  messages,
   setMessages,
   sendMessage,
   className,
-  selectedVisibilityType,
   selectedModelId,
-  onModelChange,
   editingMessage,
   onCancelEdit,
-  isLoading,
 }: {
   chatId: string;
   input: string;
@@ -94,18 +85,14 @@ function PureMultimodalInput({
   stop: () => void;
   attachments: Attachment[];
   setAttachments: Dispatch<SetStateAction<Attachment[]>>;
-  messages: UIMessage[];
   setMessages: UseChatHelpers<ChatMessage>["setMessages"];
   sendMessage:
     | UseChatHelpers<ChatMessage>["sendMessage"]
     | (() => Promise<void>);
   className?: string;
-  selectedVisibilityType: VisibilityType;
   selectedModelId: string;
-  onModelChange?: (modelId: string) => void;
   editingMessage?: ChatMessage | null;
   onCancelEdit?: () => void;
-  isLoading?: boolean;
 }) {
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
@@ -386,18 +373,6 @@ function PureMultimodalInput({
         </div>
       )}
 
-      {!editingMessage &&
-        !isLoading &&
-        messages.length === 0 &&
-        attachments.length === 0 &&
-        uploadQueue.length === 0 && (
-          <SuggestedActions
-            chatId={chatId}
-            selectedVisibilityType={selectedVisibilityType}
-            sendMessage={sendMessage}
-          />
-        )}
-
       <input
         className="pointer-events-none fixed -top-4 -left-4 size-0.5 opacity-0"
         multiple
@@ -419,7 +394,7 @@ function PureMultimodalInput({
       </div>
 
       <PromptInput
-        className="[&>div]:rounded-2xl [&>div]:border [&>div]:border-border/30 [&>div]:bg-card/70 [&>div]:shadow-[var(--shadow-composer)] [&>div]:transition-shadow [&>div]:duration-300 [&>div]:focus-within:shadow-[var(--shadow-composer-focus)]"
+        className="[&>div]:h-auto [&>div]:rounded-[26px] [&>div]:border [&>div]:border-border/70 [&>div]:bg-card [&>div]:shadow-[0_8px_30px_-22px_rgba(15,23,42,0.32),0_1px_2px_rgba(15,23,42,0.05)] [&>div]:transition-[border-color,box-shadow] [&>div]:duration-300 [&>div]:focus-within:border-border [&>div]:focus-within:shadow-[0_14px_36px_-24px_rgba(15,23,42,0.34),0_1px_3px_rgba(15,23,42,0.08)] [&>div]:has-[[data-slot=input-group-control]:focus-visible]:border-border [&>div]:has-[[data-slot=input-group-control]:focus-visible]:ring-0"
         onSubmit={() => {
           if (input.startsWith("/")) {
             const query = input.slice(1).trim();
@@ -439,114 +414,119 @@ function PureMultimodalInput({
           }
         }}
       >
-        {(attachments.length > 0 || uploadQueue.length > 0) && (
-          <div
-            className="flex w-full self-start flex-row gap-2 overflow-x-auto px-3 pt-3 no-scrollbar"
-            data-testid="attachments-preview"
-          >
-            {attachments.map((attachment) => (
-              <PreviewAttachment
-                attachment={attachment}
-                key={attachment.url}
-                onRemove={() => {
-                  setAttachments((currentAttachments) =>
-                    currentAttachments.filter((a) => a.url !== attachment.url)
-                  );
-                  if (fileInputRef.current) {
-                    fileInputRef.current.value = "";
-                  }
-                }}
-              />
-            ))}
+        <div className="flex w-full flex-col">
+          {(attachments.length > 0 || uploadQueue.length > 0) && (
+            <div
+              className="flex w-full self-start flex-row gap-2 overflow-x-auto px-4 pt-3 no-scrollbar"
+              data-testid="attachments-preview"
+            >
+              {attachments.map((attachment) => (
+                <PreviewAttachment
+                  attachment={attachment}
+                  key={attachment.url}
+                  onRemove={() => {
+                    setAttachments((currentAttachments) =>
+                      currentAttachments.filter((a) => a.url !== attachment.url)
+                    );
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
+                  }}
+                />
+              ))}
 
-            {uploadQueue.map((filename) => (
-              <PreviewAttachment
-                attachment={{
-                  url: "",
-                  name: filename,
-                  contentType: "",
-                }}
-                isUploading={true}
-                key={filename}
-              />
-            ))}
-          </div>
-        )}
-        <PromptInputTextarea
-          className="min-h-24 text-[13px] leading-relaxed px-4 pt-3.5 pb-1.5 placeholder:text-muted-foreground/35"
-          data-testid="multimodal-input"
-          onChange={handleInput}
-          onKeyDown={(e) => {
-            if (slashOpen) {
-              const filtered = slashCommands.filter((cmd) =>
-                cmd.name.startsWith(slashQuery.toLowerCase())
-              );
-              if (e.key === "ArrowDown") {
-                e.preventDefault();
-                setSlashIndex((i) => Math.min(i + 1, filtered.length - 1));
-                return;
-              }
-              if (e.key === "ArrowUp") {
-                e.preventDefault();
-                setSlashIndex((i) => Math.max(i - 1, 0));
-                return;
-              }
-              if (e.key === "Enter" || e.key === "Tab") {
-                e.preventDefault();
-                if (filtered[slashIndex]) {
-                  handleSlashSelect(filtered[slashIndex]);
-                }
-                return;
-              }
-              if (e.key === "Escape") {
-                e.preventDefault();
-                setSlashOpen(false);
-                return;
-              }
-            }
-            if (e.key === "Escape" && editingMessage && onCancelEdit) {
-              e.preventDefault();
-              onCancelEdit();
-            }
-          }}
-          placeholder={
-            editingMessage ? "Edit your message..." : "Ask anything..."
-          }
-          ref={textareaRef}
-          value={input}
-        />
-        <PromptInputFooter className="px-3 pb-3">
-          <PromptInputTools>
+              {uploadQueue.map((filename) => (
+                <PreviewAttachment
+                  attachment={{
+                    url: "",
+                    name: filename,
+                    contentType: "",
+                  }}
+                  isUploading={true}
+                  key={filename}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="flex min-h-[52px] w-full items-end gap-1 px-2.5 py-1.5">
             <AttachmentsButton
               fileInputRef={fileInputRef}
               selectedModelId={selectedModelId}
               status={status}
             />
-            <ModelSelectorCompact
-              onModelChange={onModelChange}
-              selectedModelId={selectedModelId}
-            />
-          </PromptInputTools>
 
-          {status === "submitted" ? (
-            <StopButton setMessages={setMessages} stop={stop} />
-          ) : (
-            <PromptInputSubmit
-              className={cn(
-                "h-7 w-7 rounded-xl transition-all duration-200",
-                input.trim()
-                  ? "bg-foreground text-background hover:opacity-85 active:scale-95"
-                  : "bg-muted text-muted-foreground/25 cursor-not-allowed"
-              )}
-              data-testid="send-button"
-              disabled={!input.trim() || uploadQueue.length > 0}
-              status={status}
-              variant="secondary"
-            >
-              <ArrowUpIcon className="size-4" />
-            </PromptInputSubmit>
-          )}
-        </PromptInputFooter>
+            <PromptInputTextarea
+              className="max-h-36 min-h-9 flex-1 px-2 py-[7px] text-[13.5px] leading-relaxed placeholder:text-muted-foreground/55"
+              data-testid="multimodal-input"
+              onChange={handleInput}
+              onKeyDown={(e) => {
+                if (slashOpen) {
+                  const filtered = slashCommands.filter((cmd) =>
+                    cmd.name.startsWith(slashQuery.toLowerCase())
+                  );
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    setSlashIndex((i) => Math.min(i + 1, filtered.length - 1));
+                    return;
+                  }
+                  if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    setSlashIndex((i) => Math.max(i - 1, 0));
+                    return;
+                  }
+                  if (e.key === "Enter" || e.key === "Tab") {
+                    e.preventDefault();
+                    if (filtered[slashIndex]) {
+                      handleSlashSelect(filtered[slashIndex]);
+                    }
+                    return;
+                  }
+                  if (e.key === "Escape") {
+                    e.preventDefault();
+                    setSlashOpen(false);
+                    return;
+                  }
+                }
+                if (e.key === "Escape" && editingMessage && onCancelEdit) {
+                  e.preventDefault();
+                  onCancelEdit();
+                }
+              }}
+              placeholder={
+                editingMessage ? "Edit your message..." : "Ask anything..."
+              }
+              ref={textareaRef}
+              value={input}
+            />
+
+            <DictationButton
+              disabled={status === "submitted" || status === "streaming"}
+              onTranscript={(text) =>
+                setInput(input ? `${input.trimEnd()} ${text}` : text)
+              }
+            />
+
+            {status === "submitted" ? (
+              <StopButton setMessages={setMessages} stop={stop} />
+            ) : (
+              <PromptInputSubmit
+                className={cn(
+                  "size-8 shrink-0 rounded-full transition-all duration-200",
+                  input.trim()
+                    ? "bg-foreground text-background hover:opacity-85 active:scale-95"
+                    : "bg-muted text-muted-foreground/25 cursor-not-allowed"
+                )}
+                data-testid="send-button"
+                disabled={!input.trim() || uploadQueue.length > 0}
+                status={status}
+                variant="secondary"
+              >
+                <ArrowUpIcon className="size-3.5" />
+              </PromptInputSubmit>
+            )}
+          </div>
+        </div>
       </PromptInput>
     </div>
   );
@@ -564,22 +544,12 @@ export const MultimodalInput = memo(
     if (!equal(prevProps.attachments, nextProps.attachments)) {
       return false;
     }
-    if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType) {
-      return false;
-    }
     if (prevProps.selectedModelId !== nextProps.selectedModelId) {
       return false;
     }
     if (prevProps.editingMessage !== nextProps.editingMessage) {
       return false;
     }
-    if (prevProps.isLoading !== nextProps.isLoading) {
-      return false;
-    }
-    if (prevProps.messages.length !== nextProps.messages.length) {
-      return false;
-    }
-
     return true;
   }
 );
@@ -606,7 +576,7 @@ function PureAttachmentsButton({
   return (
     <Button
       className={cn(
-        "h-7 w-7 rounded-lg border border-border/40 p-1 transition-colors",
+        "size-8 shrink-0 rounded-full border-0 p-0 transition-colors",
         hasVision
           ? "text-foreground hover:border-border hover:text-foreground"
           : "text-muted-foreground/30 cursor-not-allowed"
@@ -619,7 +589,7 @@ function PureAttachmentsButton({
       }}
       variant="ghost"
     >
-      <PaperclipIcon size={14} style={{ width: 14, height: 14 }} />
+      <PaperclipIcon size={15} style={{ width: 15, height: 15 }} />
     </Button>
   );
 }
@@ -634,14 +604,14 @@ function PureModelSelectorCompact({
   onModelChange?: (modelId: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const { data: modelsData } = useSWR(
+  // Remote-session availability is live state: refresh on focus and when the
+  // picker opens, rather than caching the model list for an hour.
+  const { data: modelsData, mutate: refreshModels } = useSWR(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
     (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
+    { revalidateOnFocus: true, dedupingInterval: 15_000 }
   );
 
-  const capabilities: Record<string, ModelCapabilities> | undefined =
-    modelsData?.capabilities ?? modelsData;
   const dynamicModels: ChatModel[] | undefined = modelsData?.models;
   const activeModels = dynamicModels ?? chatModels;
 
@@ -649,28 +619,70 @@ function PureModelSelectorCompact({
     activeModels.find((m: ChatModel) => m.id === selectedModelId) ??
     activeModels.find((m: ChatModel) => m.id === DEFAULT_CHAT_MODEL) ??
     activeModels[0];
-  const [provider] = selectedModel.id.split("/");
+
+  const selectModel = (model: ChatModel, selectable: boolean) => {
+    if (!selectable) {
+      return;
+    }
+
+    onModelChange?.(model.id);
+    setCookie("chat-model", model.id);
+    setOpen(false);
+    setTimeout(() => {
+      document
+        .querySelector<HTMLTextAreaElement>("[data-testid='multimodal-input']")
+        ?.focus();
+    }, 50);
+  };
 
   return (
-    <ModelSelector onOpenChange={setOpen} open={open}>
+    <ModelSelector
+      onOpenChange={(next) => {
+        if (next) {
+          refreshModels();
+        }
+        setOpen(next);
+      }}
+      open={open}
+    >
       <ModelSelectorTrigger asChild>
         <Button
-          className="h-7 max-w-[200px] justify-between gap-1.5 rounded-lg px-2 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+          aria-label="Choose response model"
+          className="h-8 max-w-[210px] justify-between gap-1.5 rounded-lg px-2 text-[15px] font-semibold tracking-[-0.025em] text-foreground shadow-none transition-colors hover:bg-muted/70"
           data-testid="model-selector"
+          type="button"
           variant="ghost"
         >
-          {provider && <ModelSelectorLogo provider={provider} />}
           <ModelSelectorName>{selectedModel.name}</ModelSelectorName>
+          <ChevronDownIcon
+            className={cn(
+              "size-3 text-muted-foreground transition-transform duration-200",
+              open && "rotate-180"
+            )}
+            strokeWidth={1.8}
+          />
         </Button>
       </ModelSelectorTrigger>
-      <ModelSelectorContent>
-        <ModelSelectorInput placeholder="Search models..." />
-        <ModelSelectorList>
+      <ModelSelectorContent
+        className="w-[min(320px,calc(100vw-1.5rem))] rounded-xl"
+        side="bottom"
+        sideOffset={6}
+      >
+        <ModelSelectorInput
+          className="py-2 text-[12px]"
+          placeholder="Search models..."
+        />
+        <ModelSelectorList className="max-h-[240px]">
           {(() => {
             const curatedIds = new Set(chatModels.map((m) => m.id));
+            // The server enriches curated entries with live fields such as
+            // `offline`, so prefer its version and fall back to the static one.
+            const byId = new Map(
+              (dynamicModels ?? []).map((m: ChatModel) => [m.id, m])
+            );
             const allModels = dynamicModels
               ? [
-                  ...chatModels,
+                  ...chatModels.map((m) => byId.get(m.id) ?? m),
                   ...dynamicModels.filter((m) => !curatedIds.has(m.id)),
                 ]
               : chatModels;
@@ -717,6 +729,9 @@ function PureModelSelectorCompact({
               morph: "Morph",
               nvidia: "Nvidia",
               openai: "OpenAI",
+              groq: "Groq",
+              ollama: "Ollama",
+              sol: "Sol",
               perplexity: "Perplexity",
               "prime-intellect": "Prime Intellect",
               xiaomi: "Xiaomi",
@@ -726,6 +741,7 @@ function PureModelSelectorCompact({
 
             return sortedKeys.map((key) => (
               <ModelSelectorGroup
+                className="**:[[cmdk-group-heading]]:text-[10.5px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:tracking-[-0.01em] **:[[cmdk-group-heading]]:text-foreground/60"
                 heading={
                   key === "_available"
                     ? "Available"
@@ -734,45 +750,58 @@ function PureModelSelectorCompact({
                 key={key}
               >
                 {grouped[key].map(({ model, curated }) => {
-                  const logoProvider = model.id.split("/")[0];
+                  const logoProvider = model.provider;
+                  const isSelected = model.id === selectedModel.id;
+                  // A remote session that is down cannot answer, so it is
+                  // shown as unavailable rather than failing after selection.
+                  const offline = model.offline === true;
+                  const selectable = curated && !offline;
                   return (
                     <ModelSelectorItem
+                      aria-label={`Use ${model.name}${isSelected ? ", currently selected" : ""}`}
                       className={cn(
-                        "flex w-full",
-                        model.id === selectedModel.id &&
-                          "border-b border-dashed border-foreground/50",
-                        !curated && "opacity-40 cursor-default"
+                        "flex w-full cursor-pointer items-center rounded-lg border border-transparent px-2.5 py-2 transition-colors hover:bg-muted/60 data-[selected=true]:bg-muted/60",
+                        isSelected && "border-border/70 bg-muted/50",
+                        !selectable && "opacity-40 cursor-default"
                       )}
+                      data-active-model={isSelected ? "true" : "false"}
                       key={model.id}
-                      onSelect={() => {
-                        if (!curated) {
+                      onPointerDown={(event) => {
+                        if (event.button !== 0 || !selectable) {
                           return;
                         }
-                        onModelChange?.(model.id);
-                        setCookie("chat-model", model.id);
-                        setOpen(false);
-                        setTimeout(() => {
-                          document
-                            .querySelector<HTMLTextAreaElement>(
-                              "[data-testid='multimodal-input']"
-                            )
-                            ?.focus();
-                        }, 50);
+
+                        // Select before cmdk/Radix can transfer focus and
+                        // dismiss the popover. This makes mouse and touch
+                        // selection reliable while onSelect still handles
+                        // keyboard activation.
+                        event.preventDefault();
+                        selectModel(model, curated);
                       }}
+                      onSelect={() => selectModel(model, selectable)}
                       value={model.id}
                     >
-                      <ModelSelectorLogo provider={logoProvider} />
-                      <ModelSelectorName>{model.name}</ModelSelectorName>
-                      <div className="ml-auto flex items-center gap-2 text-foreground/70">
-                        {capabilities?.[model.id]?.tools && (
-                          <WrenchIcon className="size-3.5" />
-                        )}
-                        {capabilities?.[model.id]?.vision && (
-                          <EyeIcon className="size-3.5" />
-                        )}
-                        {capabilities?.[model.id]?.reasoning && (
-                          <BrainIcon className="size-3.5" />
-                        )}
+                      <ModelSelectorLogo
+                        className="size-3.5"
+                        provider={logoProvider}
+                      />
+                      <div className="min-w-0 flex-1 text-left">
+                        <ModelSelectorName className="block text-[12px] font-medium tracking-[-0.01em] text-foreground/90">
+                          {model.name}
+                          {offline && (
+                            <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 font-normal text-[10px] text-muted-foreground">
+                              Session offline
+                            </span>
+                          )}
+                        </ModelSelectorName>
+                        <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+                          Provider:{" "}
+                          {providerNames[model.provider] ?? model.provider}
+                          {model.deployment ? ` · ${model.deployment}` : ""}
+                        </p>
+                      </div>
+                      <div className="ml-2 flex items-center justify-end text-foreground/70">
+                        {isSelected && <CheckIcon className="size-3.5" />}
                         {!curated && (
                           <LockIcon className="size-3 text-muted-foreground/50" />
                         )}
@@ -789,7 +818,7 @@ function PureModelSelectorCompact({
   );
 }
 
-const ModelSelectorCompact = memo(PureModelSelectorCompact);
+export const ModelSelectorCompact = memo(PureModelSelectorCompact);
 
 function PureStopButton({
   stop,
@@ -800,7 +829,7 @@ function PureStopButton({
 }) {
   return (
     <Button
-      className="h-7 w-7 rounded-xl bg-foreground p-1 text-background transition-all duration-200 hover:opacity-85 active:scale-95 disabled:bg-muted disabled:text-muted-foreground/25 disabled:cursor-not-allowed"
+      className="size-8 shrink-0 rounded-full bg-foreground p-1 text-background transition-all duration-200 hover:opacity-85 active:scale-95 disabled:bg-muted disabled:text-muted-foreground/25 disabled:cursor-not-allowed"
       data-testid="stop-button"
       onClick={(event) => {
         event.preventDefault();

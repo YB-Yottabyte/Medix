@@ -12,23 +12,30 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (Ruff)
+    name: Backend (uv quality gate)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version-file: ".python-version"
 
-      - name: Install Ruff
-        run: pip install "ruff==0.8.6"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install locked Python dependencies
+        run: uv sync --frozen --group dev
 
       - name: Ruff lint
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Ruff format check
-        run: ruff format --check .
+        run: uv run ruff format --check .
+
+      - name: Backend tests with coverage
+        run: uv run pytest -q --cov=backend
 
   frontend:
     name: Frontend (Biome + TypeScript)
@@ -58,12 +65,15 @@ jobs:
       - name: TypeScript typecheck
         run: pnpm exec tsc --noEmit
 
+      - name: Frontend unit tests
+        run: pnpm test:unit
+
       - name: Next.js production build
         env:
           AUTH_SECRET: ci-auth-secret-for-build-only
           GROQ_API_KEY: ci-groq-key-for-build-only
           POSTGRES_URL: postgresql://ci:ci@localhost:5432/ci
-          FLASK_API_URL: http://localhost:8080
+          MEDIX_API_URL: http://localhost:8080
         run: pnpm build
 
   pre-commit:
@@ -74,7 +84,11 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version-file: ".python-version"
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
 
       - uses: pnpm/action-setup@v4
         with:
@@ -90,4 +104,8 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
-      - uses: pre-commit/action@v3.0.1
+      - name: Install locked Python dependencies
+        run: uv sync --frozen --group dev
+
+      - name: Run all pre-commit hooks
+        run: uv run pre-commit run --all-files

@@ -3,11 +3,11 @@
 # and baseline file hygiene. Runs on commit AND on push.
 #
 # First-time setup (after clone):
-#   pip install pre-commit
-#   pre-commit install --hook-type pre-commit --hook-type pre-push
+#   uv sync --group dev
+#   uv run pre-commit install --hook-type pre-commit --hook-type pre-push
 #
 # Manual run across all files:
-#   pre-commit run --all-files
+#   uv run pre-commit run --all-files
 
 repos:
   # Baseline file hygiene (large files, merge conflicts, invalid JSON/YAML, etc.)
@@ -29,15 +29,21 @@ repos:
       - id: mixed-line-ending
         args: ["--fix=lf"]
 
-  # Ruff — Python lint + format for the Flask backend
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.6
+  # Python tooling runs through uv so pyproject.toml/uv.lock remain the only
+  # dependency source.
+  - repo: local
     hooks:
-      - id: ruff
+      - id: ruff-check
         name: ruff (lint, autofix)
+        language: system
+        entry: uv run --frozen ruff check
         args: ["--fix", "--exit-non-zero-on-fix"]
+        types_or: [python, pyi]
       - id: ruff-format
         name: ruff (format)
+        language: system
+        entry: uv run --frozen ruff format
+        types_or: [python, pyi]
 
   # Biome — TS/TSX lint + format for the Next.js frontend.
   # We shell out to the locally-installed Biome inside frontend/

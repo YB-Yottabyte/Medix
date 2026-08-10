@@ -42,7 +42,7 @@ def update_system_with_complete_dataset():
     complete_file = "data/verified_medvidqa_videos_complete.json"
     if not os.path.exists(complete_file):
         print(f"Complete verified dataset not found: {complete_file}")
-        print("Please run 'python scripts/verify_all_videos.py' first!")
+        print("Please run 'uv run python scripts/verify_all_videos.py' first!")
         return
 
     # Load the complete verified dataset
@@ -147,7 +147,7 @@ def show_comparison():
             )
     else:
         print("Complete verification not yet available")
-        print("Run: python scripts/verify_all_videos.py")
+        print("Run: uv run python scripts/verify_all_videos.py")
 
 
 if __name__ == "__main__":

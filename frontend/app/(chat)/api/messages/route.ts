@@ -1,5 +1,5 @@
-import { getAppSession } from "@/lib/dev-session";
 import { getChatById, getMessagesByChatId } from "@/lib/db/queries";
+import { getAppSession } from "@/lib/dev-session";
 import { convertToUIMessages } from "@/lib/utils";
 
 export async function GET(request: Request) {

@@ -1,12 +1,11 @@
 "use client";
 
-import type { ComponentProps } from "react";
+import { ArrowDownIcon, DownloadIcon } from "lucide-react";
+import { type ComponentProps, type ReactNode, useCallback } from "react";
+import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ArrowDownIcon, DownloadIcon } from "lucide-react";
-import { useCallback } from "react";
-import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
 export type ConversationProps = ComponentProps<typeof StickToBottom>;
 
@@ -37,7 +36,7 @@ export const ConversationContent = ({
 export type ConversationEmptyStateProps = ComponentProps<"div"> & {
   title?: string;
   description?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 };
 
 export const ConversationEmptyState = ({

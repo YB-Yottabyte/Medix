@@ -1,6 +1,45 @@
-# Python code quality config for the MedVidQA Flask backend.
+[project]
+name = "medix-qa"
+version = "0.1.0"
+description = "Multimodal medical-procedure question answering research prototype"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = { file = "LICENSE" }
+dependencies = [
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "fastapi>=0.116.0",
+    "groq>=0.4.0",
+    "jinja2>=3.1.0",
+    "kokoro>=0.9.4,<0.10",
+    "numpy>=1.24.0",
+    "pillow>=10.0.0",
+    "python-multipart>=0.0.20",
+    "pyyaml>=6.0.1",
+    "qdrant-client>=1.9.0",
+    "requests>=2.31.0",
+    "sentence-transformers>=2.3.0",
+    "uvicorn[standard]>=0.35.0",
+    "youtube-transcript-api>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=0.1.0",
+    "pre-commit>=4.0.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=5.0.0",
+    "ruff==0.8.6",
+]
+research = [
+    "scikit-learn>=1.5.0,<2.0",
+    "scipy>=1.11.0,<2.0",
+    "torch>=2.2.0",
+    "transformers>=4.48.0,<6.0",
+]
+[tool.uv]
+package = false
+
 # Ruff handles linting, import sorting, and formatting in one tool.
-# Docs: https://docs.astral.sh/ruff/
 
 [tool.ruff]
 target-version = "py310"
@@ -63,12 +102,28 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/*" = ["T20", "S"]          # scripts may print and read files
-"app.py" = ["S104"]                 # Flask bind 0.0.0.0 is intentional for dev
+"app.py" = ["S104"]                 # Uvicorn bind 0.0.0.0 is intentional for dev
 "**/__init__.py" = ["F401"]         # re-exports
 
 [tool.ruff.lint.isort]
-known-first-party = ["database", "models", "scripts"]
+known-first-party = ["backend", "evaluation", "scripts", "tests"]
 combine-as-imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+
+[tool.coverage.run]
+branch = true
+source = ["backend"]
+
+[tool.coverage.report]
+fail_under = 50
+show_missing = true
+skip_covered = true
+omit = [
+    "backend/adapters/*",
+]
 
 [tool.ruff.format]
 quote-style = "double"

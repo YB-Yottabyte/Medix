@@ -10,8 +10,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -36,9 +36,15 @@ venv.bak/
 
 # Environment variables
 .env
+.env.local
+.env.*.local
 
 # Data
 data/cache/
+data/video_cache/
+data/research_runtime/
+data/models/
+data/transcript_cache/*.json
 *.pkl
 *.npy
 
@@ -48,6 +54,14 @@ Thumbs.db
 
 # Logs
 *.log
+frontend/error
+.coverage
+htmlcov/
 .vercel
 qdrant_storage/
 config.yaml
+
+# Generated research outputs (regenerate from the documented protocol)
+evaluation/results/
+evaluation/artifacts/
+data/cache_medvidqa_verified/

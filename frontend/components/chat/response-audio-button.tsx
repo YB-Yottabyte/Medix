@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { prepareSpeechText } from "@/lib/speech-text";
 import { toast } from "./toast";
-import { PlayIcon, StopIcon } from "./icons";
 
-export function ResponseAudioButton({ text }: { text: string }) {
+export function useResponseAudio(text: string) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -26,7 +26,7 @@ export function ResponseAudioButton({ text }: { text: string }) {
   }, []);
 
   const splitIntoChunks = (input: string) => {
-    const normalized = input.replace(/\s+/g, " ").trim();
+    const normalized = prepareSpeechText(input);
     const sentences =
       normalized.match(/[^.!?]+[.!?]?/g)?.map((sentence) => sentence.trim()) ??
       [];
@@ -96,7 +96,10 @@ export function ResponseAudioButton({ text }: { text: string }) {
       let message = "Could not generate audio response.";
 
       try {
-        const error = (await response.json()) as { error?: string; cause?: string };
+        const error = (await response.json()) as {
+          error?: string;
+          cause?: string;
+        };
         message = error.error ?? error.cause ?? message;
       } catch {
         /* fall back to generic error */
@@ -115,7 +118,7 @@ export function ResponseAudioButton({ text }: { text: string }) {
 
       audio.onended = () => resolve();
       audio.onerror = () => reject(new Error("Audio playback failed."));
-      void audio.play().catch(() => reject(new Error("Audio playback failed.")));
+      audio.play().catch(() => reject(new Error("Audio playback failed.")));
     });
   };
 
@@ -160,14 +163,8 @@ export function ResponseAudioButton({ text }: { text: string }) {
     }
   };
 
-  return (
-    <button
-      className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-background px-2 py-1 text-muted-foreground text-xs transition-colors hover:text-foreground"
-      onClick={handleToggleSpeech}
-      type="button"
-    >
-      {isSpeaking || isLoading ? <StopIcon size={12} /> : <PlayIcon size={12} />}
-      <span>{isSpeaking || isLoading ? "Stop audio" : "Listen"}</span>
-    </button>
-  );
+  return {
+    isActive: isSpeaking || isLoading,
+    toggleSpeech: handleToggleSpeech,
+  };
 }

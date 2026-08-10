@@ -1,139 +1,131 @@
 #!/usr/bin/env python3
-"""
-Build database from VERIFIED MedVidQA Dataset Videos
-Uses only videos confirmed to be publicly available
-"""
+"""Build the local procedure cache from the already verified MedVidQA manifest."""
 
+from __future__ import annotations
+
+import argparse
 import json
+import logging
 import pickle
-import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
-
-def verify_video(vid_id):
-    """Check if YouTube video is available"""
-    try:
-        url = f"https://i.ytimg.com/vi/{vid_id}/hqdefault.jpg"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        response = urllib.request.urlopen(req, timeout=3)
-        size = len(response.read())
-        return size > 2000
-    except Exception:
-        return False
+LOGGER = logging.getLogger(__name__)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+DEFAULT_REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
 
 
-def build_verified_medvidqa_database():
-    print("=" * 70)
-    print("  Building Database from VERIFIED MedVidQA Videos")
-    print("=" * 70)
+@dataclass(frozen=True)
+class ProcedureCacheBuilder:
+    """Create reproducible procedure metadata and dense embeddings."""
 
-    # Load all MedVidQA data
-    all_data = []
-    for split in ["train.json", "val.json", "test.json"]:
-        path = f"MedVidQA/cleaned/{split}"
-        if Path(path).exists():
-            with open(path) as f:
-                data = json.load(f)
-                all_data.extend(data)
-                print(f"✓ Loaded {len(data)} samples from {split}")
+    model_name: str = DEFAULT_MODEL
+    model_revision: str = DEFAULT_REVISION
 
-    print(f"\nTotal samples: {len(all_data)}")
+    def build(self, records: list[dict[str, Any]], output_dir: Path) -> int:
+        procedures = self._procedures(records)
+        if not procedures:
+            raise ValueError("The verified manifest did not contain any procedures")
 
-    # Get unique videos and verify availability
-    print("\n🔍 Verifying video availability (testing first 100 unique videos)...")
+        model = SentenceTransformer(self.model_name, revision=self.model_revision)
+        embeddings = model.encode(
+            [procedure["question"] for procedure in procedures],
+            batch_size=64,
+            convert_to_numpy=True,
+            normalize_embeddings=True,
+            show_progress_bar=True,
+        ).astype(np.float32)
 
-    seen_videos = set()
-    verified_data = []
-    tested = 0
-
-    for item in all_data:
-        vid_id = item["video_id"]
-
-        if vid_id in seen_videos:
-            if any(v["video_id"] == vid_id for v in verified_data):
-                verified_data.append(item)
-            continue
-
-        seen_videos.add(vid_id)
-        tested += 1
-
-        if verify_video(vid_id):
-            verified_data.append(item)
-            print(f"✓ {vid_id}: {item['question'][:40]}...")
-        else:
-            print(f"✗ {vid_id}: unavailable")
-
-    print(f"\n📊 Verified {len(verified_data)} samples from available videos")
-
-    # Create procedures
-    procedures = []
-    seen_questions = set()
-
-    for item in verified_data:
-        question = item["question"]
-
-        if question.lower() in seen_questions:
-            continue
-        seen_questions.add(question.lower())
-
-        proc = {
-            "question": question,
-            "video_id": item["video_id"],
-            "youtube_url": item["video_url"],
-            "youtube_embed": f"https://www.youtube.com/embed/{item['video_id']}?start={item['answer_start_second']}",
-            "duration": item.get("video_length", 0),
-            "answer_start": item.get("answer_start_second", 0),
-            "answer_end": item.get("answer_end_second", 0),
-            "steps": [
+        output_dir.mkdir(parents=True, exist_ok=True)
+        with (output_dir / "procedures.pkl").open("wb") as output:
+            pickle.dump(procedures, output)
+        with (output_dir / "embeddings.npy").open("wb") as output:
+            np.save(output, embeddings)
+        (output_dir / "build_metadata.json").write_text(
+            json.dumps(
                 {
-                    "index": 0,
-                    "heading": f"Watch from {item['answer_start']} to {item['answer_end']}",
-                    "absolute_bounds": [item["answer_start_second"], item["answer_end_second"]],
+                    "source_records": len(records),
+                    "procedures": len(procedures),
+                    "embedding_dimensions": int(embeddings.shape[1]),
+                    "model": self.model_name,
+                    "model_revision": self.model_revision,
+                    "normalized_embeddings": True,
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return len(procedures)
+
+    @staticmethod
+    def _procedures(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        procedures = []
+        seen_questions: set[str] = set()
+        for item in records:
+            question = str(item["question"]).strip()
+            normalized_question = " ".join(question.lower().split())
+            if normalized_question in seen_questions:
+                continue
+            seen_questions.add(normalized_question)
+
+            video_id = str(item["video_id"])
+            answer_start = float(item.get("answer_start_second", 0))
+            answer_end = float(item.get("answer_end_second", answer_start))
+            procedures.append(
+                {
+                    "question": question,
+                    "video_id": video_id,
+                    "youtube_url": item.get("video_url")
+                    or f"https://www.youtube.com/watch?v={video_id}",
+                    "youtube_embed": (
+                        f"https://www.youtube.com/embed/{video_id}?start={int(answer_start)}"
+                    ),
+                    "duration": float(item.get("video_length", 0)),
+                    "answer_start": answer_start,
+                    "answer_end": answer_end,
+                    "steps": [
+                        {
+                            "index": 0,
+                            "heading": "Watch the annotated procedure segment",
+                            "absolute_bounds": [answer_start, answer_end],
+                        }
+                    ],
+                    "sample_id": str(item.get("sample_id", "")),
+                    "source": "MedVidQA verified manifest",
                 }
-            ],
-            "sample_id": item.get("sample_id", 0),
-            "source": "MedVidQA Dataset (TREC 2024)",
-        }
-        procedures.append(proc)
+            )
+        return procedures
 
-    print(f"✓ Created {len(procedures)} unique verified procedures")
 
-    # Build embeddings
-    print("\n🔧 Building embeddings...")
-    embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "verified_medvidqa_videos.json",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=PROJECT_ROOT / "data" / "cache_medvidqa_verified",
+    )
+    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--revision", default=DEFAULT_REVISION)
+    args = parser.parse_args()
 
-    texts = [proc["question"] for proc in procedures]
-    embeddings = embedding_model.encode(texts, show_progress_bar=True, convert_to_numpy=True)
-
-    # Save to cache
-    cache_dir = Path("data/cache_medvidqa_verified")
-    cache_dir.mkdir(parents=True, exist_ok=True)
-
-    with open(cache_dir / "procedures.pkl", "wb") as f:
-        pickle.dump(procedures, f)
-
-    with open(cache_dir / "embeddings.npy", "wb") as f:
-        np.save(f, embeddings)
-
-    print(f"\nDatabase saved to {cache_dir}")
-
-    # Show sample procedures
-    print("\n" + "=" * 70)
-    print("Sample Verified MedVidQA Procedures:")
-    print("=" * 70)
-    for i, proc in enumerate(procedures[:10], 1):
-        print(f"\n{i}. {proc['question']}")
-        print(f"Video: {proc['youtube_url']}")
-        print(f"Answer: {proc['answer_start']}s - {proc['answer_end']}s")
-        print(f"Source: {proc['source']}")
-
-    print("\n" + "=" * 70)
-    print(f"Built database with {len(procedures)} verified MedVidQA procedures!")
-    print("=" * 70)
+    records = json.loads(args.input.read_text(encoding="utf-8"))
+    if not isinstance(records, list):
+        raise TypeError("The verified manifest must contain a JSON list")
+    count = ProcedureCacheBuilder(args.model, args.revision).build(records, args.output)
+    LOGGER.info("Built %d verified procedure embeddings in %s", count, args.output)
 
 
 if __name__ == "__main__":
-    build_verified_medvidqa_database()
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    main()

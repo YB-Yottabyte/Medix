@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple Qdrant semantic search example for transcript-style embeddings.
+Populate Qdrant with the locally built MedVidQA procedure-question embeddings.
 
 This script:
 1. Connects to a local Qdrant container
@@ -16,7 +16,7 @@ docker run -d --name qdrant \
   qdrant/qdrant
 
 Install dependency:
-pip install qdrant-client
+uv sync
 """
 
 from __future__ import annotations
@@ -67,6 +67,7 @@ def load_cached_records(cache_dir: Path) -> list[dict[str, Any]]:
     for idx, (procedure, embedding) in enumerate(zip(procedures, embeddings, strict=True), start=1):
         payload = {
             "question": procedure["question"],
+            "sample_id": procedure.get("sample_id"),
             "video_id": procedure.get("video_id"),
             "youtube_url": procedure.get("youtube_url"),
             "youtube_embed": procedure.get("youtube_embed"),
@@ -91,6 +92,11 @@ def create_collection(client: QdrantClient, collection_name: str, vector_size: i
     client.create_payload_index(
         collection_name=collection_name,
         field_name="video_id",
+        field_schema=PayloadSchemaType.KEYWORD,
+    )
+    client.create_payload_index(
+        collection_name=collection_name,
+        field_name="sample_id",
         field_schema=PayloadSchemaType.KEYWORD,
     )
     client.create_payload_index(
@@ -146,7 +152,7 @@ def main() -> None:
 
     print(f"Connected to Qdrant at {QDRANT_URL}")
     print(f"Collection: {COLLECTION_NAME}")
-    print(f"Inserted {len(records)} transcript embeddings")
+    print(f"Inserted {len(records)} procedure-question embeddings")
 
     example_query = records[0]
     print("\nExample search:")
@@ -157,7 +163,7 @@ def main() -> None:
         collection_name=COLLECTION_NAME,
         query_vector=example_query["vector"],
         limit=3,
-        source_filter="MedVidQA Dataset (TREC 2024)",
+        source_filter="MedVidQA verified manifest",
     )
 
     print("\nTop matches:")

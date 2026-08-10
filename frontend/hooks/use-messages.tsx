@@ -23,8 +23,9 @@ export function useMessages({
   useEffect(() => {
     if (status === "submitted") {
       setHasSentMessage(true);
+      scrollToBottom("smooth");
     }
-  }, [status]);
+  }, [scrollToBottom, status]);
 
   return {
     containerRef,

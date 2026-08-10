@@ -26,8 +26,7 @@ import { PanelLeftIcon } from "lucide-react"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
+const SIDEBAR_WIDTH = "15rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -161,7 +160,7 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          "flex h-full w-(--sidebar-width) flex-col bg-sidebar text-sidebar-foreground",
+          "flex h-full w-(--sidebar-width) flex-col bg-white text-sidebar-foreground dark:bg-sidebar",
           className
         )}
         {...props}
@@ -179,16 +178,15 @@ function Sidebar({
           data-sidebar="sidebar"
           data-slot="sidebar"
           data-mobile="true"
-          className="inset-x-0 bottom-0 top-auto h-[70dvh] w-full rounded-t-2xl border-t border-border/30 bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+          className="inset-y-0 left-0 right-auto h-dvh w-[min(86vw,20rem)] max-w-[20rem] border-r border-slate-200/70 bg-white p-0 text-sidebar-foreground dark:bg-sidebar [&>button]:hidden"
           showCloseButton={false}
-          side="bottom"
+          side="left"
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Sidebar</SheetTitle>
             <SheetDescription>Displays the mobile sidebar.</SheetDescription>
           </SheetHeader>
-          <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-sidebar-foreground/20" />
-          <div className="flex h-full w-full flex-col overflow-y-auto pt-2">{children}</div>
+          <div className="flex h-full w-full flex-col overflow-y-auto">{children}</div>
         </SheetContent>
       </Sheet>
     )
@@ -229,7 +227,7 @@ function Sidebar({
         <div
           data-sidebar="sidebar"
           data-slot="sidebar-inner"
-          className="flex size-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border-none group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
+          className="flex size-full flex-col bg-white dark:bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border-none group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:ring-1 group-data-[variant=floating]:ring-sidebar-border"
         >
           {children}
         </div>
@@ -302,10 +300,6 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"button">) {
           isCollapsed ? "top-0" : "top-[calc(3.5rem-6px)] cursor-w-resize"
         )}
       />
-      <div className={cn(
-        "pointer-events-none absolute bottom-0 left-0 w-[100vw] rounded-tl-[12px] border-t border-l border-sidebar-border opacity-0 transition-opacity duration-150 group-hover/rail:opacity-100",
-        isCollapsed ? "top-0" : "top-14"
-      )} />
     </div>
   )
 }
