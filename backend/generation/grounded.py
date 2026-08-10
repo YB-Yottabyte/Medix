@@ -183,9 +183,7 @@ class EvidenceGroundedAnswerGenerator:
         ordered_citation_ids: tuple[str, ...],
     ) -> str:
         """Render public citation numbers while retaining cue IDs internally."""
-        citation_numbers = {
-            cue_id: index for index, cue_id in enumerate(ordered_citation_ids, 1)
-        }
+        citation_numbers = {cue_id: index for index, cue_id in enumerate(ordered_citation_ids, 1)}
         return "\n".join(
             f"{index}. {claim.text} "
             f"[{', '.join(str(citation_numbers[cue_id]) for cue_id in claim.citation_ids)}]"

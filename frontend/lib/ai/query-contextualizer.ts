@@ -50,10 +50,8 @@ function readProcedureOutput(message: ChatMessage): ProcedureToolOutput | null {
         citations: output.citations ?? [],
         evidenceContext: output.evidenceContext ?? output.citations ?? [],
         retrievalQuery,
-        sourceRetrievalQuery:
-          output.sourceRetrievalQuery ?? retrievalQuery,
-        retrievalDecision:
-          output.retrievalDecision ?? "retrieve_new_source",
+        sourceRetrievalQuery: output.sourceRetrievalQuery ?? retrievalQuery,
+        retrievalDecision: output.retrievalDecision ?? "retrieve_new_source",
         followUpQuestion: output.followUpQuestion ?? null,
       } as ProcedureToolOutput;
     }
@@ -78,7 +76,6 @@ export function buildConversationContext(
         previousUserQuestion = text;
       }
     }
-
   }
 
   // Follow-up messages intentionally do not repeat a tool result or media

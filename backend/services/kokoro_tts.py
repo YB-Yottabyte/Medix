@@ -1,4 +1,5 @@
 """Lazy, local Kokoro text-to-speech inference."""
+
 from __future__ import annotations
 
 import os
@@ -74,9 +75,7 @@ class KokoroSpeechSynthesizer:
                     )
                 ]
             except Exception as exc:
-                raise KokoroUnavailableError(
-                    f"Kokoro could not synthesize speech: {exc}"
-                ) from exc
+                raise KokoroUnavailableError(f"Kokoro could not synthesize speech: {exc}") from exc
 
         if not audio_parts:
             raise KokoroUnavailableError("Kokoro returned no audio.")

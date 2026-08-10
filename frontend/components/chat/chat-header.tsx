@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  Show,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from "@clerk/nextjs";
+import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { PanelLeftIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,8 +17,7 @@ export function ChatHeader() {
   const { currentModelId, setCurrentModelId } = useActiveChat();
   const { isAuthenticated, isLoaded } = useMedixAuth();
   const sidebarIsHidden = state === "collapsed" || isMobile;
-  const showAuthActions =
-    isLocalAuthBypassed || (isLoaded && !isAuthenticated);
+  const showAuthActions = isLocalAuthBypassed || (isLoaded && !isAuthenticated);
 
   return (
     <header className="sticky top-0 z-30 flex h-13 shrink-0 items-center gap-1.5 bg-white px-2 font-sans dark:bg-background sm:px-3.5">

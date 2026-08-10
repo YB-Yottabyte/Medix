@@ -11,8 +11,11 @@ import {
 import { checkBotId } from "botid/server";
 import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
-import type { UserType } from "@/lib/auth/types";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import {
+  generateVerifiedFollowUp,
+  linkFollowUpTimestamps,
+} from "@/lib/ai/medical-follow-up";
 import {
   allowedModelIds,
   chatModels,
@@ -26,6 +29,7 @@ import {
   getLanguageModel,
   providerOptionsKey,
 } from "@/lib/ai/providers";
+import { contextualizeMedicalQuery } from "@/lib/ai/query-contextualizer";
 import { isSmallTalk, SMALL_TALK_PROMPT } from "@/lib/ai/small-talk";
 import {
   isSolAvailable,
@@ -34,12 +38,8 @@ import {
   SOL_UNAVAILABLE_MESSAGE,
   solFallbackEnabled,
 } from "@/lib/ai/sol";
-import { contextualizeMedicalQuery } from "@/lib/ai/query-contextualizer";
-import {
-  generateVerifiedFollowUp,
-  linkFollowUpTimestamps,
-} from "@/lib/ai/medical-follow-up";
 import { createSearchProcedureTool } from "@/lib/ai/tools/search-procedure";
+import type { UserType } from "@/lib/auth/types";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,

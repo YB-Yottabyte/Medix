@@ -117,9 +117,7 @@ def test_tts_returns_local_kokoro_wav() -> None:
             return b"RIFF-local-kokoro-wave"
 
     client = make_client()
-    client.app.dependency_overrides[get_kokoro_synthesizer] = (
-        lambda: FakeSpeechSynthesizer()
-    )
+    client.app.dependency_overrides[get_kokoro_synthesizer] = lambda: FakeSpeechSynthesizer()
 
     response = client.post("/api/tts", json={"text": " Apply  pressure. "})
 

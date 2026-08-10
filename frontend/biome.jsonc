@@ -25,7 +25,8 @@
         "noExplicitAny": "off",
         "noUnknownAtRules": "off",
         "noConsole": "off",
-        "noBitwiseOperators": "off"
+        "noBitwiseOperators": "off",
+        "useAwait": "off"
       },
       "style": {
         "noMagicNumbers": "off",
@@ -49,7 +50,8 @@
       },
       "performance": {
         "noBarrelFile": "off",
-        "useTopLevelRegex": "off"
+        "useTopLevelRegex": "off",
+        "noDelete": "off"
       }
     }
   }

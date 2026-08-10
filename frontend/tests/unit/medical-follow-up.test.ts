@@ -106,9 +106,7 @@ test("follow-up timestamps target the existing evidence workspace", () => {
     "Keep compressions going. [0:33–0:39](#medix-evidence=bundle%2Faed&clip=33,39)"
   );
   assert.deepEqual(
-    parseEvidenceTimestampHref(
-      "#medix-evidence=bundle%2Faed&clip=33,39"
-    ),
+    parseEvidenceTimestampHref("#medix-evidence=bundle%2Faed&clip=33,39"),
     {
       evidenceBundleId: "bundle/aed",
       startSeconds: 33,

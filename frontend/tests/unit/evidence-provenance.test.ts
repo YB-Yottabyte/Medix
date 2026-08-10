@@ -99,9 +99,7 @@ test("a supported follow-up reports the cues it was built from", async () => {
         relatedCueIds: ["T001"],
       }),
       JSON.stringify({
-        claims: [
-          { text: "Keep chest compressions going", cueIds: ["T002"] },
-        ],
+        claims: [{ text: "Keep chest compressions going", cueIds: ["T002"] }],
       }),
       JSON.stringify({
         verdict: "accept",
@@ -205,9 +203,7 @@ test("the active-source label clears when the newest search did not answer", () 
   );
   // An answered result without a usable bundle is not a reusable source.
   assert.equal(
-    activeSourceLabel([
-      procedureTurn({ status: "answered", videoId: null }),
-    ]),
+    activeSourceLabel([procedureTurn({ status: "answered", videoId: null })]),
     null
   );
 });

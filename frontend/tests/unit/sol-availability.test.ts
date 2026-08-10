@@ -33,18 +33,22 @@ test("identifies the Sol-backed model", () => {
 
 test("availability reports false for every session failure mode", async () => {
   const originalFetch = globalThis.fetch;
-  const cases: Array<[string, () => Promise<Response>]> = [
+  const cases: [string, () => Promise<Response>][] = [
     // Tunnel closed / nothing listening.
     [
       "connection refused",
-      () => Promise.reject(new Error("fetch failed: ECONNREFUSED 127.0.0.1:11500")),
+      () =>
+        Promise.reject(new Error("fetch failed: ECONNREFUSED 127.0.0.1:11500")),
     ],
     // GPU job expired mid-session.
     ["socket hang up", () => Promise.reject(new Error("socket hang up"))],
     // Tunnel open but server not answering: must time out, not hang.
     [
       "timeout",
-      () => Promise.reject(Object.assign(new Error("timed out"), { name: "TimeoutError" })),
+      () =>
+        Promise.reject(
+          Object.assign(new Error("timed out"), { name: "TimeoutError" })
+        ),
     ],
     // Server up but returning an error status.
     [
@@ -65,7 +69,10 @@ test("availability reports false for every session failure mode", async () => {
     // Server up but returning non-JSON (e.g. a proxy error page).
     [
       "non-json body",
-      () => Promise.resolve(new Response("<html>Bad Gateway</html>", { status: 200 })),
+      () =>
+        Promise.resolve(
+          new Response("<html>Bad Gateway</html>", { status: 200 })
+        ),
     ],
   ];
 
@@ -95,7 +102,9 @@ test("connectivity errors are recognised, unrelated errors are not", () => {
     new Error("connect ECONNREFUSED 127.0.0.1:11500"),
     new Error("read ECONNRESET"),
     new Error("socket hang up"),
-    Object.assign(new Error("The operation timed out"), { name: "TimeoutError" }),
+    Object.assign(new Error("The operation timed out"), {
+      name: "TimeoutError",
+    }),
     Object.assign(new Error("aborted"), { name: "AbortError" }),
     new Error("getaddrinfo ENOTFOUND sol.cluster"),
     new Error("terminated"),
@@ -114,7 +123,10 @@ test("connectivity errors are recognised, unrelated errors are not", () => {
 });
 
 test("the outage message names the recovery action and leaks no internals", () => {
-  assert.match(SOL_UNAVAILABLE_MESSAGE, /supercomputer model is currently unavailable/i);
+  assert.match(
+    SOL_UNAVAILABLE_MESSAGE,
+    /supercomputer model is currently unavailable/i
+  );
   assert.match(SOL_UNAVAILABLE_MESSAGE, /reconnect the Sol session/i);
   // No hostnames, ports, stack traces, or provider names.
   assert.doesNotMatch(

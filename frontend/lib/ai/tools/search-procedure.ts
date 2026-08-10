@@ -67,7 +67,10 @@ type SearchProcedureOptions = {
 function publicAbstentionMessage(result: ProcedureResponse) {
   const response = result.response
     .replace(/\bT\d{3}\b/g, "")
-    .replace(/^.*(?:generation output failed|grounding validation|lexical support).*$/gim, "")
+    .replace(
+      /^.*(?:generation output failed|grounding validation|lexical support).*$/gim,
+      ""
+    )
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return response &&
@@ -87,7 +90,8 @@ export function toProcedureToolOutput(
     // The canonical response is a compact validation artifact, not the
     // user-facing answer. Exposing it for answered results encourages chat
     // models to copy the two-line summary verbatim.
-    answer: result.status === "abstained" ? publicAbstentionMessage(result) : null,
+    answer:
+      result.status === "abstained" ? publicAbstentionMessage(result) : null,
     status: result.status,
     answerable: result.status === "answered",
     confidence: result.confidence ?? null,
@@ -181,10 +185,7 @@ export function createSearchProcedureTool(
         ),
     }),
     execute: async ({ query, action }) => {
-      if (
-        options.continueCurrentEvidenceFirst &&
-        !currentEvidencePresented
-      ) {
+      if (options.continueCurrentEvidenceFirst && !currentEvidencePresented) {
         currentEvidencePresented = true;
         const reused = reuseCurrentEvidence();
         if (reused) {

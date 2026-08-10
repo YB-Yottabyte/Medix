@@ -12,11 +12,7 @@ export async function DELETE() {
   const { userId: clerkUserId } = await clerkAuth();
   const session = await getAppSession();
 
-  if (
-    !clerkUserId ||
-    !session?.user ||
-    session.user.type !== "regular"
-  ) {
+  if (!clerkUserId || !session?.user || session.user.type !== "regular") {
     return new ChatbotError("unauthorized:chat").toResponse();
   }
 

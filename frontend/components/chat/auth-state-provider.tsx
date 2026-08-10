@@ -2,8 +2,8 @@
 
 import { useClerk, useUser } from "@clerk/nextjs";
 import {
-  SessionProvider,
   signOut as nextAuthSignOut,
+  SessionProvider,
   useSession,
 } from "next-auth/react";
 import { createContext, useContext, useMemo } from "react";

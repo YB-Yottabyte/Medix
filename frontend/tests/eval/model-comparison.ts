@@ -25,9 +25,13 @@ import {
 } from "../../lib/ai/medical-follow-up";
 import { QWEN_CHAT_MODEL } from "../../lib/ai/models";
 import { ollamaOpenAIBaseUrl } from "../../lib/ai/providers";
-import { isSolAvailable, SOL_CHAT_MODEL, solOllamaBaseUrl } from "../../lib/ai/sol";
-import { sanitizeProcedureAnswer } from "../../lib/evidence-timestamps";
+import {
+  isSolAvailable,
+  SOL_CHAT_MODEL,
+  solOllamaBaseUrl,
+} from "../../lib/ai/sol";
 import type { TranscriptCitation } from "../../lib/ai/tools/search-procedure";
+import { sanitizeProcedureAnswer } from "../../lib/evidence-timestamps";
 
 const ollama = createOpenAICompatible({
   name: "ollama",
@@ -66,11 +70,12 @@ const sol = createOpenAICompatible({
  * MedGemma experiment stays reproducible while the Sol comparison runs by
  * default. All candidates share the prompts, cues, pipeline, and validators.
  */
-const ALL_CANDIDATES: Record<string, { label: string; model: LanguageModel }> = {
-  qwen35: { label: "qwen3.5-9b (local)", model: ollama(QWEN_CHAT_MODEL) },
-  qwen36: { label: "qwen3.6-27b (Sol)", model: sol(SOL_CHAT_MODEL) },
-  medgemma: { label: "medgemma1.5-4b", model: ollama(MEDGEMMA_EVAL_MODEL) },
-};
+const ALL_CANDIDATES: Record<string, { label: string; model: LanguageModel }> =
+  {
+    qwen35: { label: "qwen3.5-9b (local)", model: ollama(QWEN_CHAT_MODEL) },
+    qwen36: { label: "qwen3.6-27b (Sol)", model: sol(SOL_CHAT_MODEL) },
+    medgemma: { label: "medgemma1.5-4b", model: ollama(MEDGEMMA_EVAL_MODEL) },
+  };
 const CANDIDATES = (process.env.MEDIX_EVAL_MODELS ?? "qwen35,qwen36")
   .split(",")
   .map((key) => ALL_CANDIDATES[key.trim()])
@@ -152,16 +157,56 @@ const FOLLOW_UPS: Array<{
   cueIds: string[];
   kind: "answerable" | "unanswerable";
 }> = [
-  { question: "Should I keep doing compressions while the AED is being set up?", cueIds: ["T003"], kind: "answerable" },
-  { question: "Where exactly do the pads go?", cueIds: ["T002"], kind: "answerable" },
-  { question: "What do I do right after the shock is delivered?", cueIds: ["T005"], kind: "answerable" },
-  { question: "What if the person has a really hairy chest?", cueIds: ["T006"], kind: "answerable" },
-  { question: "Is it safe for me to be touching them when it shocks?", cueIds: ["T004"], kind: "answerable" },
-  { question: "Do I need to know how to use the machine before it arrives?", cueIds: ["T001"], kind: "answerable" },
-  { question: "How many compressions per minute should I be doing?", cueIds: [], kind: "unanswerable" },
-  { question: "What compression depth is correct for an adult?", cueIds: [], kind: "unanswerable" },
-  { question: "What should I do if the AED says no shock advised?", cueIds: [], kind: "unanswerable" },
-  { question: "How much adrenaline should be given during the arrest?", cueIds: [], kind: "unanswerable" },
+  {
+    question: "Should I keep doing compressions while the AED is being set up?",
+    cueIds: ["T003"],
+    kind: "answerable",
+  },
+  {
+    question: "Where exactly do the pads go?",
+    cueIds: ["T002"],
+    kind: "answerable",
+  },
+  {
+    question: "What do I do right after the shock is delivered?",
+    cueIds: ["T005"],
+    kind: "answerable",
+  },
+  {
+    question: "What if the person has a really hairy chest?",
+    cueIds: ["T006"],
+    kind: "answerable",
+  },
+  {
+    question: "Is it safe for me to be touching them when it shocks?",
+    cueIds: ["T004"],
+    kind: "answerable",
+  },
+  {
+    question: "Do I need to know how to use the machine before it arrives?",
+    cueIds: ["T001"],
+    kind: "answerable",
+  },
+  {
+    question: "How many compressions per minute should I be doing?",
+    cueIds: [],
+    kind: "unanswerable",
+  },
+  {
+    question: "What compression depth is correct for an adult?",
+    cueIds: [],
+    kind: "unanswerable",
+  },
+  {
+    question: "What should I do if the AED says no shock advised?",
+    cueIds: [],
+    kind: "unanswerable",
+  },
+  {
+    question: "How much adrenaline should be given during the arrest?",
+    cueIds: [],
+    kind: "unanswerable",
+  },
 ];
 
 const INITIAL_QUESTIONS = [
@@ -399,12 +444,16 @@ Return JSON only: {"total":N,"unsupported":N,"examples":["..."]}`,
 }
 
 const HEADING = /(^|\n)\s*#{1,6}\s+\S|(^|\n)\s*\*\*[^*\n]{6,}\*\*\s*$/m;
-const FILLER = /supporting video guidance|hope this helps|let me know if|in summary/i;
+const FILLER =
+  /supporting video guidance|hope this helps|let me know if|in summary/i;
 
 async function main() {
   const evidenceText = EVIDENCE.map((c) => c.text).join("\n");
 
-  if (CANDIDATES.some((c) => c.label.includes("Sol")) && !(await isSolAvailable())) {
+  if (
+    CANDIDATES.some((c) => c.label.includes("Sol")) &&
+    !(await isSolAvailable())
+  ) {
     console.error(
       "Sol session unavailable — start the SSH tunnel and GPU job, or run\n" +
         "  MEDIX_EVAL_MODELS=qwen35 pnpm eval:models\n" +
@@ -450,8 +499,12 @@ async function main() {
       "hallucinated-cue": results.filter((r) => r.hallucinatedCueId).length,
       "unsupported-claims": unsupportedTotal,
       "mean-words": (
-        results.filter((r) => r.answer).reduce((sum, r) => sum + r.answer.split(/\s+/).filter(Boolean).length, 0) /
-        Math.max(1, results.filter((r) => r.answer).length)
+        results
+          .filter((r) => r.answer)
+          .reduce(
+            (sum, r) => sum + r.answer.split(/\s+/).filter(Boolean).length,
+            0
+          ) / Math.max(1, results.filter((r) => r.answer).length)
       ).toFixed(0),
       "median-latency-s": (
         [...results].map((r) => r.latencyMs).sort((a, b) => a - b)[

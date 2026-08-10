@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createSearchProcedureTool,
-  type ProcedureToolOutput,
   type ProcedureResponse,
+  type ProcedureToolOutput,
   toContinuedProcedureToolOutput,
   toProcedureToolOutput,
 } from "../../lib/ai/tools/search-procedure";

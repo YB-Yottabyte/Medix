@@ -3,11 +3,7 @@ import { auth } from "@/app/(auth)/auth";
 import { isClerkConfigured } from "./auth/config";
 import type { AppSession } from "./auth/types";
 import { isLocalAuthBypassed } from "./constants";
-import {
-  createUser,
-  getOrCreateClerkUser,
-  getUser,
-} from "./db/queries";
+import { createUser, getOrCreateClerkUser, getUser } from "./db/queries";
 
 const LOCAL_USER_EMAIL = "local@medix.dev";
 
@@ -30,7 +26,7 @@ export async function getAppSession(): Promise<AppSession | null> {
 
     if (userId) {
       const client = await clerkClient();
-      let clerkUser;
+      let clerkUser: Awaited<ReturnType<typeof client.users.getUser>>;
       try {
         clerkUser = await client.users.getUser(userId);
       } catch (error) {

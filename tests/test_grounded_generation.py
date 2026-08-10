@@ -296,12 +296,11 @@ def test_ollama_adapter_uses_the_shared_strict_contract() -> None:
     assert draft.claims[0].citation_ids == ("T001",)
     assert model.model_name == "ollama-strict-grounding-v2:qwen-test"
     assert captured["url"] == "http://localhost:11434/api/chat"
-    assert captured["json"]["format"] == (
-        GroqStructuredEvidenceAnswerModel._response_format()["json_schema"]["schema"]
+    assert (
+        captured["json"]["format"]
+        == (GroqStructuredEvidenceAnswerModel._response_format()["json_schema"]["schema"])
     )
-    assert captured["json"]["messages"][1]["content"].startswith(
-        "Question: How do I clean it?"
-    )
+    assert captured["json"]["messages"][1]["content"].startswith("Question: How do I clean it?")
     assert captured["json"]["think"] is False
     assert captured["json"]["options"]["num_predict"] == 512
     assert captured["json"]["format"]["properties"]["claims"]["maxItems"] == 5

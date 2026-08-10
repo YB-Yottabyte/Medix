@@ -7,13 +7,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { LanguageModel } from "ai";
 import {
+  buildFollowUpCues,
   generateVerifiedFollowUp,
   parseClaimVerification,
   parseSemanticAssessment,
   publicFollowUpDeferral,
   validateConversationalReply,
   validateFollowUpAnswer,
-  buildFollowUpCues,
 } from "../../lib/ai/medical-follow-up";
 import { QWEN_CHAT_MODEL } from "../../lib/ai/models";
 import type {
@@ -118,7 +118,10 @@ const continueAssessment = JSON.stringify({
 });
 const twoClaims = JSON.stringify({
   claims: [
-    { text: "Keep chest compressions going while the AED is prepared", cueIds: ["T002"] },
+    {
+      text: "Keep chest compressions going while the AED is prepared",
+      cueIds: ["T002"],
+    },
     { text: "Expose the chest before the pads go on", cueIds: ["T002"] },
   ],
 });
@@ -126,7 +129,11 @@ const twoClaims = JSON.stringify({
 // --- Three-way retrieval relation ([Retrieve] / [No Retrieve] / [Continue]) ---
 
 test("the assessment parser accepts the three-way relation and the legacy alias", () => {
-  const relations = ["continue_to_use_evidence", "no_retrieval_needed", "topic_change"];
+  const relations = [
+    "continue_to_use_evidence",
+    "no_retrieval_needed",
+    "topic_change",
+  ];
   for (const relation of relations) {
     const parsed = parseSemanticAssessment(
       JSON.stringify({
@@ -183,7 +190,10 @@ test("a [No Retrieve] turn gets a conversational reply, not a medical deferral",
   assert.equal(result.taxonomy, "conversational");
   assert.equal(result.verified, true);
   assert.notEqual(result.answer, publicFollowUpDeferral());
-  assert.doesNotMatch(result.answer, /does not contain enough verified evidence/);
+  assert.doesNotMatch(
+    result.answer,
+    /does not contain enough verified evidence/
+  );
   // Assessment plus one conversational generation: no grounded generation and
   // no verification pass for an ungrounded turn.
   assert.equal(model.calls.length, 2);
@@ -376,9 +386,7 @@ test("a grounded answer that does not address the question is not shown", async 
     [
       continueAssessment,
       JSON.stringify({
-        claims: [
-          { text: "The AED pads go on a bare chest", cueIds: ["T002"] },
-        ],
+        claims: [{ text: "The AED pads go on a bare chest", cueIds: ["T002"] }],
       }),
       JSON.stringify({
         verdict: "accept",

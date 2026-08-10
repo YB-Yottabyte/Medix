@@ -7,9 +7,9 @@ import {
   buildFollowUpCues,
   COLLECTION_SEARCH_REQUEST,
   extractiveFallback,
-  offersCollectionSearch,
   generateVerifiedFollowUp,
   linkFollowUpTimestamps,
+  offersCollectionSearch,
   parseClaimVerification,
   parseEvidenceTimestampHref,
   parseGroundedClaims,
@@ -133,7 +133,10 @@ const supportedAssessment = JSON.stringify({
 });
 const supportedClaims = JSON.stringify({
   claims: [
-    { text: "Keep chest compressions going while the AED is prepared", cueIds: ["T002"] },
+    {
+      text: "Keep chest compressions going while the AED is prepared",
+      cueIds: ["T002"],
+    },
   ],
 });
 const acceptedVerification = JSON.stringify({
@@ -211,7 +214,10 @@ test("a supported follow-up returns text only and keeps the original bundle", as
   assert.equal(result.verified, true);
   assert.equal(typeof result.answer, "string");
   // No tool result, clip, or video object is produced by this path.
-  assert.doesNotMatch(result.answer, /clip|videoUrl|searchProcedure|workspace/i);
+  assert.doesNotMatch(
+    result.answer,
+    /clip|videoUrl|searchProcedure|workspace/i
+  );
   assert.doesNotMatch(result.answer, /^\s*Yes[.,]/i);
   assert.doesNotMatch(result.answer, /^\s*No[.,]/i);
   assert.equal(bundle.evidenceBundleId, "aed-bundle");
@@ -263,7 +269,10 @@ test("an unsupported same-topic question defers instead of answering", async () 
 
   assert.equal(result.taxonomy, "nonanswerable");
   assert.equal(result.answer, publicFollowUpDeferral());
-  assert.match(result.answer, /ask me to search the supported video collection/);
+  assert.match(
+    result.answer,
+    /ask me to search the supported video collection/
+  );
   // Generation and verification are never invoked for an insufficient bundle.
   assert.equal(model.calls.length, 1);
 });
@@ -390,7 +399,9 @@ test("unparseable model output defers conservatively", async () => {
 
 // 15 — Ollama failure defers.
 test("a local model failure defers conservatively", async () => {
-  const { result } = await runFollowUp([new Error("ECONNREFUSED 127.0.0.1:11434")]);
+  const { result } = await runFollowUp([
+    new Error("ECONNREFUSED 127.0.0.1:11434"),
+  ]);
 
   assert.equal(result.answer, publicFollowUpDeferral());
   assert.equal(result.verified, false);
@@ -487,7 +498,11 @@ test("explicit requests for another source route to canonical retrieval", () => 
     "can you search the collection",
     "show me another procedure video",
   ]) {
-    assert.equal(decideRetrieval(request, context), "retrieve_new_source", request);
+    assert.equal(
+      decideRetrieval(request, context),
+      "retrieve_new_source",
+      request
+    );
   }
 });
 
@@ -496,7 +511,10 @@ test("the offered collection search is recognised as an explicit retrieval reque
   const context = buildConversationContext([answeredTurn]);
 
   assert.equal(offersCollectionSearch(publicFollowUpDeferral()), true);
-  assert.equal(offersCollectionSearch("Keep compressions going. [0:36–0:43]"), false);
+  assert.equal(
+    offersCollectionSearch("Keep compressions going. [0:36–0:43]"),
+    false
+  );
   assert.equal(
     decideRetrieval(COLLECTION_SEARCH_REQUEST, context),
     "retrieve_new_source"

@@ -1,7 +1,7 @@
 import { z } from "zod";
+import { medixApiEndpoint } from "@/lib/ai/tools/medix-api-client";
 import { getAppSession } from "@/lib/dev-session";
 import { ChatbotError } from "@/lib/errors";
-import { medixApiEndpoint } from "@/lib/ai/tools/medix-api-client";
 
 const ttsSchema = z.object({
   text: z.string().trim().min(1).max(200),

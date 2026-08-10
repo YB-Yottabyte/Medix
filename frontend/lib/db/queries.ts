@@ -274,15 +274,11 @@ export async function deleteUserAccount({ userId }: { userId: string }) {
         await transaction
           .delete(message)
           .where(inArray(message.chatId, chatIds));
-        await transaction
-          .delete(stream)
-          .where(inArray(stream.chatId, chatIds));
+        await transaction.delete(stream).where(inArray(stream.chatId, chatIds));
         await transaction.delete(chat).where(eq(chat.userId, userId));
       }
 
-      await transaction
-        .delete(suggestion)
-        .where(eq(suggestion.userId, userId));
+      await transaction.delete(suggestion).where(eq(suggestion.userId, userId));
       await transaction.delete(document).where(eq(document.userId, userId));
       const [deletedUser] = await transaction
         .delete(user)

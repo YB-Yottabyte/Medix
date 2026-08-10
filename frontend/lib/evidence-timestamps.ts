@@ -220,7 +220,10 @@ export function sanitizeProcedureAnswer(
     ""
   );
   cleaned = cleaned
-    .replace(/^.*(?:generation output failed|grounding validation|lexical support).*$/gim, "")
+    .replace(
+      /^.*(?:generation output failed|grounding validation|lexical support).*$/gim,
+      ""
+    )
     .replace(/\s*\((?:cue|cues)\s+T?\d{3}(?:\s*[–-]\s*T?\d{3})?\)/gi, "")
     .replace(/\b(?:cue|cues)\s+T?\d{3}(?:\s*[–-]\s*T?\d{3})?\b/gi, "")
     .replace(/\bT\d{3}\b/g, "");
@@ -236,12 +239,11 @@ export function sanitizeProcedureAnswer(
     // a "Steps to ..." lead-in, and the old closing filler line.
     .replace(/^\s*#{1,6}\s*.*$/gm, "")
     .replace(/^\s*(?:\*\*)?Steps? to [^\n*]*(?:\*\*)?\s*:?\s*$/gim, "")
-    .replace(
-      /^\s*Supporting video guidance is shown below\.?\s*$/gim,
-      ""
-    )
+    .replace(/^\s*Supporting video guidance is shown below\.?\s*$/gim, "")
     .replace(/\s*Supporting video guidance is shown below\.\s*$/i, "");
-  return limitNumberedSteps(cleaned, 4).replace(/\n{3,}/g, "\n\n").trim();
+  return limitNumberedSteps(cleaned, 4)
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**

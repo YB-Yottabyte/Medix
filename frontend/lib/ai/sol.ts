@@ -71,9 +71,7 @@ export async function isSolAvailable(): Promise<boolean> {
     const payload = (await response.json()) as {
       data?: Array<{ id?: string }>;
     };
-    return Boolean(
-      payload.data?.some((entry) => entry.id === SOL_CHAT_MODEL)
-    );
+    return Boolean(payload.data?.some((entry) => entry.id === SOL_CHAT_MODEL));
   } catch {
     return false;
   }

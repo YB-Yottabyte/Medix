@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useActionState, useEffect, useState } from "react";
-import {
-  type RegisterActionState,
-  register,
-} from "@/app/(auth)/actions";
+import { type RegisterActionState, register } from "@/app/(auth)/actions";
 import { AuthForm } from "@/components/chat/auth-form";
 import { OAuthButtons } from "@/components/chat/oauth-buttons";
 import { SubmitButton } from "@/components/chat/submit-button";

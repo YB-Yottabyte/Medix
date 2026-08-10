@@ -5,13 +5,13 @@ import Apple from "next-auth/providers/apple";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
+import type { UserType } from "@/lib/auth/types";
 import { DUMMY_PASSWORD } from "@/lib/constants";
 import {
   createGuestUser,
   getOrCreateOAuthUser,
   getUser,
 } from "@/lib/db/queries";
-import type { UserType } from "@/lib/auth/types";
 import { authConfig } from "./auth.config";
 
 export type { UserType } from "@/lib/auth/types";

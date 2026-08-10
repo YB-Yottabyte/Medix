@@ -114,13 +114,17 @@ function summarize(label: string, answers: string[]) {
     "heading%": rate((a) => HEADING.test(a)).toFixed(0),
     "title-phrase%": rate((a) => TITLE_LINE.test(a)).toFixed(0),
     "filler%": rate((a) => FILLER.test(a)).toFixed(0),
-    "preamble-open%": rate((a) => PREAMBLE_OPENER.test(firstSentence(a))).toFixed(0),
+    "preamble-open%": rate((a) =>
+      PREAMBLE_OPENER.test(firstSentence(a))
+    ).toFixed(0),
     "mean-bold": (
       answers.reduce((sum, a) => sum + boldCount(a), 0) / answers.length
     ).toFixed(1),
     "mean-words": (
-      answers.reduce((sum, a) => sum + a.split(/\s+/).filter(Boolean).length, 0) /
-      answers.length
+      answers.reduce(
+        (sum, a) => sum + a.split(/\s+/).filter(Boolean).length,
+        0
+      ) / answers.length
     ).toFixed(0),
   };
 }
@@ -135,7 +139,9 @@ async function main() {
     after.push(await answer(AFTER_RULES, scenario));
   }
 
-  console.log("\n=== Initial-answer presentation metrics (lower is better) ===");
+  console.log(
+    "\n=== Initial-answer presentation metrics (lower is better) ==="
+  );
   console.table([summarize("before", before), summarize("after", after)]);
 
   for (let i = 0; i < SCENARIOS.length; i++) {

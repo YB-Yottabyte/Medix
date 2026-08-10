@@ -23,11 +23,7 @@ class ServiceContainer:
 
     @property
     def ready(self) -> bool:
-        return (
-            self.settings.research.enabled
-            and self.qa is not None
-            and self.startup_error is None
-        )
+        return self.settings.research.enabled and self.qa is not None and self.startup_error is None
 
     @classmethod
     def unavailable(cls, settings: AppSettings, reason: str) -> ServiceContainer:

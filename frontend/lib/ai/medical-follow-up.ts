@@ -94,7 +94,8 @@ const CONCEPT_CHECKS: Array<{
     label: "the no-shock instruction",
   },
   {
-    question: /\b(?:after|following).{0,24}\bshock\b|\bshock.{0,20}\bdelivered\b/i,
+    question:
+      /\b(?:after|following).{0,24}\bshock\b|\bshock.{0,20}\bdelivered\b/i,
     evidence:
       /\b(?:after|following).{0,32}\bshock\b|\bresume.{0,24}\b(?:cpr|compressions?)\b/i,
     label: "the action after a shock",
@@ -105,13 +106,15 @@ const CONCEPT_CHECKS: Array<{
     label: "hair removal for pad contact",
   },
   {
-    question: /\b(?:where|place|placement|position).{0,30}\bpads?\b|\bpads?.{0,20}\b(?:go|place|position)\w*\b/i,
+    question:
+      /\b(?:where|place|placement|position).{0,30}\bpads?\b|\bpads?.{0,20}\b(?:go|place|position)\w*\b/i,
     evidence:
       /\b(?:collarbone|clavicle|right upper chest|left (?:side|chest)|nipple|armpit|pad goes|place the pad)\b/i,
     label: "AED pad placement",
   },
   {
-    question: /\b(?:stop|pause|continue).{0,30}\b(?:cpr|compressions?)\b|\b(?:cpr|compressions?).{0,30}\b(?:attach|pads?)\b/i,
+    question:
+      /\b(?:stop|pause|continue).{0,30}\b(?:cpr|compressions?)\b|\b(?:cpr|compressions?).{0,30}\b(?:attach|pads?)\b/i,
     evidence:
       /\b(?:keep|continue|doing|stop|pause).{0,30}\b(?:cpr|compressions?)\b|\b(?:cpr|compressions?).{0,40}\b(?:hook|attach|aed|pads?)\b/i,
     label: "CPR while attaching the AED",
@@ -157,7 +160,8 @@ export function assessMedicalFollowUp(
     return {
       taxonomy: "nonanswerable",
       evidenceSufficiency: "insufficient",
-      reason: "The question requests diagnosis, prescribing, or medication changes.",
+      reason:
+        "The question requests diagnosis, prescribing, or medication changes.",
     };
   }
 
@@ -190,17 +194,18 @@ export function assessMedicalFollowUp(
     ? "sufficient"
     : CONTEXTUAL_SEQUENCE_PATTERN.test(question.trim())
       ? "partial"
-    : coverage >= 0.6
-      ? "sufficient"
-      : coverage >= 0.3
-        ? "partial"
-        : "insufficient";
+      : coverage >= 0.6
+        ? "sufficient"
+        : coverage >= 0.3
+          ? "partial"
+          : "insufficient";
 
   if (evidenceSufficiency === "insufficient") {
     return {
       taxonomy: "nonanswerable",
       evidenceSufficiency,
-      reason: "The follow-up is not directly supported by the active transcript.",
+      reason:
+        "The follow-up is not directly supported by the active transcript.",
     };
   }
 
@@ -312,7 +317,10 @@ export function sanitizeFollowUpAnswer(answer: string) {
     .replace(/\*\*|__/g, "")
     .replace(/^\s*(?:[-*•]|\d+[.)])\s+/gm, "")
     .replace(/\s*\((?:cue|cues)\s+T?\d{3}(?:\s*[–-]\s*T?\d{3})?\)/gi, "")
-    .replace(/^.*(?:generation output failed|grounding validation|lexical support).*$/gim, "")
+    .replace(
+      /^.*(?:generation output failed|grounding validation|lexical support).*$/gim,
+      ""
+    )
     .replace(/\b(?:cue|cues)\s+T?\d{3}(?:\s*[–-]\s*T?\d{3})?\b/gi, "")
     .replace(/\bT\d{3}\b/g, "")
     .replace(
@@ -505,7 +513,10 @@ function parseJsonPayload(text: string): unknown {
  * active bundle. A single hallucinated ID invalidates the whole selection
  * rather than being silently dropped.
  */
-function validatedCueIds(value: unknown, allowed: Set<string>): string[] | null {
+function validatedCueIds(
+  value: unknown,
+  allowed: Set<string>
+): string[] | null {
   if (value === undefined || value === null) {
     return [];
   }
@@ -533,7 +544,10 @@ function normalizeRelation(value: unknown): FollowUpRelation | null {
     return null;
   }
   const normalized = value.trim().toLowerCase();
-  if (normalized === "same_topic" || normalized === "continue_to_use_evidence") {
+  if (
+    normalized === "same_topic" ||
+    normalized === "continue_to_use_evidence"
+  ) {
     return "continue_to_use_evidence";
   }
   if (
@@ -1073,7 +1087,9 @@ ${claims.map((claim, index) => `${index}: ${claim.text} (cites ${claim.cueIds.jo
       verification.utility !== undefined &&
       verification.utility < MINIMUM_UTILITY
     ) {
-      return fallbackOrDefer("The proposed answer did not address the question.");
+      return fallbackOrDefer(
+        "The proposed answer did not address the question."
+      );
     }
 
     const verdictByIndex = new Map(
@@ -1082,7 +1098,8 @@ ${claims.map((claim, index) => `${index}: ${claim.text} (cites ${claim.cueIds.jo
     let downgraded = false;
     const supportedClaims = claims.flatMap((claim, index) => {
       const verdict = verdictByIndex.get(index);
-      const support = verification.claims.length === 0 ? "full" : verdict?.support;
+      const support =
+        verification.claims.length === 0 ? "full" : verdict?.support;
       if (support === undefined || support === "none") {
         return [];
       }
@@ -1128,7 +1145,10 @@ function parseTime(value: string) {
     .reduce((total, part) => total * 60 + part, 0);
 }
 
-export function linkFollowUpTimestamps(answer: string, evidenceBundleId: string) {
+export function linkFollowUpTimestamps(
+  answer: string,
+  evidenceBundleId: string
+) {
   const bundle = encodeURIComponent(evidenceBundleId);
   return answer.replace(
     TIMESTAMP_PATTERN,
@@ -1142,9 +1162,7 @@ export function linkFollowUpTimestamps(answer: string, evidenceBundleId: string)
 }
 
 export function parseEvidenceTimestampHref(href?: string) {
-  const match = href?.match(
-    /^#medix-evidence=([^&]+)&clip=(\d+),(\d+)$/
-  );
+  const match = href?.match(/^#medix-evidence=([^&]+)&clip=(\d+),(\d+)$/);
   if (!match) {
     return null;
   }

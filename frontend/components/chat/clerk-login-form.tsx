@@ -4,10 +4,7 @@ import { useSignIn } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  AuthForm,
-  VerificationCodeForm,
-} from "@/components/chat/auth-form";
+import { AuthForm, VerificationCodeForm } from "@/components/chat/auth-form";
 import { OAuthButtons } from "@/components/chat/oauth-buttons";
 import { SubmitButton } from "@/components/chat/submit-button";
 import { toast } from "@/components/chat/toast";

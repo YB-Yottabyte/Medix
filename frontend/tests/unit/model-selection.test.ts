@@ -3,9 +3,9 @@ import test from "node:test";
 import {
   chatModels,
   DEFAULT_CHAT_MODEL,
+  getCapabilities,
   QWEN_CHAT_MODEL,
   SOL_CHAT_MODEL,
-  getCapabilities,
 } from "../../lib/ai/models";
 import {
   languageModelProvider,
@@ -32,7 +32,6 @@ test("keeps GPT-OSS and local Qwen, and adds Sol-backed Qwen 3.6 for evaluation"
   assert.notEqual(DEFAULT_CHAT_MODEL, SOL_CHAT_MODEL);
   assert.equal(chatModels[2]?.id, SOL_CHAT_MODEL);
 });
-
 
 test("normalizes Ollama hosts to the OpenAI-compatible v1 endpoint", () => {
   assert.equal(

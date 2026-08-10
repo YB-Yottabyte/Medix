@@ -2,10 +2,7 @@
 
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 import { AppleIcon, GithubIcon } from "lucide-react";
-import {
-  getProviders,
-  signIn as nextAuthSignIn,
-} from "next-auth/react";
+import { getProviders, signIn as nextAuthSignIn } from "next-auth/react";
 import { useState } from "react";
 import { LogoGoogle } from "@/components/chat/icons";
 import { clerkErrorMessage } from "@/lib/auth/clerk-errors";

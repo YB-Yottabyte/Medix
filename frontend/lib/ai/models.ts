@@ -1,4 +1,6 @@
-import { SOL_CHAT_MODEL } from "./sol";
+import { SOL_CHAT_MODEL as SOL_MODEL_ID } from "./sol";
+
+export { SOL_CHAT_MODEL } from "./sol";
 
 export const DEFAULT_CHAT_MODEL = "openai/gpt-oss-20b";
 export const QWEN_CHAT_MODEL =
@@ -9,8 +11,6 @@ export const QWEN_CHAT_MODEL =
  * against local Qwen, but not a default: DEFAULT_CHAT_MODEL and the follow-up
  * pipeline are unchanged. See docs/research/ for the comparison protocol.
  */
-export { SOL_CHAT_MODEL };
-
 export const titleModel = {
   id: "openai/gpt-oss-20b",
   name: "GPT-OSS 20B",
@@ -53,7 +53,7 @@ export const chatModels: ChatModel[] = [
     reasoningEffort: "none",
   },
   {
-    id: SOL_CHAT_MODEL,
+    id: SOL_MODEL_ID,
     name: "Qwen 3.6 27B",
     provider: "sol",
     deployment: "Sol supercomputer",

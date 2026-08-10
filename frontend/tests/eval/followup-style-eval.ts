@@ -252,14 +252,19 @@ async function runArm(
     utility: verdict?.utility ?? null,
     claimCount: claims.length,
     droppedClaims: claims.length - kept.length,
-    failure: validation.valid ? "" : `invalid render: ${rendered.slice(0, 160)}`,
+    failure: validation.valid
+      ? ""
+      : `invalid render: ${rendered.slice(0, 160)}`,
   };
 }
 
 // --- Deterministic metrics, derived from the Med-PaLM 2 rubric axes ---
 
 function stripCitations(text: string) {
-  return text.replace(/\[[^\]]*\]/g, " ").replace(/\s+/g, " ").trim();
+  return text
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function words(text: string) {
@@ -299,7 +304,8 @@ const TRANSCRIPT_VOICE =
   /\b(?:the (?:video|transcript|clip)|according to|as (?:shown|mentioned|stated)|the speaker|it says|this segment)\b/i;
 
 /** Report scaffolding the answer should never contain. */
-const SCAFFOLDING = /(^|\n)\s*(?:#{1,6}\s|\*\*[^*]+\*\*\s*$)|Supporting video guidance/im;
+const SCAFFOLDING =
+  /(^|\n)\s*(?:#{1,6}\s|\*\*[^*]+\*\*\s*$)|Supporting video guidance/im;
 
 function firstSentence(answer: string) {
   return stripCitations(answer).split(/(?<=[.!?])\s/)[0] ?? "";
@@ -308,13 +314,54 @@ function firstSentence(answer: string) {
 /** "Addresses the intent": first sentence carries the question's content words. */
 function intentOverlap(question: string, answer: string) {
   const stop = new Set([
-    "what", "how", "when", "where", "should", "the", "and", "for", "you",
-    "your", "are", "was", "can", "could", "with", "that", "this", "into",
-    "does", "did", "have", "has", "will", "would", "them", "they", "there",
-    "here", "very", "much", "many", "need", "know", "safe", "before", "after",
-    "while", "being", "doing", "keep", "going", "right", "really", "person",
+    "what",
+    "how",
+    "when",
+    "where",
+    "should",
+    "the",
+    "and",
+    "for",
+    "you",
+    "your",
+    "are",
+    "was",
+    "can",
+    "could",
+    "with",
+    "that",
+    "this",
+    "into",
+    "does",
+    "did",
+    "have",
+    "has",
+    "will",
+    "would",
+    "them",
+    "they",
+    "there",
+    "here",
+    "very",
+    "much",
+    "many",
+    "need",
+    "know",
+    "safe",
+    "before",
+    "after",
+    "while",
+    "being",
+    "doing",
+    "keep",
+    "going",
+    "right",
+    "really",
+    "person",
   ]);
-  const q = new Set(words(question).filter((w) => w.length > 2 && !stop.has(w)));
+  const q = new Set(
+    words(question).filter((w) => w.length > 2 && !stop.has(w))
+  );
   if (q.size === 0) {
     return 1;
   }
@@ -340,7 +387,9 @@ function summarize(label: string, outcomes: Outcome[]): ArmSummary {
   const valid = outcomes.filter((o) => o.valid && o.answer);
   const mean = (nums: number[]) =>
     nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
-  const partialCases = outcomes.filter((_, i) => CASES[i].sufficiency === "partial");
+  const partialCases = outcomes.filter(
+    (_, i) => CASES[i].sufficiency === "partial"
+  );
   return {
     label,
     validRate: outcomes.filter((o) => o.valid).length / outcomes.length,
@@ -435,7 +484,9 @@ async function main() {
     }))
   );
 
-  console.log("\n=== Blinded pairwise judge (secondary; same 9B is the judge) ===");
+  console.log(
+    "\n=== Blinded pairwise judge (secondary; same 9B is the judge) ==="
+  );
   const tally: Record<string, Record<string, number>> = {};
   for (let i = 0; i < CASES.length; i++) {
     if (!(before[i].answer && after[i].answer)) {
