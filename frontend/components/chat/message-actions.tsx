@@ -9,7 +9,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ChatMessage } from "@/lib/types";
-import copyIcon from "@/public/icons/copy.png";
 import {
   MessageAction as Action,
   MessageActions as Actions,
@@ -107,7 +106,7 @@ export function PureMessageActions({
                 aria-hidden
                 className="size-4 opacity-60 dark:invert"
                 height={16}
-                src={copyIcon}
+                src="/icons/copy.png"
                 width={16}
               />
             )}
@@ -133,7 +132,7 @@ export function PureMessageActions({
             aria-hidden
             className="size-4 opacity-60 dark:invert"
             height={16}
-            src={copyIcon}
+            src="/icons/copy.png"
             width={16}
           />
         )}
