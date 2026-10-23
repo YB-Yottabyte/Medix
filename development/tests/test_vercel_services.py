@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -104,3 +105,24 @@ def test_explicit_profile_is_available_when_system_variables_are_not_exposed(tmp
     assert result.returncode == 0
     lines = result.stdout.splitlines()
     assert lines[lines.index("--port") + 1] == "80"
+
+
+def test_vercel_dockerfile_context_contains_every_local_copy_source():
+    """Vercel builds with the Dockerfile directory as context, unlike CI -f."""
+    config = json.loads((ROOT / "vercel.json").read_text())
+    service = config["services"]["app"]
+    dockerfile = ROOT / service["root"] / service["entrypoint"]
+    context = dockerfile.parent.resolve()
+    sources = []
+    for line in dockerfile.read_text().splitlines():
+        if not line.strip().upper().startswith("COPY "):
+            continue
+        fields = shlex.split(line)
+        if any(field.startswith("--from=") for field in fields):
+            continue
+        sources.extend(field for field in fields[1:-1] if not field.startswith("--"))
+    assert sources, "Expected the backend image to copy runtime dependencies and code"
+    for source in sources:
+        path = (context / source).resolve()
+        assert path.is_relative_to(context), f"COPY {source} escapes the build context"
+        assert path.exists(), f"COPY {source} is unavailable in Vercel context {context}"
