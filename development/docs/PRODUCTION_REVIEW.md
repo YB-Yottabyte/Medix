@@ -42,9 +42,15 @@ are grouped under `development/`; application code remains under `backend/` and
 
 ## Limits before a public release
 
-The local Docker daemon was unavailable: the Linux image build is a separate CI
-check, not a claimed local success. Real Voyager inference, clinical answer quality,
+The local Docker daemon was unavailable. The Linux image build and import smoke
+check subsequently passed in [GitHub CI](https://github.com/YB-Yottabyte/Medix/actions/runs/40020528668),
+alongside the backend, frontend and repository checks. Real Voyager inference, clinical answer quality,
 representative load, persistent-media playback and hosting integrations require
 validation with the deployed configuration. These results establish software
 checks, not a clinical accuracy percentage or an end-to-end speed improvement.
 Real video/transcript resources and credentials are intentionally excluded from Git.
+
+BotID requires Vercel production context, and the existing chat route catches
+BotID failures without enforcing classification. The Render frontend therefore
+needs a supported, enforced abuse-prevention integration before public release.
+Preserving an integration is not evidence that protection works on another host.

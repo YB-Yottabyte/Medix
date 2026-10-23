@@ -17,7 +17,8 @@
     "typescript": "passed",
     "next_production_build": "passed",
     "postgres_migration_and_repeat": "passed",
-    "repository_hygiene": "passed"
+    "repository_hygiene": "passed",
+    "linux_container_image_and_import": "passed in GitHub CI run 40020528668"
   },
   "production_dependency_advisories": {
     "before": {
@@ -59,10 +60,11 @@
     }
   ],
   "limitations": [
-    "Backend Linux Docker build must pass CI; local Docker daemon was unavailable.",
+    "Local Docker daemon unavailable; Linux image build and import passed in GitHub CI.",
     "No live Voyager inference, clinical accuracy benchmark or representative load test was performed.",
     "Real video/transcript resources and hosting credentials must be provisioned separately.",
     "HTTP Range smoke uses synthetic bytes and validates delivery, not audiovisual content.",
-    "BotID and hosting-specific production integrations still require validation on the target host."
-  ]
+    "BotID requires Vercel production context; existing chat error handling/classification enforcement is not a verified protection boundary. A Render frontend needs a supported enforced protection integration."
+  ],
+  "ci_run": "https://github.com/YB-Yottabyte/Medix/actions/runs/40020528668"
 }

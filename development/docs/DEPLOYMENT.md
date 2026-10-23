@@ -6,8 +6,9 @@ No deployment runs from GitHub Actions; CI tests and builds the project only.
 
 ## Render topology
 
-Use a public Node web service for `frontend/` and a **private Docker service** for
-`backend/`. The frontend is the browser's only API origin. It authenticates users
+Render supports a public Node web service for `frontend/` and a **private Docker
+service** for `backend/`. The backend is packaged for this topology; the frontend
+has the BotID compatibility requirement below. The frontend is the browser's only API origin. It authenticates users
 and proxies MP4 clips, including Range requests, to the backend. A shared
 `MEDIX_API_TOKEN` authenticates server-to-server calls and is never exposed to the
 browser. Keep Redis-backed and per-user production rate limits enabled.
@@ -101,9 +102,17 @@ Set `NEXT_PUBLIC_APP_URL` to the public frontend origin when not using Render;
 Render supplies `RENDER_EXTERNAL_URL`. Public Clerk keys must be available at
 build time; never prefix private keys or `MEDIX_API_TOKEN` with `NEXT_PUBLIC_`.
 
-The Next.js configuration retains BotID and existing rate-limit checks. Verify
-BotID behavior, trusted proxy headers, authentication callbacks, Redis limits,
-and storage access in the hosting environment before a public launch. The
+The Next.js configuration retains BotID and existing rate-limit checks. **BotID
+is Vercel-specific**: its production SDK requires Vercel OIDC and request context.
+Do not assume that installing its package supplies bot protection on Render.
+The existing chat route catches BotID errors and does not enforce its returned
+classification, so this integration is not a verified abuse-prevention boundary.
+A production Render frontend needs a supported, enforced protection mechanism
+and deployed verification before a public launch; that migration is outside this
+review. Alternatively, retain a Vercel frontend and use a token-protected public
+Render backend, since a Vercel service cannot reach Render private networking.
+Verify trusted proxy headers, authentication callbacks, Redis limits and storage
+access in the hosting environment. The
 server-only credential protects the private backend; it does not replace user
 sessions or abuse controls.
 
@@ -132,3 +141,4 @@ clinical validation or a substitute for institutional review of its intended use
 - [Render FastAPI deployment](https://render.com/docs/deploy-fastapi)
 - [Render persistent disks](https://render.com/docs/disks)
 - [Render private services](https://render.com/docs/private-services)
+- [Vercel BotID setup](https://vercel.com/docs/botid/get-started)
