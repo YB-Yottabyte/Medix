@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Protocol
 import numpy as np
 
 from backend.domain import VideoCandidate
+from backend.performance import timed
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -75,6 +76,7 @@ class SemanticVideoRetriever:
             model_name=model_name,
         )
 
+    @timed("retrieval.metadata")
     def retrieve(self, question: str, *, limit: int = 5) -> tuple[VideoCandidate, ...]:
         normalized_question = question.strip()
         if not normalized_question:

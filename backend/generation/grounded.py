@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import TYPE_CHECKING
 
@@ -11,9 +12,12 @@ from backend.generation.base import (
     EvidenceCue,
     EvidenceGenerationRequest,
 )
+from backend.performance import timed
 
 if TYPE_CHECKING:
     from backend.domain.evidence import EvidenceBundle
+
+LOGGER = logging.getLogger(__name__)
 
 GENERATION_ABSTENTION_MESSAGE = (
     "The predicted video segment does not contain enough evidence to answer this question."
@@ -91,6 +95,7 @@ class EvidenceGroundedAnswerGenerator:
         self.max_claim_characters = max_claim_characters
         self.minimum_lexical_support = minimum_lexical_support
 
+    @timed("generation.grounding_validation")
     def generate(self, evidence: EvidenceBundle) -> GroundedAnswer:
         request = build_evidence_generation_request(evidence)
         cues = request.cues
@@ -161,10 +166,33 @@ class EvidenceGroundedAnswerGenerator:
 
     def abstain(self, evidence: EvidenceBundle, reason: str) -> GroundedAnswer:
         """Return a provenance-preserving abstention for rejected generation."""
+        LOGGER.warning(
+            "Grounded answer rejected: video=%s clip=%.3f-%.3f cues=%d reason=%s",
+            evidence.video_id,
+            evidence.predicted_start_seconds,
+            evidence.predicted_end_seconds,
+            len(evidence.transcript),
+            reason,
+        )
+        start = evidence.predicted_start_seconds
+        end = evidence.predicted_end_seconds
+        interval = (
+            f"{int(start // 60):02d}:{int(start % 60):02d}-{int(end // 60):02d}:{int(end % 60):02d}"
+        )
+        if reason.startswith("Generation output failed grounding validation"):
+            response = (
+                f"I found a video clip ({interval}), but could not verify the generated "
+                "instructions against its transcript. I cannot provide those steps."
+            )
+        else:
+            response = (
+                f"I found a video clip ({interval}), but its transcript does not provide "
+                "enough instructions to answer your question. A more relevant source is needed."
+            )
         return GroundedAnswer(
             question=evidence.question,
             status="abstained",
-            response=GENERATION_ABSTENTION_MESSAGE,
+            response=response,
             claims=(),
             citations=(),
             evidence_bundle_id=evidence.bundle_id,
@@ -184,11 +212,14 @@ class EvidenceGroundedAnswerGenerator:
     ) -> str:
         """Render public citation numbers while retaining cue IDs internally."""
         citation_numbers = {cue_id: index for index, cue_id in enumerate(ordered_citation_ids, 1)}
-        return "\n".join(
-            f"{index}. {claim.text} "
-            f"[{', '.join(str(citation_numbers[cue_id]) for cue_id in claim.citation_ids)}]"
-            for index, claim in enumerate(claims, 1)
-        )
+        sentences = [
+            f"{claim.text.rstrip('. ')} "
+            f"[{', '.join(str(citation_numbers[cue_id]) for cue_id in claim.citation_ids)}]."
+            for claim in claims
+        ]
+        if len(sentences) <= 2:
+            return " ".join(sentences)
+        return sentences[0] + "\n\n" + "\n".join(f"- {sentence}" for sentence in sentences[1:])
 
     @staticmethod
     def _lexical_support(claim: str, evidence: str) -> float:

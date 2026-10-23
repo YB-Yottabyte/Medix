@@ -6,6 +6,8 @@ import re
 from dataclasses import asdict, dataclass
 from typing import Any, Literal
 
+from backend.performance import timed
+
 ABSTENTION_MESSAGE = (
     "I could not find sufficiently relevant evidence in the approved procedure corpus "
     "to answer this safely. Please consult a qualified healthcare professional."
@@ -74,6 +76,7 @@ class SafetyTriageService:
         )
     )
 
+    @timed("safety.triage")
     def assess(self, query: str) -> SafetyAssessment:
         normalized = " ".join(query.lower().split())
         if any(pattern.search(normalized) for pattern in self._emergency_patterns):

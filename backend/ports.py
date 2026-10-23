@@ -1,7 +1,7 @@
 """Structural interfaces between use cases and external adapters.
 
-Protocols keep the service layer independent from Groq, Qdrant, YouTube,
-SentenceTransformers, and FastAPI while avoiding inheritance-only abstractions.
+Protocols keep the service layer independent from model providers, semantic retrieval, YouTube,
+SentenceTransformers, and Flask while avoiding inheritance-only abstractions.
 """
 
 from __future__ import annotations
@@ -14,8 +14,6 @@ class ResponseGeneratorPort(Protocol):
 
 
 class RetrieverPort(Protocol):
-    def search(self, query: str) -> list[dict[str, Any]]: ...
-
     def multi_query_search(
         self,
         queries: list[str],
@@ -33,8 +31,6 @@ class RetrieverPort(Protocol):
 
 
 class LanguageModelPort(Protocol):
-    def generate_response(self, query: str, context: str) -> str: ...
-
     def generate_multimodal_response(self, query: str, context: str) -> str: ...
 
 

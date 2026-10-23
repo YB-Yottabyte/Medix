@@ -1,0 +1,54 @@
+{
+  "cases": [
+    {
+      "id": "train-115",
+      "source_split": "train",
+      "sample_id": "115",
+      "question": "How do you apply a pressure bandage to stop bleeding?",
+      "derived": false
+    },
+    {
+      "id": "train-479",
+      "source_split": "train",
+      "sample_id": "479",
+      "question": "What are the symptoms of a broken finger?",
+      "derived": false
+    },
+    {
+      "id": "train-1590",
+      "source_split": "train",
+      "sample_id": "1590",
+      "question": "When to call the emergency if someone is going into shock?",
+      "derived": false
+    },
+    {
+      "id": "train-700",
+      "source_split": "train",
+      "sample_id": "700",
+      "question": "What to do if blood soaks through the bandage?",
+      "derived": false
+    },
+    {
+      "id": "derived-why-pressure",
+      "source_split": "train",
+      "sample_id": "115",
+      "question": "Why is pressure used when bandaging a wound?",
+      "derived": true
+    },
+    {
+      "id": "derived-why-burn",
+      "source_split": "train",
+      "sample_id": "636",
+      "question": "Why is running water used to cool a burn?",
+      "derived": true
+    },
+    {
+      "id": "derived-why-sling",
+      "source_split": "train",
+      "sample_id": "839",
+      "question": "Why check circulation after applying a sling?",
+      "derived": true
+    }
+  ],
+  "policy": "Training questions plus explicitly derived why variants. No gold video IDs, timestamps or reference answers are supplied to inference."
+}

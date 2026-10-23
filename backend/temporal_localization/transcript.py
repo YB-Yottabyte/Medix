@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Protocol
 import numpy as np
 
 from backend.domain import LocalizationRequest, TemporalSegment
+from backend.performance import count, timed
 from backend.transcripts import TranscriptUnavailableError
 
 if TYPE_CHECKING:
@@ -39,6 +40,8 @@ class TranscriptWindowLocalizer:
         stride_seconds: float,
         embedding_model_name: str,
         batch_size: int = 64,
+        query_prefix: str = "",
+        complete_cue_boundaries: bool = False,
     ):
         if window_seconds <= 0:
             raise ValueError("window_seconds must be positive")
@@ -49,10 +52,14 @@ class TranscriptWindowLocalizer:
         self.window_seconds = window_seconds
         self.stride_seconds = stride_seconds
         self.batch_size = batch_size
+        self.query_prefix = query_prefix
+        self.complete_cue_boundaries = complete_cue_boundaries
         self.model_name = (
             f"transcript-window-{window_seconds:g}s-"
             f"stride-{stride_seconds:g}s:{embedding_model_name}"
         )
+        if complete_cue_boundaries:
+            self.model_name += ":complete-cues"
         self._window_cache: dict[
             tuple[str, float],
             tuple[tuple[TranscriptWindowCandidate, ...], np.ndarray],
@@ -68,6 +75,7 @@ class TranscriptWindowLocalizer:
             model_name=self.model_name,
         )
 
+    @timed("localization.transcript")
     def rank_candidates(
         self,
         request: LocalizationRequest,
@@ -79,7 +87,7 @@ class TranscriptWindowLocalizer:
             raise ValueError("limit must be positive")
         windows, embeddings = self._video_windows(request)
         encoded_question = self.encoder.encode(
-            [request.question],
+            [f"{self.query_prefix}{request.question}"],
             convert_to_numpy=True,
             normalize_embeddings=True,
             show_progress_bar=False,
@@ -99,6 +107,7 @@ class TranscriptWindowLocalizer:
             for index in ranked_indices
         )
 
+    @timed("localization.window_features")
     def _video_windows(
         self,
         request: LocalizationRequest,
@@ -106,7 +115,9 @@ class TranscriptWindowLocalizer:
         cache_key = (request.video_id, request.duration_seconds)
         cached = self._window_cache.get(cache_key)
         if cached is not None:
+            count("window_cache.hit")
             return cached
+        count("window_cache.miss")
 
         cues = self.repository.load(request.video_id)
         windows = self._build_windows(cues, request.duration_seconds)
@@ -143,9 +154,11 @@ class TranscriptWindowLocalizer:
         windows = []
         for start in starts:
             end = min(start + window_duration, video_duration)
-            text = " ".join(
-                cue.text for cue in cues if cue.end_seconds > start and cue.start_seconds < end
-            ).strip()
+            selected = [cue for cue in cues if cue.end_seconds > start and cue.start_seconds < end]
+            text = " ".join(cue.text for cue in selected).strip()
+            if self.complete_cue_boundaries and selected:
+                start = max(0.0, min(start, *(cue.start_seconds for cue in selected)))
+                end = min(video_duration, max(end, *(cue.end_seconds for cue in selected)))
             if text:
                 windows.append(
                     TranscriptWindowCandidate(

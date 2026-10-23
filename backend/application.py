@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from fastapi import FastAPI, Request
@@ -11,9 +12,11 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from backend.api.routes import router
+from backend.api.security import ApiSecurityMiddleware
 from backend.config import AppSettings, ConfigurationError, ProjectPaths
 from backend.container import ServiceContainer, ServiceFactory
 from backend.errors import ResourceNotFoundError, ServiceUnavailableError, ValidationError
+from backend.performance import PerformanceMiddleware
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +52,12 @@ class MedixApplication:
 
         app.include_router(router)
         self._register_error_handlers(app)
-        self._register_size_limit(app)
+        app.add_middleware(
+            ApiSecurityMiddleware,
+            maximum=self.settings.web.max_content_length,
+            token=os.environ.get("MEDIX_API_TOKEN", ""),
+        )
+        app.add_middleware(PerformanceMiddleware)
 
         @app.get("/", include_in_schema=False)
         async def index() -> dict[str, str]:
@@ -60,19 +68,6 @@ class MedixApplication:
             }
 
         return app
-
-    def _register_size_limit(self, app: FastAPI) -> None:
-        maximum = self.settings.web.max_content_length
-
-        @app.middleware("http")
-        async def reject_oversized_request(request: Request, call_next):
-            content_length = request.headers.get("content-length")
-            if content_length and content_length.isdecimal() and int(content_length) > maximum:
-                return JSONResponse(
-                    status_code=413,
-                    content={"error": "Request body is too large"},
-                )
-            return await call_next(request)
 
     @staticmethod
     def _register_error_handlers(app: FastAPI) -> None:

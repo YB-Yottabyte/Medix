@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Protocol
 import numpy as np
 
 from backend.domain import LocalizationRequest, TemporalSegment
+from backend.performance import timed
 from backend.video_processing import VideoUnavailableError
 
 if TYPE_CHECKING:
@@ -49,11 +50,15 @@ class MultimodalWindowLocalizer:
         transcript_weight: float,
         frames_per_window: int = 3,
         fallback_to_transcript: bool = True,
+        candidate_limit: int | None = None,
     ):
         if not 0 <= transcript_weight <= 1:
             raise ValueError("transcript_weight must be between zero and one")
         if frames_per_window < 1:
             raise ValueError("frames_per_window must be positive")
+        if candidate_limit is not None and candidate_limit < 1:
+            raise ValueError("candidate_limit must be positive")
+        self.candidate_limit = candidate_limit
         self.transcript_localizer = transcript_localizer
         self.frame_extractor = frame_extractor
         self.frame_scorer = frame_scorer
@@ -65,14 +70,20 @@ class MultimodalWindowLocalizer:
             f"v{1-transcript_weight:g}:{frame_scorer.model_name}"
         )
 
+        if candidate_limit is not None:
+            self.model_name += f":top-windows-{candidate_limit}"
+
     def localize(self, request: LocalizationRequest) -> TemporalSegment:
         return self.localize_with_details(request).segment
 
+    @timed("localization.multimodal")
     def localize_with_details(
         self,
         request: LocalizationRequest,
     ) -> MultimodalLocalizationResult:
         candidates = self.transcript_localizer.rank_candidates(request)
+        if self.candidate_limit is not None:
+            candidates = candidates[: self.candidate_limit]
         try:
             timestamps_by_candidate = tuple(
                 self._sample_timestamps(candidate.start_seconds, candidate.end_seconds)

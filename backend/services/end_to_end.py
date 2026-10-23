@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from contextvars import ContextVar
 from dataclasses import replace
+from time import perf_counter
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -13,6 +15,7 @@ from backend.domain import (
     LocalizationRequest,
 )
 from backend.evidence import EvidenceExtractionRequest, EvidenceUnavailableError
+from backend.performance import timed
 from backend.transcripts import TranscriptUnavailableError
 from backend.video_processing import VideoUnavailableError
 
@@ -45,20 +48,37 @@ class EndToEndMedicalPipeline:
         self.evidence_extractor = evidence_extractor
         self.top_k = top_k
         self.retrieval_weight = retrieval_weight
+        self._last_timings: ContextVar[dict[str, float] | None] = ContextVar(
+            "legacy_offline_timings", default=None
+        )
 
-    def run(self, question: str) -> EndToEndPipelineResult:
+    @property
+    def last_timings_ms(self) -> dict[str, float]:
+        """Compatibility view for same-context offline benchmarks, not HTTP telemetry."""
+        return self._last_timings.get() or {}
+
+    @last_timings_ms.setter
+    def last_timings_ms(self, value: dict[str, float]) -> None:
+        self._last_timings.set(value)
+
+    @timed("evidence.pipeline")
+    def run(self, question: str, *, retrieval_query: str | None = None) -> EndToEndPipelineResult:
         normalized_question = question.strip()
         if not normalized_question:
             raise ValueError("question must not be empty")
 
+        self.last_timings_ms = {"retrieval": 0.0, "localization": 0.0, "evidence": 0.0}
+        stage_started = perf_counter()
         retrieved = self.video_retriever.retrieve(
-            normalized_question,
+            retrieval_query or normalized_question,
             limit=self.top_k,
         )
+        self.last_timings_ms["retrieval"] = (perf_counter() - stage_started) * 1000
         attempts = []
         localizable = []
         for rank, candidate in enumerate(retrieved, 1):
             retrieval_confidence = float(np.clip((candidate.retrieval_score + 1.0) / 2.0, 0.0, 1.0))
+            stage_started = perf_counter()
             try:
                 document = self.video_catalog.get(candidate.video_id)
                 segment = self.temporal_localizer.localize(
@@ -104,8 +124,12 @@ class EndToEndMedicalPipeline:
                     )
                 )
 
+            finally:
+                self.last_timings_ms["localization"] += (perf_counter() - stage_started) * 1000
+
         localizable.sort(key=lambda item: (-item[0], item[1]))
         for joint_score, _rank, attempt, document in localizable:
+            stage_started = perf_counter()
             try:
                 evidence = self.evidence_extractor.extract(
                     EvidenceExtractionRequest(
@@ -140,6 +164,9 @@ class EndToEndMedicalPipeline:
                 ]
                 continue
 
+            finally:
+                self.last_timings_ms["evidence"] += (perf_counter() - stage_started) * 1000
+
             attempts = [
                 replace(item, evidence_bundle_id=evidence.bundle_id)
                 if item.video_id == attempt.video_id
@@ -170,6 +197,59 @@ class EndToEndMedicalPipeline:
             attempts=tuple(attempts),
             abstention_reason="No retrieved candidate produced complete local evidence.",
         )
+
+    @timed("evidence.alternative")
+    def alternative_evidence(
+        self, previous: EndToEndPipelineResult, *, excluded: set[str]
+    ) -> EndToEndPipelineResult | None:
+        """Reuse already-scored candidates; do not repeat retrieval or localization."""
+        candidates = sorted(
+            (
+                a
+                for a in previous.attempts
+                if a.video_id not in excluded
+                and a.joint_score is not None
+                and a.failure_reason is None
+            ),
+            key=lambda a: (-a.joint_score, a.retrieval_rank),
+        )
+        for attempt in candidates:
+            document = self.video_catalog.get(attempt.video_id)
+            try:
+                evidence = self.evidence_extractor.extract(
+                    EvidenceExtractionRequest(
+                        question=previous.question,
+                        video_id=attempt.video_id,
+                        source_uri=document.source_uri,
+                        start_seconds=float(attempt.predicted_start_seconds),
+                        end_seconds=float(attempt.predicted_end_seconds),
+                        localization_model=self.temporal_localizer.model_name,
+                        scores={
+                            "retrieval": attempt.retrieval_confidence,
+                            "localization": attempt.localization_score,
+                            "joint": attempt.joint_score,
+                        },
+                        provenance={
+                            "pipeline": "live-answer-recovery",
+                            "retrieval_rank": attempt.retrieval_rank,
+                        },
+                    )
+                )
+            except EvidenceUnavailableError:
+                continue
+            return replace(
+                previous,
+                selected_video_id=attempt.video_id,
+                predicted_start_seconds=attempt.predicted_start_seconds,
+                predicted_end_seconds=attempt.predicted_end_seconds,
+                joint_score=attempt.joint_score,
+                evidence=evidence,
+                attempts=tuple(
+                    replace(a, evidence_bundle_id=evidence.bundle_id) if a == attempt else a
+                    for a in previous.attempts
+                ),
+            )
+        return None
 
     @staticmethod
     def _reason(error: Exception) -> str:

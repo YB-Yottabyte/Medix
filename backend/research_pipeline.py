@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from backend.adapters.grounded_generation import (
-    GroqStructuredEvidenceAnswerModel,
     OllamaStructuredEvidenceAnswerModel,
 )
-from backend.adapters.visual_similarity import ClipFrameScorer
 from backend.evidence import EvidenceArtifactStore, EvidenceExtractor
 from backend.generation import (
     EvidenceGroundedAnswerGenerator,
@@ -30,6 +29,7 @@ from backend.video_processing import (
     FFmpegClipExtractor,
     FFmpegFrameExtractor,
     LocalVideoRepository,
+    OnDemandVideoRepository,
 )
 from backend.video_retrieval import (
     SemanticVideoRetriever,
@@ -38,6 +38,8 @@ from backend.video_retrieval import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from backend.config import AppSettings, ProjectPaths, ResearchPipelineSettings
 
 TEXT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
@@ -67,16 +69,33 @@ class ResearchPipelineFactory:
         paths: ProjectPaths,
         app_settings: AppSettings | None = None,
         text_encoder: Any | None = None,
-        groq_client: Any | None = None,
+        feature_cache_dir: Path | None = None,
+        visual_candidate_limit: int | None = None,
+        visual_device: str | None = None,
+        live_transcript_retrieval: bool = False,
     ):
         self.settings = settings
         self.paths = paths
         self.app_settings = app_settings
         self._text_encoder = text_encoder
-        self._groq_client = groq_client
+        self.feature_cache_dir = feature_cache_dir
+        self.visual_candidate_limit = visual_candidate_limit
+        self.visual_device = visual_device
+        self.live_transcript_retrieval = live_transcript_retrieval
 
     def build_components(self) -> ResearchPipelineComponents:
-        text_encoder = self._text_encoder or self._load_text_encoder()
+        from backend.performance import TimedTextEncoder
+
+        text_encoder = TimedTextEncoder(self._text_encoder or self._load_text_encoder())
+        if self.feature_cache_dir is not None:
+            from importlib.metadata import version
+
+            from backend.adapters.feature_cache import CachedTextEncoder
+
+            namespace = f"{TEXT_MODEL}@{TEXT_REVISION}:{version('sentence-transformers')}:{version('transformers')}:{getattr(text_encoder, 'max_seq_length', None)}"
+            text_encoder = CachedTextEncoder(
+                text_encoder, self.feature_cache_dir / "text", namespace
+            )
         documents = self._runtime_documents(load_video_documents(self.paths.video_catalog))
         catalog = VideoCatalog(documents)
         retriever = SemanticVideoRetriever.build(
@@ -86,14 +105,32 @@ class ResearchPipelineFactory:
             model_name=f"{TEXT_MODEL}@{TEXT_REVISION}:title-author",
         )
         transcripts = CachedTranscriptRepository(self.paths.transcript_cache)
+        if self.live_transcript_retrieval:
+            from backend.video_retrieval.transcript import TranscriptVideoRetriever
+
+            retriever = TranscriptVideoRetriever(
+                metadata=retriever,
+                repository=transcripts,
+                encoder=text_encoder,
+            )
         transcript_localizer = TranscriptWindowLocalizer(
             repository=transcripts,
             encoder=text_encoder,
             window_seconds=self.settings.window_seconds,
             stride_seconds=self.settings.stride_seconds,
             embedding_model_name=f"{TEXT_MODEL}@{TEXT_REVISION}",
+            complete_cue_boundaries=self.live_transcript_retrieval,
         )
-        videos = LocalVideoRepository(self.paths.video_cache)
+        if self.settings.on_demand_video_cache:
+            videos = OnDemandVideoRepository(
+                self.paths.video_cache,
+                source_index=self.paths.video_source_index,
+                metadata_dir=self.paths.video_cache_metadata,
+                max_cache_bytes=self.settings.video_cache_max_bytes,
+                seed_dirs=self.paths.video_seed_caches,
+            )
+        else:
+            videos = LocalVideoRepository(self.paths.video_cache)
         frames = FFmpegFrameExtractor(videos)
         localizer = self._localizer(
             transcripts=transcripts,
@@ -114,7 +151,9 @@ class ResearchPipelineFactory:
             temporal_localizer=localizer,
             evidence_extractor=evidence_extractor,
             top_k=self.settings.top_k,
-            retrieval_weight=self.settings.retrieval_weight,
+            retrieval_weight=max(0.5, self.settings.retrieval_weight)
+            if self.live_transcript_retrieval
+            else self.settings.retrieval_weight,
         )
         return ResearchPipelineComponents(
             evidence_pipeline=evidence_pipeline,
@@ -143,11 +182,21 @@ class ResearchPipelineFactory:
                 repository=transcripts,
                 predictor=predictor,
             )
+        from backend.adapters.visual_similarity import ClipFrameScorer
+
         return MultimodalWindowLocalizer(
             transcript_localizer=transcript_localizer,
             frame_extractor=frames,
-            frame_scorer=ClipFrameScorer(VISUAL_MODEL, revision=VISUAL_REVISION),
-            transcript_weight=self.settings.transcript_weight,
+            frame_scorer=ClipFrameScorer(
+                VISUAL_MODEL,
+                revision=VISUAL_REVISION,
+                device=self.visual_device,
+                cache_dir=self.feature_cache_dir / "visual" if self.feature_cache_dir else None,
+            ),
+            candidate_limit=self.visual_candidate_limit,
+            transcript_weight=max(0.8, self.settings.transcript_weight)
+            if self.live_transcript_retrieval
+            else self.settings.transcript_weight,
             frames_per_window=self.settings.frames_per_window,
         )
 
@@ -158,7 +207,7 @@ class ResearchPipelineFactory:
         if not path.is_file():
             raise FileNotFoundError(
                 "Supported video collection is missing. Run "
-                "`uv run python -m scripts.build_supported_collection`."
+                "`uv run python -m development.scripts.build_supported_collection`."
             )
         payload = json.loads(path.read_text(encoding="utf-8"))
         video_ids = payload.get("video_ids") if isinstance(payload, dict) else None
@@ -188,6 +237,22 @@ class ResearchPipelineFactory:
     def _answer_model(self) -> Any:
         if self.settings.answer_model == "extractive":
             return ExtractiveEvidenceAnswerModel(max_claims=3)
+        if self.settings.answer_model == "structured_voyager":
+            from backend.adapters.voyager import (
+                VoyagerStructuredAnswerModel,
+                get_voyager_client,
+                voyager_model,
+            )
+
+            return VoyagerStructuredAnswerModel(get_voyager_client(), voyager_model())
+        if self.settings.answer_model == "structured_sol":
+            return OllamaStructuredEvidenceAnswerModel(
+                base_url=os.environ.get("SOL_OLLAMA_BASE_URL", "http://localhost:11500")
+                .rstrip("/")
+                .removesuffix("/v1"),
+                model=os.environ.get("SOL_CHAT_MODEL", "qwen3.6:27b"),
+                max_output_tokens=512,
+            )
         if self.app_settings is None:
             raise ValueError(f"{self.settings.answer_model} requires application AI settings")
         if self.settings.answer_model == "structured_ollama":
@@ -197,12 +262,7 @@ class ResearchPipelineFactory:
                 model=str(config["model"]),
                 max_output_tokens=int(config.get("max_tokens", 512)),
             )
-        config = self._provider_config("groq")
-        client = self._groq_client or self._load_groq_client()
-        return GroqStructuredEvidenceAnswerModel(
-            client,
-            model=str(config["model"]),
-        )
+        raise ValueError(f"Unsupported answer model: {self.settings.answer_model}")
 
     def _provider_config(self, provider: str) -> dict[str, Any]:
         assert self.app_settings is not None
@@ -218,11 +278,3 @@ class ResearchPipelineFactory:
         from sentence_transformers import SentenceTransformer
 
         return SentenceTransformer(TEXT_MODEL, revision=TEXT_REVISION)
-
-    def _load_groq_client(self) -> Any:
-        from groq import Groq
-
-        from backend.adapters.language_model import get_groq_chat_api_key
-
-        assert self.app_settings is not None
-        return Groq(api_key=get_groq_chat_api_key(self.app_settings.as_legacy_dict()))
