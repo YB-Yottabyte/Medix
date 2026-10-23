@@ -4,7 +4,7 @@
     "app": {
       "root": ".",
       "runtime": "container",
-      "entrypoint": "backend/Dockerfile"
+      "entrypoint": "Dockerfile"
     },
     "frontend": {
       "root": "frontend",

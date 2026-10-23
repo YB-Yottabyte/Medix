@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build --file backend/Dockerfile --tag medix-backend:ci .
+      - run: docker build --file Dockerfile --tag medix-backend:ci .
       - name: Import the application without downloading inference weights
         run: >-
           docker run --rm --entrypoint uv medix-backend:ci run --no-sync python -c

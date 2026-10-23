@@ -11,7 +11,9 @@ paid resource, or storage upload is created by adding these files.
   the final `/(.*)` rewrite. This includes `/api/chat`, `/api/auth/*`, uploads,
   TTS and the authenticated `/api/medix/artifacts/*` video proxy.
 - `app`: the existing FastAPI application, built from repository root using
-  `backend/Dockerfile`. The container keeps FFmpeg and Python/speech dependencies.
+  `Dockerfile`. Its parent is also the container build context, so root-level
+  dependency files and `data/` are available to `COPY`. The container keeps FFmpeg
+  and Python/speech dependencies.
   It has no public rewrite. Naming it `app` preserves Vercel's suggested name.
 - `frontend` calls `app` over the `MEDIX_API_URL` binding. Vercel injects that
   variable into frontend functions at runtime. Do not set it manually in the

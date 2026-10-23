@@ -26,7 +26,7 @@ files do not create an account, deploy a service, or purchase resources.
 ## Backend service
 
 - Runtime: Docker; repository root is the build context.
-- Dockerfile: `backend/Dockerfile`.
+- Dockerfile: `Dockerfile`.
 - Internal port: the platform's `PORT` (defaults to `10000`).
 - Attach a persistent disk at `/var/data/medix`. Size it for the video collection,
   transcript cache, embedding/vision weights, optional speech weights, and clips.
