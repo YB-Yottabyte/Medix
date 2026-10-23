@@ -155,7 +155,7 @@ curl -X POST http://localhost:5001/api/query \
 
 ## Frontend Folder
 
-`frontend/` contains a Next.js chatbot app using Next.js, React, the AI SDK, Auth.js, Drizzle, Postgres, Redis, Vercel Blob, and Playwright. Its shared `lib/` layer includes model configuration, database access, typed chat data, prompts, rate limiting, and artifact support.
+`frontend/` contains a Next.js chatbot app using Next.js, React, the AI SDK, Auth.js, Drizzle, Postgres, Redis, and Playwright. Its shared `lib/` layer includes model configuration, database access, typed chat data, prompts, rate limiting, and artifact support.
 
 The `searchProcedure` AI SDK tool connects the chat experience to `/api/query`
 and renders the canonical grounded answer, extracted clip, timestamps, transcript

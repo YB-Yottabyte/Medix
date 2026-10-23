@@ -14,8 +14,8 @@ corepack pnpm dev
 ```
 
 Copy the environment example only for a new setup. Configure PostgreSQL,
-`AUTH_SECRET`, and server-only Voyager credentials; configure Blob for image
-uploads. Set `MEDIX_API_URL=http://127.0.0.1:5001` for a local backend or port 5002
+`AUTH_SECRET`, and server-only Voyager credentials. Image attachments use the
+existing data-URL upload route; no Blob token is currently required. Set `MEDIX_API_URL=http://127.0.0.1:5001` for a local backend or port 5002
 for the current Sol tunnel. Set the same optional `MEDIX_API_TOKEN` on both
 services when backend authentication is enabled. Existing private environment
 files must never be committed.
@@ -34,3 +34,11 @@ for Render, resource provisioning, production secrets, and operational checks.
 
 The UI's medical answer is composed from checked reference/video evidence; a
 model review or a green CI check is not independent clinical validation.
+
+## Combined Vercel deployment
+
+The repository-root `vercel.json` defines a public `frontend` service and an
+internal `app` service. `MEDIX_API_URL` is injected by the frontend binding at
+runtime; do not set a manual value in Vercel. Standalone local URLs remain valid.
+See [the Vercel Services guide](../development/docs/VERCEL_SERVICES.md) for the
+confirmation plan, container defaults and outstanding evidence-storage work.

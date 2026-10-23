@@ -22,7 +22,7 @@ const userMessageSchema = z.object({
 
 const toolApprovalMessageSchema = z.object({
   id: z.string(),
-  parts: z.array(z.record(z.unknown())),
+  parts: z.array(z.record(z.string(), z.unknown())),
   role: z.enum(["user", "assistant"]),
 });
 

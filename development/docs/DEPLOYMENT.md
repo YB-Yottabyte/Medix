@@ -14,8 +14,9 @@ and proxies MP4 clips, including Range requests, to the backend. A shared
 browser. Keep Redis-backed and per-user production rate limits enabled.
 
 You can use managed PostgreSQL and Redis on Render or another provider. The
-existing attachment route uses Vercel Blob, which works independently of Vercel
-hosting; configure its token for image uploads. Clerk is optional; when enabled,
+existing attachment route returns data URLs and does not currently use a Blob
+store or require a Blob token. Durable video storage is a separate requirement.
+Clerk is optional; when enabled,
 set both Clerk keys and configure the deployed domain in Clerk. Auth.js remains
 the supported fallback. Do not set `LOCAL_AUTH_BYPASS` in production.
 
@@ -95,7 +96,6 @@ Required environment:
 | `MEDIX_API_TOKEN` | Same server-only secret as the backend |
 | `ASU_RC_API_KEY` | Server-side Voyager key for response composition |
 | `ASU_RC_MODEL` | `qwen35-27b` |
-| `BLOB_READ_WRITE_TOKEN` | Required for the current hosted image-upload route |
 | `REDIS_URL` | Configure for production IP limits and resumable streams |
 
 Set `NEXT_PUBLIC_APP_URL` to the public frontend origin when not using Render;
