@@ -1,0 +1,17 @@
+flowchart TD
+ T[Text question + history] --> J[Next.js route and contextualize]
+ I[One inline JPEG or PNG] --> J
+ J --> A[POST /api/multimodal/query]
+ A --> P[Pillow: validate, orient, resize, strip EXIF]
+ P --> V[Voyager Qwen visual observation]
+ V --> O[Validated objects / actions / uncertainty]
+ O --> Q[Question + unverified retrieval hints]
+ Q --> R[MiniLM + lexical catalog / transcript retrieval]
+ T --> L[Original question for localization and QA]
+ R --> L
+ L --> C[CLIP video frames + temporal localization]
+ C --> E[Transcript cues + frames + extracted clip]
+ E --> B[Backend structured text claims + validation]
+ B --> G[Next.js medical-reference generation + verification]
+ O -.->|context, not clinical evidence| G
+ G --> U[Streamed answer + precise relevant evidence]

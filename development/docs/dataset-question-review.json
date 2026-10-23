@@ -1,0 +1,95 @@
+{
+  "total_questions": 3010,
+  "splits": {
+    "train": {
+      "count": 2710,
+      "intent_counts": {
+        "procedure": 2573,
+        "contingency": 4,
+        "recognition": 129,
+        "escalation": 3,
+        "quantity": 1
+      },
+      "explicit_why_count": 0,
+      "how_word_count": 2679
+    },
+    "val": {
+      "count": 145,
+      "intent_counts": {
+        "procedure": 138,
+        "recognition": 7
+      },
+      "explicit_why_count": 0,
+      "how_word_count": 139
+    },
+    "test": {
+      "count": 155,
+      "intent_counts": {
+        "procedure": 145,
+        "recognition": 9,
+        "contingency": 1
+      },
+      "explicit_why_count": 0,
+      "how_word_count": 150
+    }
+  },
+  "method": "Descriptive rule-based question audit, not expert labels. Runtime examples use train only. Original dataset has temporal answer intervals, not prose medical answers.",
+  "why_policy": "Derived why variants are labeled separately and require explicit rationale support; neither original timestamps nor derived rationales enter retrieval as gold answers.",
+  "runtime_examples": {
+    "schema_version": 1,
+    "source": "MedVidQA/train.json",
+    "purpose": "Question intent examples only; no medical answer or gold interval enters runtime prompts.",
+    "examples": [
+      {
+        "sample_id": "115",
+        "split": "train",
+        "question": "How do you apply a pressure bandage to stop bleeding?",
+        "intent": "procedure"
+      },
+      {
+        "sample_id": "479",
+        "split": "train",
+        "question": "What are the symptoms of a broken finger?",
+        "intent": "recognition"
+      },
+      {
+        "sample_id": "1590",
+        "split": "train",
+        "question": "When to call the emergency if someone is going into shock?",
+        "intent": "escalation"
+      },
+      {
+        "sample_id": "700",
+        "split": "train",
+        "question": "What to do if blood soaks through the bandage?",
+        "intent": "contingency"
+      }
+    ]
+  },
+  "derived_why_cases": [
+    {
+      "source_split": "train",
+      "source_sample_id": "115",
+      "original_question": "How do you apply a pressure bandage to stop bleeding?",
+      "question": "Why is pressure used when bandaging a wound?",
+      "derived": true,
+      "expected": "Explain only an explicitly supported reason; an action-only passage is insufficient. Do not invent causal links."
+    },
+    {
+      "source_split": "train",
+      "source_sample_id": "636",
+      "original_question": "How to cool the burn with tap water?",
+      "question": "Why is running water used to cool a burn?",
+      "derived": true,
+      "expected": "Explain only an explicitly supported reason; an action-only passage is insufficient. Do not invent causal links."
+    },
+    {
+      "source_split": "train",
+      "source_sample_id": "839",
+      "original_question": "How to check a patient's circulation, sensation, and motion after applying a sling and swathe for splinting a limb?",
+      "question": "Why check circulation after applying a sling?",
+      "derived": true,
+      "expected": "Explain only an explicitly supported reason; an action-only passage is insufficient. Do not invent causal links."
+    }
+  ]
+}

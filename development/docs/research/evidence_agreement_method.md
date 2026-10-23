@@ -75,7 +75,7 @@ risk, and latency. Compare paired predictions with bootstrap confidence interval
 
 ## Conflict benchmark
 
-`evaluation/datasets/evidence_conflicts.json` contains structural cases for three conditions:
+`development/evaluation/datasets/evidence_conflicts.json` contains structural cases for three conditions:
 
 - aligned question and visual evidence;
 - a relevant question paired with a conflicting visual source; and

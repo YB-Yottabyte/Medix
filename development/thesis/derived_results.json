@@ -1,0 +1,67 @@
+{
+  "protocol": "paired percentile bootstrap, sampling video IDs with replacement and retaining all their questions",
+  "seed": 572,
+  "resamples": 10000,
+  "end_to_end": {
+    "questions": 155,
+    "videos": 50,
+    "metrics": {
+      "top5_recall": {
+        "estimate": 0.567741935483871,
+        "ci_95": [
+          0.42473118279569894,
+          0.7173976982097185
+        ]
+      },
+      "evidence_coverage": {
+        "estimate": 0.36129032258064514,
+        "ci_95": [
+          0.24614973262032086,
+          0.48299319727891155
+        ]
+      },
+      "selected_video_accuracy": {
+        "estimate": 0.17419354838709677,
+        "ci_95": [
+          0.08433734939759036,
+          0.2846715328467153
+        ]
+      },
+      "correct_video_iou_at_05": {
+        "estimate": 0.05161290322580645,
+        "ci_95": [
+          0.006060606060606061,
+          0.12025316455696203
+        ]
+      }
+    },
+    "contingency": {
+      "target_in_top5_but_transcript_unavailable": 59,
+      "target_in_top5_and_localizable": 29,
+      "abstained_target_in_top5": 44,
+      "abstained_target_not_in_top5": 55,
+      "answered_wrong_video": 29,
+      "answered_correct_video": 27
+    }
+  },
+  "known_video_visual_matched": {
+    "questions": 67,
+    "videos": 19,
+    "metrics": {
+      "mean_iou_difference_visual_minus_transcript": {
+        "estimate": 0.03208551570325503,
+        "ci_95": [
+          0.0,
+          0.06875750789059809
+        ]
+      },
+      "r_at_1_iou_05_difference_visual_minus_transcript": {
+        "estimate": 0.04477611940298507,
+        "ci_95": [
+          0.0,
+          0.11538461538461539
+        ]
+      }
+    }
+  }
+}

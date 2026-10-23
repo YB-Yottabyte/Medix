@@ -4,7 +4,7 @@
 
 Medix is a research prototype for just-in-time medical-procedure question answering. The
 backend combines semantic retrieval, transcript grounding, language generation, medical-image
-analysis, speech transcription, and timestamped video results. It is not a diagnostic system or
+analysis, local speech playback, and timestamped video results. It is not a diagnostic system or
 a medical device.
 
 ## Design
@@ -18,14 +18,19 @@ HTTP request
 FastAPI router + Pydantic schemas
     │
     ▼
-MedicalQAService (use-case orchestration)
+GroundedMedicalQAPipeline
     │
     ├── SafetyTriageService ── scope and emergency classification
-    ├── RetrievalGate ── confidence decision + evidence metadata
-    ├── ResponseGenerator ── AIHandler
-    ├── ProcedureRetriever ── Qdrant + embedding model
-    ├── MedicalImageRecognizer ── vision-language model
-    └── GroqTranscriptionService ── Whisper
+    ├── EndToEndMedicalPipeline
+    │   ├── SemanticVideoRetriever ── in-memory embeddings + lexical ranking
+    │   ├── temporal localization ── transcript/CLIP windows
+    │   └── evidence extraction ── bounded video + transcript cues
+    └── EvidenceGroundedAnswerGenerator
+        ├── VoyagerStructuredAnswerModel ── qwen35-27b
+        └── claim/citation/support validation
+
+Image requests → OptionalVisionAdapter → VoyagerVisionModel
+Speech playback → local Kokoro runtime
 ```
 
 The major responsibilities are:
@@ -37,14 +42,14 @@ The major responsibilities are:
   and records capability-specific startup failures.
 - `backend.api.routes` translates HTTP requests into service calls. It contains no retrieval,
   model, or prompt logic.
-- `backend.services.medical_qa.MedicalQAService` coordinates text, video, image, voice, and
-  multimodal use cases without depending on FastAPI.
-- `backend.services.pipeline` owns deterministic scope triage, the validation-tunable retrieval
-  gate, abstention messages, and timestamped evidence metadata.
-- `backend.services.transcription.GroqTranscriptionService` isolates speech-provider and
-  temporary-file handling.
+- `backend.services.grounded_qa.GroundedMedicalQAPipeline` coordinates evidence acquisition,
+  safety assessment, generation, and abstention.
+- `backend.research_pipeline.ResearchPipelineFactory` composes the current pipeline and optional
+  extractive/local research baselines.
+- `backend.adapters.structured_vision.StructuredVisionModel` normalizes images and validates the
+  observation envelope. Images guide retrieval and are not transcript evidence.
 - `backend.ports` defines the structural interfaces required by the service layer.
-- `backend.adapters` owns model providers, local cache loading, Qdrant retrieval, transcript
+- `backend.adapters` owns model providers, local cache loading, transcript
   access, and response generation.
 
 The root `app.py` is the only compatibility entrypoint. Integrations that previously lived in
@@ -57,8 +62,8 @@ FastAPI application:
 
 - If configuration or retrieval artifacts are unavailable, `/api/health` reports `degraded` and
   model-dependent routes return HTTP 503.
-- If only the Groq vision key is unavailable, text QA can remain available while image routes
-  return HTTP 503.
+- Voyager requires `ASU_RC_API_KEY`. Vision can be explicitly disabled with
+  `MEDIX_VISION_PROVIDER=disabled`; disabled image requests return HTTP 503.
 - Heavy ML dependencies are imported only inside the production composition boundary. Tests can
   inject small fakes without loading models.
 
@@ -66,10 +71,11 @@ This distinction makes the application testable and provides useful operational 
 
 ## Evidence and abstention
 
-Generation is not invoked when the retriever returns no procedure or when the top retrieval score
-is below `safety.answer_confidence_threshold`. The response instead records an abstention reason,
-the configured threshold, any retrieved source metadata, and per-stage latency. The threshold must
-be selected on validation data and is not a clinical safety guarantee.
+Missing retrieval results, unavailable media, or an incomplete evidence bundle produce an
+abstention. Generation accepts only claims linked to transcript cues within the selected interval;
+invalid citation IDs or unsupported claims are rejected. The frontend handles greetings and
+Medix capability questions without procedure retrieval. Experimental retrieval thresholds must be
+selected on validation data; they are not clinical safety guarantees.
 
 Diagnosis, prescribing, and dosage-selection questions are rejected by a deterministic
 pre-retrieval scope policy. Potential emergency phrases add an escalation warning while retaining
@@ -96,11 +102,12 @@ The repository separates:
 - source MedVidQA splits in `MedVidQA/`;
 - derived cleaned splits and cleaning reports;
 - generated local embedding caches;
-- Qdrant vector-store state;
+- label-free video catalog metadata;
 - transcript cache data.
 
-Generated embeddings and local service state are intentionally excluded from version control.
-The scripts in `scripts/` reproduce the retrieval artifacts.
+Canonical video embeddings are built in memory at startup. Generated caches and local
+service state are intentionally excluded from version control.
+The scripts in `development/scripts/` reproduce the retrieval artifacts.
 
 ## Safety and Thesis Evaluation Gaps
 
@@ -116,7 +123,7 @@ reliable, the thesis evaluation should measure at least:
    viewpoint.
 7. Usability and cognitive load for caregivers using the target headset.
 
-The current implementation calls hosted Groq models and YouTube when a transcript is not cached.
+The default implementation calls hosted Voyager models and YouTube when a transcript is not cached.
 It therefore does not yet satisfy the thesis goal of operation without a robust internet
 connection. Offline model execution, a fully local transcript corpus, queueing/retry behavior,
 and on-device or edge deployment remain future system work.
@@ -126,7 +133,8 @@ and on-device or edge deployment remain future system work.
 - **uv** is the only Python environment and dependency manager. `pyproject.toml` is the dependency
   source and `uv.lock` makes local development and CI reproducible.
 - **Ruff** replaces separate formatter, import sorter, and lint tools.
-- **pytest + pytest-cov** provide contract, configuration, service, and coverage checks.
+- The backend pytest regression suite is archived outside this repository; backend CI currently
+  runs lint/format checks. Frontend checks remain configured separately.
 - **pre-commit** runs repository hygiene and language-specific quality checks before changes reach
   CI.
 - Standard-library **Protocol** interfaces provide dependency inversion without forcing adapter
@@ -136,3 +144,11 @@ FastAPI's Pydantic models validate transport inputs and generate the OpenAPI con
 configuration remains represented by validated dataclasses so the service layer is independent
 of the web framework. The explicit composition root remains the dependency-injection mechanism;
 an additional container framework would add complexity without improving this object graph.
+
+## Retired integrations
+
+The current application has no Groq, CreateAI, or Qdrant connection. Retrieval uses local
+embeddings and metadata. The unused HTML/JavaScript backend UI was removed; `frontend/` is the
+website. Historic research notes and frozen outputs are retained as records, not active setup
+instructions. PostgreSQL, Redis, and blob storage support separate frontend features and are
+not replacements for the video-retrieval index.

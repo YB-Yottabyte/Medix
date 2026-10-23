@@ -12,14 +12,15 @@ or gold timestamps as model inputs.
 ## Conditions
 
 1. **Extractive:** deterministic token-overlap selection of verbatim transcript cues.
-2. **Structured Groq:** temperature-zero JSON claims with required cue IDs, followed by Medix
-   citation, interval, and lexical-support validation. GPT-OSS uses Groq strict JSON Schema mode
-   so provider output is schema-constrained before Medix domain validation.
-3. **Free-form Groq:** the same model, temperature, question, and transcript interval without
-   structured claims or citation enforcement.
+2. **Structured Voyager:** Qwen JSON claims with cue IDs, followed by Medix citation,
+   interval, and lexical-support validation.
+3. **Structured Ollama:** optional local baseline using the same structured contract.
 
-The extractive condition establishes a high-provenance, low-fluency baseline. Structured versus
-free-form Groq is the controlled comparison for the grounding intervention.
+The extractive condition establishes a high-provenance, low-fluency baseline. Historical
+Groq structured/free-form outputs remain unchanged in recorded results, but their connectors
+and CLI conditions are retired. Those historic experiments must not be relabeled as Voyager
+runs. The generic free-form comparison/review machinery remains available for offline records;
+the current CLI does not offer a remote free-form condition.
 
 ## Split policy
 
@@ -30,10 +31,10 @@ transcript availability is not uniform, so coverage bias must be reported separa
 Run a bounded validation pilot:
 
 ```bash
-uv run python -m evaluation.run_generation_comparison \
+uv run python -m development.evaluation.run_generation_comparison \
   --split validation \
-  --predictions evaluation/results/end_to_end/validation/predictions.jsonl \
-  --conditions extractive,structured-groq,freeform-groq \
+  --predictions development/evaluation/results/end_to_end/validation/predictions.jsonl \
+  --conditions extractive,structured-voyager \
   --limit 5 \
   --allow-api
 ```
@@ -60,15 +61,15 @@ unsafe or unsupported claim is present. Review status is not a clinical validati
 Create separate blinded files for two reviewers:
 
 ```bash
-uv run python -m evaluation.prepare_generation_review \
-  --manifest evaluation/results/generation_comparison_pilot/validation/blinded_review.json \
+uv run python -m development.evaluation.prepare_generation_review \
+  --manifest development/evaluation/results/generation_comparison_pilot/validation/blinded_review.json \
   --reviewer-id reviewer-01 \
-  --output evaluation/results/generation_comparison_pilot/reviews/reviewer-01.json
+  --output development/evaluation/results/generation_comparison_pilot/reviews/reviewer-01.json
 
-uv run python -m evaluation.prepare_generation_review \
-  --manifest evaluation/results/generation_comparison_pilot/validation/blinded_review.json \
+uv run python -m development.evaluation.prepare_generation_review \
+  --manifest development/evaluation/results/generation_comparison_pilot/validation/blinded_review.json \
   --reviewer-id reviewer-02 \
-  --output evaluation/results/generation_comparison_pilot/reviews/reviewer-02.json
+  --output development/evaluation/results/generation_comparison_pilot/reviews/reviewer-02.json
 ```
 
 Each reviewer fills every rating, adds notes where useful, and changes top-level `review_status`
@@ -77,16 +78,16 @@ from `pending` to `complete`. Do not give reviewers `condition_key.json`.
 After both reviews are complete:
 
 ```bash
-uv run --group research python -m evaluation.summarize_generation_reviews \
+uv run --group research python -m development.evaluation.summarize_generation_reviews \
   --reviews \
-    evaluation/results/generation_comparison_pilot/reviews/reviewer-01.json \
-    evaluation/results/generation_comparison_pilot/reviews/reviewer-02.json \
+    development/evaluation/results/generation_comparison_pilot/reviews/reviewer-01.json \
+    development/evaluation/results/generation_comparison_pilot/reviews/reviewer-02.json \
   --condition-key \
-    evaluation/results/generation_comparison_pilot/validation/condition_key.json \
+    development/evaluation/results/generation_comparison_pilot/validation/condition_key.json \
   --output \
-    evaluation/results/generation_comparison_pilot/validation/human_review_summary.json \
+    development/evaluation/results/generation_comparison_pilot/validation/human_review_summary.json \
   --unblinded-output \
-    evaluation/results/generation_comparison_pilot/validation/unblinded_ratings.jsonl
+    development/evaluation/results/generation_comparison_pilot/validation/unblinded_ratings.jsonl
 ```
 
 The summarizer rejects incomplete ratings. It reports condition summaries, paired bootstrap
@@ -97,14 +98,14 @@ rating variation.
 If the pilot shows poor agreement, create a condition-blinded calibration packet:
 
 ```bash
-uv run python -m evaluation.build_generation_calibration \
+uv run python -m development.evaluation.build_generation_calibration \
   --manifest \
-    evaluation/results/generation_comparison_pilot/validation/blinded_review.json \
+    development/evaluation/results/generation_comparison_pilot/validation/blinded_review.json \
   --reviews \
-    evaluation/results/generation_comparison_pilot/reviews/reviewer-01.json \
-    evaluation/results/generation_comparison_pilot/reviews/reviewer-02.json \
+    development/evaluation/results/generation_comparison_pilot/reviews/reviewer-01.json \
+    development/evaluation/results/generation_comparison_pilot/reviews/reviewer-02.json \
   --output \
-    evaluation/results/generation_comparison_pilot/validation/calibration_disagreements.json
+    development/evaluation/results/generation_comparison_pilot/validation/calibration_disagreements.json
 ```
 
 The packet includes only responses with a binary disagreement or an ordinal rating range of at

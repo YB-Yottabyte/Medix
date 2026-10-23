@@ -59,46 +59,23 @@ A null or negative result remains reportable but does not justify deploying KAN.
 
 ## Reproduction
 
-First generate retrieval records for every split. Each output must be produced using an index that
-does not expose evaluation labels to the model:
+Generate all three legacy question-level retrieval files in memory. These records
+exclude the query itself but may include other expert questions from the same video;
+they must not be presented as leakage-free video retrieval results.
 
 ```bash
-uv run python -m evaluation.build_manifest \
-  --input MedVidQA/cleaned/train.json \
-  --output evaluation/datasets/medvidqa_train.json
-uv run python -m evaluation.build_manifest \
-  --input MedVidQA/cleaned/val.json \
-  --output evaluation/datasets/medvidqa_validation.json
-uv run python -m evaluation.build_manifest \
-  --input MedVidQA/cleaned/test.json \
-  --output evaluation/datasets/medvidqa_test.json
-
-uv run python -m evaluation.run_retrieval \
-  --manifest evaluation/datasets/medvidqa_train.json \
-  --output evaluation/results/retrieval_train.jsonl
-uv run python -m evaluation.run_retrieval \
-  --manifest evaluation/datasets/medvidqa_validation.json \
-  --output evaluation/results/retrieval_validation.jsonl
-uv run python -m evaluation.run_retrieval \
-  --manifest evaluation/datasets/medvidqa_test.json \
-  --output evaluation/results/retrieval_test.jsonl
-```
-
-Alternatively, generate all three files without a Qdrant server:
-
-```bash
-uv run --group research python -m evaluation.run_offline_retrieval
+uv run --group research python -m development.evaluation.run_offline_retrieval
 ```
 
 Install the explicitly separated research dependencies and run the comparison:
 
 ```bash
 uv sync --group dev --group research
-uv run --group research python -m evaluation.run_confidence_experiment \
-  --train evaluation/results/retrieval_train.jsonl \
-  --validation evaluation/results/retrieval_validation.jsonl \
-  --test evaluation/results/retrieval_test.jsonl \
-  --output evaluation/results/confidence_comparison.json
+uv run --group research python -m development.evaluation.run_confidence_experiment \
+  --train development/evaluation/results/retrieval_train.jsonl \
+  --validation development/evaluation/results/retrieval_validation.jsonl \
+  --test development/evaluation/results/retrieval_test.jsonl \
+  --output development/evaluation/results/confidence_comparison.json
 ```
 
 The JSON result retains every seed-level result as well as aggregate test statistics. Generated

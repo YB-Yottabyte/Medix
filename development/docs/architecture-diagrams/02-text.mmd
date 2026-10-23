@@ -1,0 +1,14 @@
+flowchart TD
+ A[Text question] --> B[Validate session and message]
+ B --> C[Intent + conversation context]
+ C -->|new source| D[POST /api/query]
+ C -->|same topic| I[Reuse current evidence]
+ D --> E[Safety triage]
+ E --> F[MiniLM + lexical passage retrieval]
+ F --> G[Transcript windows + CLIP frame scoring]
+ G --> H[Extract cues, frames and clip]
+ H --> J[Voyager structured backend claims]
+ J --> I
+ I --> K[Select relevant cues + checked references]
+ K --> L[Generate, verify and bounded repair]
+ L --> M[Chat + inline sources + optional video]
