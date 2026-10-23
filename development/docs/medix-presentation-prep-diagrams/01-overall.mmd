@@ -1,0 +1,17 @@
+flowchart TD
+ U[Browser: text or image] --> N[Next.js /api/chat]
+ P[(PostgreSQL chat history)] <--> N
+ N --> R{Route and resolve context}
+ R -->|clarify or general| O[Streamed chat output]
+ R -->|new medical question| F[FastAPI canonical QA]
+ R -->|same-topic follow-up| C[Next.js response composer]
+ D[(Catalog + transcripts + local videos)] --> F
+ V[Voyager Qwen: text and vision] <--> F
+ F --> E[Evidence bundle + validated backend claims]
+ E --> C
+ K[Checked NHS / St John references] --> C
+ V <--> C
+ C --> O
+ E --> M[Optional relevant clip + transcript]
+ M --> U
+ O --> U

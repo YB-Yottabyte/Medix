@@ -1,13 +1,13 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { ArrowUpRight, Github, Menu, X } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn, generateUUID } from "@/lib/utils";
-import { menuItems } from "./data";
+import { codeHref, menuItems } from "./data";
 
 const wordmarkLetters = ["E", "D", "I", "X"] as const;
 
@@ -20,7 +20,7 @@ function MedixWordmark({ collapseStage }: { collapseStage: number }) {
 
   return (
     <motion.span
-      className="relative inline-flex h-9 items-center overflow-visible text-[1.6rem] font-semibold leading-none tracking-[-0.025em] text-slate-950"
+      className="relative inline-flex h-9 items-center overflow-visible font-semibold text-[1.6rem] text-slate-950 leading-none tracking-[-0.025em]"
       data-medix-wordmark
     >
       <motion.span
@@ -34,7 +34,7 @@ function MedixWordmark({ collapseStage }: { collapseStage: number }) {
       <motion.span
         animate={{ opacity: 1, scaleY: 1 }}
         aria-hidden
-        className="mx-[0.14em] inline-block h-[0.92em] w-[0.28em] shrink-0 origin-center bg-sky-500 [clip-path:polygon(0_0,34%_0,100%_100%,66%_100%)] transition-[margin,transform] duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:mx-[0.2em] group-hover:scale-x-110"
+        className="mx-[0.14em] inline-block h-[0.92em] w-[0.28em] shrink-0 origin-center bg-sky-500 transition-[margin,transform] duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)] [clip-path:polygon(0_0,34%_0,100%_100%,66%_100%)] group-hover:mx-[0.2em] group-hover:scale-x-110"
         initial={prefersReducedMotion ? false : { opacity: 0, scaleY: 0.16 }}
         transition={{
           delay: prefersReducedMotion ? 0 : 0.5,
@@ -90,6 +90,9 @@ function MedixWordmark({ collapseStage }: { collapseStage: number }) {
 
 export function HeroHeader() {
   const router = useRouter();
+  const pathname = usePathname();
+  const navHref = (href: string) =>
+    href.startsWith("#") && pathname !== "/" ? `/${href}` : href;
   const [menuState, setMenuState] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [wordmarkCollapseStage, setWordmarkCollapseStage] = useState(0);
@@ -99,9 +102,9 @@ export function HeroHeader() {
 
     const updateFromScroll = () => {
       const scrollTop = window.scrollY;
-      const nextStage = Math.min(4, Math.floor(scrollTop / 220));
+      const nextStage = scrollTop > 80 ? 4 : 0;
 
-      setIsScrolled(scrollTop > 24);
+      setIsScrolled(scrollTop > 80);
       setWordmarkCollapseStage(nextStage);
       animationFrame = undefined;
     };
@@ -128,18 +131,26 @@ export function HeroHeader() {
     <header>
       <motion.nav
         animate={{ opacity: 1 }}
+        aria-label="Main navigation"
         className="fixed inset-x-0 top-0 z-40 px-3 sm:px-5"
+        data-compact={isScrolled}
         initial={{ opacity: 0 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       >
         <div
           className={cn(
-            "mx-auto mt-3 max-w-[92rem] rounded-[1.35rem] border border-transparent px-3 transition-all duration-500 sm:px-5",
-            isScrolled &&
-              "max-w-[88rem] border-slate-200/80 bg-white/88 shadow-[0_14px_45px_-30px_rgba(15,23,42,0.28)] backdrop-blur-xl"
+            "relative mx-auto mt-3 w-full rounded-[1.35rem] border px-3 transition-[max-width,background-color,border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none sm:px-5",
+            isScrolled
+              ? "max-w-[60rem] border-neutral-300/80 bg-white/90 shadow-[0_12px_40px_-22px_rgba(0,0,0,0.22)] backdrop-blur-xl"
+              : "max-w-[72rem] border-neutral-200/70 bg-[#f5f5f5]/80 backdrop-blur-md"
           )}
         >
-          <div className="flex h-16 items-center justify-between gap-6">
+          <div
+            className={cn(
+              "flex items-center justify-between gap-4 transition-[height] duration-500 ease-out motion-reduce:transition-none",
+              isScrolled ? "h-14" : "h-[4.5rem]"
+            )}
+          >
             <Link
               aria-label="Medix home"
               className="group flex items-center px-1 py-2"
@@ -148,12 +159,12 @@ export function HeroHeader() {
               <MedixWordmark collapseStage={wordmarkCollapseStage} />
             </Link>
 
-            <ul className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 text-[13px] text-slate-600 lg:flex">
+            <ul className="ml-6 hidden flex-1 items-center gap-6 text-[13px] text-neutral-600 lg:flex">
               {menuItems.map((item) => (
                 <li key={item.name}>
                   <Link
                     className="transition-colors hover:text-slate-950"
-                    href={item.href}
+                    href={navHref(item.href)}
                     rel={item.external ? "noreferrer" : undefined}
                     target={item.external ? "_blank" : undefined}
                   >
@@ -164,26 +175,54 @@ export function HeroHeader() {
             </ul>
 
             <div className="hidden items-center gap-2 lg:flex">
+              <a
+                aria-label="Medix on GitHub"
+                className="inline-flex size-10 items-center justify-center rounded-xl text-neutral-600 transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+                href={codeHref}
+                rel="noopener noreferrer"
+                target="_blank"
+                title="View Medix on GitHub"
+              >
+                <Github
+                  aria-hidden="true"
+                  className="size-[19px]"
+                  strokeWidth={1.7}
+                />
+              </a>
               <Link
-                className="flex h-10 items-center rounded-full px-4 text-[13px] font-medium text-slate-600 transition-colors duration-300 hover:bg-slate-100 hover:text-slate-950"
+                className="flex h-10 items-center rounded-full px-4 font-medium text-[13px] text-slate-600 transition-colors duration-300 hover:bg-slate-100 hover:text-slate-950"
                 href="/login"
               >
                 Log in
               </Link>
               <Button
-                className="group relative h-10 overflow-hidden rounded-full border-slate-300 bg-white px-5 text-[13px] text-slate-950 shadow-none transition-colors duration-500 hover:bg-white hover:text-white"
+                className="medix-blue-sweep group relative h-10 overflow-hidden rounded-xl border-primary bg-primary px-5 text-[13px] text-primary-foreground shadow-none"
                 onClick={openChat}
-                variant="outline"
               >
-                <span className="absolute inset-0 bg-slate-950 [clip-path:polygon(0_100%,0_100%,0_100%)] transition-[clip-path] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:[clip-path:polygon(0_100%,0_-100%,200%_100%)]" />
                 <span className="relative z-10 flex items-center gap-1.5">
                   Try Medix
-                  <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  <ArrowUpRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </span>
               </Button>
             </div>
 
+            <a
+              aria-label="Medix on GitHub"
+              className="ml-auto inline-flex size-10 items-center justify-center rounded-xl text-neutral-600 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-primary lg:hidden"
+              href={codeHref}
+              rel="noopener noreferrer"
+              target="_blank"
+              title="View Medix on GitHub"
+            >
+              <Github
+                aria-hidden="true"
+                className="size-[19px]"
+                strokeWidth={1.7}
+              />
+            </a>
             <button
+              aria-controls="landing-mobile-menu"
+              aria-expanded={menuState}
               aria-label={menuState ? "Close menu" : "Open menu"}
               className="relative flex size-10 items-center justify-center rounded-full bg-white text-slate-800 shadow-sm ring-1 ring-slate-200 lg:hidden"
               onClick={() => setMenuState((current) => !current)}
@@ -199,20 +238,22 @@ export function HeroHeader() {
 
           <div
             className={cn(
-              "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 lg:hidden",
+              "grid overflow-hidden transition-[grid-template-rows,opacity] duration-300 motion-reduce:transition-none lg:hidden",
               menuState
                 ? "grid-rows-[1fr] opacity-100"
                 : "grid-rows-[0fr] opacity-0"
             )}
+            id="landing-mobile-menu"
+            inert={!menuState}
           >
             <div className="min-h-0">
-              <div className="border-t border-slate-200/80 py-4">
+              <div className="border-slate-200/80 border-t py-4">
                 <ul className="grid gap-1">
                   {menuItems.map((item) => (
                     <li key={item.name}>
                       <Link
-                        className="block rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-100"
-                        href={item.href}
+                        className="block rounded-xl px-3 py-2.5 text-slate-700 text-sm hover:bg-slate-100"
+                        href={navHref(item.href)}
                         onClick={() => setMenuState(false)}
                       >
                         {item.name}
@@ -225,13 +266,11 @@ export function HeroHeader() {
                     <Link href="/login">Log in</Link>
                   </Button>
                   <Button
-                    className="group relative overflow-hidden rounded-full border-slate-300 bg-white text-slate-950 shadow-none hover:bg-white hover:text-white"
+                    className="medix-blue-sweep group relative overflow-hidden rounded-xl border-primary bg-primary text-primary-foreground shadow-none"
                     onClick={openChat}
-                    variant="outline"
                   >
-                    <span className="absolute inset-0 bg-slate-950 [clip-path:polygon(0_100%,0_100%,0_100%)] transition-[clip-path] duration-600 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:[clip-path:polygon(0_100%,0_-100%,200%_100%)]" />
                     <span className="relative z-10 flex items-center gap-1.5">
-                      Try ChatGPT
+                      Try Medix
                       <ArrowUpRight className="size-3.5" />
                     </span>
                   </Button>

@@ -22,12 +22,6 @@ type ImageResponse = {
 export const analyzeImage = tool({
   description:
     "Analyze a user-provided medical image and find a matching first-aid procedure. Use only an image URL supplied in the conversation.",
-  inputSchema: z.object({
-    imageUrl: z
-      .string()
-      .url()
-      .describe("The exact URL of the image attached by the user"),
-  }),
   execute: async ({ imageUrl }) => {
     try {
       const url = validateRemoteImageUrl(imageUrl);
@@ -48,22 +42,22 @@ export const analyzeImage = tool({
       const form = new FormData();
       form.append("image", await imageResponse.blob(), "medical-image");
       const result = await fetchMedixJson<ImageResponse>("/api/image_query", {
-        method: "POST",
         body: form,
+        method: "POST",
       });
       const recognition = result.recognition;
       const topMatch = recognition?.top_match;
 
       return {
+        answer: result.ai_guidance ?? null,
         bodyPart: recognition?.detected_body_part ?? null,
         condition: recognition?.detected_condition ?? null,
-        severity: recognition?.detected_severity ?? null,
-        matchedProcedure: topMatch?.question ?? null,
-        videoId: result.video_id ?? null,
-        startTime: result.answer_start ?? null,
-        endTime: result.answer_end ?? null,
-        answer: result.ai_guidance ?? null,
         confidence: result.confidence ?? topMatch?.confidence ?? null,
+        endTime: result.answer_end ?? null,
+        matchedProcedure: topMatch?.question ?? null,
+        severity: recognition?.detected_severity ?? null,
+        startTime: result.answer_start ?? null,
+        videoId: result.video_id ?? null,
       };
     } catch (error: unknown) {
       return {
@@ -71,6 +65,12 @@ export const analyzeImage = tool({
       };
     }
   },
+  inputSchema: z.object({
+    imageUrl: z
+      .string()
+      .url()
+      .describe("The exact URL of the image attached by the user"),
+  }),
 });
 
 function validateRemoteImageUrl(value: string): URL {

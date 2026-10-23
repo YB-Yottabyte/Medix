@@ -1,4 +1,4 @@
-"""Groq adapter for structured evidence-constrained answer generation."""
+"""Local Ollama baseline for structured evidence-constrained answer generation."""
 
 from __future__ import annotations
 
@@ -14,49 +14,10 @@ from backend.generation.structured import (
     structured_answer_system_prompt,
     structured_answer_user_prompt,
 )
+from backend.performance import timed
 
 if TYPE_CHECKING:
     from backend.generation import EvidenceGenerationRequest, StructuredAnswerDraft
-
-
-class GroqStructuredEvidenceAnswerModel:
-    """Request JSON claims from Groq while keeping validation in the domain layer."""
-
-    def __init__(self, client: Any, *, model: str):
-        if not model.strip():
-            raise ValueError("model must not be empty")
-        self.client = client
-        self._model = model
-
-    @property
-    def model_name(self) -> str:
-        return f"groq-{STRUCTURED_CONTRACT_VERSION}:{self._model}"
-
-    def generate(self, request: EvidenceGenerationRequest) -> StructuredAnswerDraft:
-        completion = self.client.chat.completions.create(
-            model=self._model,
-            temperature=0,
-            response_format=self._response_format(),
-            messages=[
-                {"role": "system", "content": structured_answer_system_prompt()},
-                {"role": "user", "content": structured_answer_user_prompt(request)},
-            ],
-        )
-        content = completion.choices[0].message.content
-        if not content:
-            raise ValueError("Groq returned an empty structured response")
-        return decode_structured_answer(content)
-
-    @staticmethod
-    def _response_format() -> dict[str, Any]:
-        return {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "medix_grounded_answer",
-                "strict": True,
-                "schema": structured_answer_json_schema(),
-            },
-        }
 
 
 class OllamaStructuredEvidenceAnswerModel:
@@ -89,6 +50,7 @@ class OllamaStructuredEvidenceAnswerModel:
     def model_name(self) -> str:
         return f"ollama-{STRUCTURED_CONTRACT_VERSION}:{self._model}"
 
+    @timed("generation.local_structured")
     def generate(self, request: EvidenceGenerationRequest) -> StructuredAnswerDraft:
         messages = [
             {"role": "system", "content": structured_answer_system_prompt()},
@@ -107,6 +69,7 @@ class OllamaStructuredEvidenceAnswerModel:
             )
             return decode_structured_answer(repaired_content)
 
+    @timed("model.local_provider")
     def _chat(self, messages: list[dict[str, str]]) -> str:
         response = self._session.post(
             f"{self._base_url}/api/chat",
@@ -134,40 +97,3 @@ class OllamaStructuredEvidenceAnswerModel:
         if not isinstance(content, str) or not content.strip():
             raise ValueError("Ollama returned an empty structured response")
         return content
-
-
-class GroqFreeformEvidenceAnswerModel:
-    """Evidence-conditioned Groq control without claim/citation enforcement."""
-
-    def __init__(self, client: Any, *, model: str):
-        if not model.strip():
-            raise ValueError("model must not be empty")
-        self.client = client
-        self._model = model
-
-    @property
-    def model_name(self) -> str:
-        return f"groq-freeform:{self._model}"
-
-    def generate(self, request: EvidenceGenerationRequest) -> str:
-        completion = self.client.chat.completions.create(
-            model=self._model,
-            temperature=0,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "Answer the medical-procedure question using the supplied "
-                        "transcript segment. Be concise."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": structured_answer_user_prompt(request),
-                },
-            ],
-        )
-        content = completion.choices[0].message.content
-        if not content or not content.strip():
-            raise ValueError("Groq returned an empty free-form response")
-        return content.strip()

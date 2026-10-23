@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { generateUUID } from "@/lib/utils";
@@ -10,8 +10,6 @@ import { greetingPlaceholders } from "./data";
 import { StarterPageFooter } from "./footer";
 import { HeroHeader } from "./hero-header";
 import { HeroSection } from "./hero-section";
-import { PipelineSection } from "./pipeline-section";
-import { ResearchSection } from "./research-section";
 
 export function StarterPage() {
   const router = useRouter();
@@ -66,7 +64,7 @@ export function StarterPage() {
       {introComplete && <HeroHeader />}
       <motion.main
         animate={{ opacity: introComplete ? 1 : 0, y: introComplete ? 0 : 12 }}
-        className="relative min-h-dvh overflow-hidden bg-white text-foreground"
+        className="relative min-h-dvh overflow-x-clip bg-[#f5f5f5] text-foreground"
         initial={{ opacity: 0, y: 12 }}
         transition={{
           delay: introComplete ? 0.05 : 0,
@@ -81,9 +79,9 @@ export function StarterPage() {
           typedPlaceholder={typedPlaceholder}
         />
         <CapabilityShowcase startChat={startChat} />
-        <PipelineSection prefersReducedMotion={Boolean(prefersReducedMotion)} />
-        <ResearchSection startChat={startChat} />
-        <StarterPageFooter />
+        <div className="flow-root" id="quest3-research">
+          <StarterPageFooter />
+        </div>
       </motion.main>
     </>
   );

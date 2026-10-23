@@ -10,6 +10,7 @@ import { Greeting } from "./greeting";
 import { submitEditedMessage } from "./message-editor";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { VoiceMode } from "./voice-mode";
 
 export function ChatShell() {
   const {
@@ -31,6 +32,7 @@ export function ChatShell() {
     null
   );
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const showEmptyState = messages.length === 0;
 
   const stopRef = useRef(stop);
@@ -47,8 +49,8 @@ export function ChatShell() {
         return;
       }
       sendMessageRef.current({
+        parts: [{ text, type: "text" }],
         role: "user",
-        parts: [{ type: "text", text }],
       });
     };
     window.addEventListener("medix:ask", handleAsk);
@@ -62,17 +64,31 @@ export function ChatShell() {
       stopRef.current();
       setEditingMessage(null);
       setAttachments([]);
+      setVoiceOpen(false);
     }
   }, [chatId]);
 
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (
+      !url.pathname.endsWith(`/chat/${chatId}`) ||
+      url.searchParams.get("voice") !== "1"
+    ) {
+      return;
+    }
+    setVoiceOpen(true);
+    url.searchParams.delete("voice");
+    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  }, [chatId]);
+
   return (
-    <div className="flex h-dvh w-full flex-row overflow-hidden bg-white dark:bg-background">
-      <div className="flex w-full min-w-0 flex-col bg-white dark:bg-background">
+    <div className="flex h-dvh w-full flex-row overflow-hidden bg-background">
+      <div className="flex w-full min-w-0 flex-col bg-background">
         <ChatHeader />
 
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-background">
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
           {isLoading ? (
-            <div className="flex-1 bg-white dark:bg-background" />
+            <div className="flex-1 bg-background" />
           ) : (
             <>
               <Messages
@@ -96,22 +112,22 @@ export function ChatShell() {
 
               <div
                 className={cn(
-                  "z-20 w-full shrink-0 animate-in fade-in duration-300",
+                  "fade-in z-20 w-full shrink-0 animate-in duration-300",
                   showEmptyState
                     ? "pointer-events-none absolute inset-0 flex items-center justify-center px-3 pt-8 sm:px-6"
-                    : "sticky bottom-0 bg-white/95 pt-2 pb-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:bg-background/95 dark:supports-[backdrop-filter]:bg-background/80 md:pb-4"
+                    : "sticky bottom-0 bg-background/95 pt-2 pb-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:pb-4"
                 )}
               >
                 <div
                   className={cn(
                     "w-full",
                     showEmptyState
-                      ? "pointer-events-auto max-w-[680px] -translate-y-[4vh]"
+                      ? "pointer-events-auto max-w-[720px] -translate-y-[3vh]"
                       : "mx-auto max-w-[760px]"
                   )}
                 >
                   {showEmptyState && (
-                    <div className="mb-7 sm:mb-8">
+                    <div className="mb-10 sm:mb-12">
                       <Greeting />
                     </div>
                   )}
@@ -126,6 +142,11 @@ export function ChatShell() {
                       <MultimodalInput
                         attachments={attachments}
                         chatId={chatId}
+                        className={
+                          showEmptyState
+                            ? "[&_textarea]:min-h-20 [&_textarea]:text-[15px]"
+                            : undefined
+                        }
                         editingMessage={editingMessage}
                         input={input}
                         onCancelEdit={() => {
@@ -140,9 +161,9 @@ export function ChatShell() {
                                 setEditingMessage(null);
                                 await submitEditedMessage({
                                   message: msg,
-                                  text: input,
-                                  setMessages,
                                   regenerate,
+                                  setMessages,
+                                  text: input,
                                 });
                                 setInput("");
                               }
@@ -166,6 +187,14 @@ export function ChatShell() {
           )}
         </div>
       </div>
+      {voiceOpen && !isReadonly && (
+        <VoiceMode
+          messages={messages}
+          onClose={() => setVoiceOpen(false)}
+          sendMessage={sendMessage}
+          status={status}
+        />
+      )}
     </div>
   );
 }

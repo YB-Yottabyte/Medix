@@ -56,11 +56,11 @@ const settingsSections: Array<{
   label: string;
   icon: LucideIcon;
 }> = [
-  { id: "general", label: "General", icon: Settings2Icon },
-  { id: "account", label: "Account", icon: CircleUserRoundIcon },
-  { id: "appearance", label: "Appearance", icon: SunIcon },
-  { id: "voice", label: "Voice", icon: Mic2Icon },
-  { id: "privacy", label: "Data & Privacy", icon: LockKeyholeIcon },
+  { icon: Settings2Icon, id: "general", label: "General" },
+  { icon: CircleUserRoundIcon, id: "account", label: "Account" },
+  { icon: SunIcon, id: "appearance", label: "Appearance" },
+  { icon: Mic2Icon, id: "voice", label: "Voice" },
+  { icon: LockKeyholeIcon, id: "privacy", label: "Data & Privacy" },
 ];
 
 function metadataString(user: ClerkUser, key: string) {
@@ -205,13 +205,13 @@ function EditProfileDialog({
       return;
     }
     if (!file.type.startsWith("image/")) {
-      toast({ type: "error", description: "Choose an image file." });
+      toast({ description: "Choose an image file.", type: "error" });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
       toast({
-        type: "error",
         description: "Profile images must be smaller than 5 MB.",
+        type: "error",
       });
       return;
     }
@@ -226,14 +226,14 @@ function EditProfileDialog({
     const nextName = displayName.trim();
     const nextUsername = username.trim().replace(/^@/, "");
     if (!nextName) {
-      toast({ type: "error", description: "Display name is required." });
+      toast({ description: "Display name is required.", type: "error" });
       return;
     }
     if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(nextUsername)) {
       toast({
-        type: "error",
         description:
           "Username must be 3–30 characters using letters, numbers, dots, dashes, or underscores.",
+        type: "error",
       });
       return;
     }
@@ -250,12 +250,12 @@ function EditProfileDialog({
         },
       });
       await user.reload();
-      toast({ type: "success", description: "Profile saved." });
+      toast({ description: "Profile saved.", type: "success" });
       onOpenChange(false);
     } catch (error) {
       toast({
-        type: "error",
         description: clerkErrorMessage(error, "Profile could not be saved."),
+        type: "error",
       });
     } finally {
       setSaving(false);
@@ -268,8 +268,8 @@ function EditProfileDialog({
         className="max-h-[calc(100dvh-2rem)] gap-0 overflow-y-auto rounded-2xl border border-border/60 bg-card p-0 shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:max-w-[470px]"
         overlayClassName="bg-slate-950/25 backdrop-blur-[2px]"
       >
-        <DialogHeader className="border-b border-border/60 px-6 py-5">
-          <DialogTitle className="text-[17px] font-semibold tracking-[-0.025em]">
+        <DialogHeader className="border-border/60 border-b px-6 py-5">
+          <DialogTitle className="font-semibold text-[17px] tracking-[-0.025em]">
             Edit profile
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -305,7 +305,7 @@ function EditProfileDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[12px] font-medium" htmlFor="display-name">
+            <Label className="font-medium text-[12px]" htmlFor="display-name">
               Display name
             </Label>
             <Input
@@ -319,7 +319,7 @@ function EditProfileDialog({
           </div>
 
           <div className="space-y-2">
-            <Label className="text-[12px] font-medium" htmlFor="username">
+            <Label className="font-medium text-[12px]" htmlFor="username">
               Username
             </Label>
             <div className="relative">
@@ -339,7 +339,7 @@ function EditProfileDialog({
           </div>
         </div>
 
-        <DialogFooter className="border-t border-border/60 px-6 py-4">
+        <DialogFooter className="border-border/60 border-t px-6 py-4">
           <Button
             disabled={saving}
             onClick={() => onOpenChange(false)}
@@ -377,8 +377,8 @@ function SettingsDialog({
         className="h-[min(680px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] grid-rows-[auto_1fr] gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-[0_32px_90px_rgba(15,23,42,0.2)] sm:max-w-[920px]"
         overlayClassName="bg-slate-950/25 backdrop-blur-[2px]"
       >
-        <DialogHeader className="h-16 justify-center border-b border-border/60 px-6">
-          <DialogTitle className="text-[18px] font-semibold tracking-[-0.03em]">
+        <DialogHeader className="h-16 justify-center border-border/60 border-b px-6">
+          <DialogTitle className="font-semibold text-[18px] tracking-[-0.03em]">
             Settings
           </DialogTitle>
           <DialogDescription className="sr-only">
@@ -387,7 +387,7 @@ function SettingsDialog({
         </DialogHeader>
 
         <div className="grid min-h-0 flex-1 grid-rows-[auto_1fr] sm:grid-cols-[210px_1fr] sm:grid-rows-1">
-          <nav className="flex gap-1 overflow-x-auto border-b border-border/60 p-2 sm:block sm:space-y-1 sm:overflow-visible sm:border-r sm:border-b-0 sm:p-3">
+          <nav className="flex gap-1 overflow-x-auto border-border/60 border-b p-2 sm:block sm:space-y-1 sm:overflow-visible sm:border-r sm:border-b-0 sm:p-3">
             {settingsSections.map((item) => {
               const Icon = item.icon;
               return (
@@ -455,8 +455,8 @@ function SectionHeading({
 }) {
   return (
     <div className="mb-7">
-      <h2 className="text-[19px] font-semibold tracking-[-0.03em]">{title}</h2>
-      <p className="mt-1 text-[12.5px] leading-5 text-muted-foreground">
+      <h2 className="font-semibold text-[19px] tracking-[-0.03em]">{title}</h2>
+      <p className="mt-1 text-[12.5px] text-muted-foreground leading-5">
         {description}
       </p>
     </div>
@@ -482,7 +482,7 @@ function GeneralSettings() {
 function SettingsRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-h-14 items-center justify-between gap-4 px-4 py-3">
-      <span className="text-[13px] font-medium">{label}</span>
+      <span className="font-medium text-[13px]">{label}</span>
       <span className="truncate text-right text-[12.5px] text-muted-foreground">
         {value}
       </span>
@@ -520,11 +520,11 @@ function AccountSettings({
     } catch (error) {
       setDeleting(false);
       toast({
-        type: "error",
         description:
           error instanceof Error
             ? error.message
             : "Account could not be deleted.",
+        type: "error",
       });
     }
   };
@@ -542,7 +542,7 @@ function AccountSettings({
         <SettingsRow label="Email" value={values.email} />
         <div className="flex items-center justify-between gap-4 px-4 py-3.5">
           <div>
-            <p className="text-[13px] font-medium">Profile</p>
+            <p className="font-medium text-[13px]">Profile</p>
             <p className="mt-0.5 text-[11.5px] text-muted-foreground">
               Change your name, username, or image.
             </p>
@@ -556,10 +556,10 @@ function AccountSettings({
       <div className="mt-8 rounded-xl border border-red-200/80 bg-red-50/60 p-4 dark:border-red-950 dark:bg-red-950/20">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-[13px] font-medium text-red-700 dark:text-red-400">
+            <p className="font-medium text-[13px] text-red-700 dark:text-red-400">
               Delete account
             </p>
-            <p className="mt-1 max-w-md text-[11.5px] leading-5 text-red-700/70 dark:text-red-400/70">
+            <p className="mt-1 max-w-md text-[11.5px] text-red-700/70 leading-5 dark:text-red-400/70">
               Permanently remove your profile, saved chats, and Medix account.
             </p>
           </div>
@@ -605,9 +605,9 @@ function AccountSettings({
 function AppearanceSettings() {
   const { theme, setTheme } = useTheme();
   const options = [
-    { value: "system", label: "System", icon: MonitorIcon },
-    { value: "light", label: "Light", icon: SunIcon },
-    { value: "dark", label: "Dark", icon: MoonIcon },
+    { icon: MonitorIcon, label: "System", value: "system" },
+    { icon: SunIcon, label: "Light", value: "light" },
+    { icon: MoonIcon, label: "Dark", value: "dark" },
   ] as const;
 
   return (
@@ -634,7 +634,7 @@ function AppearanceSettings() {
               type="button"
             >
               <Icon className="size-5" strokeWidth={1.6} />
-              <span className="text-[13px] font-medium">{option.label}</span>
+              <span className="font-medium text-[13px]">{option.label}</span>
               {selected && (
                 <span className="absolute top-3 right-3 flex size-5 items-center justify-center rounded-full bg-foreground text-background">
                   <CheckIcon className="size-3" />
@@ -661,8 +661,8 @@ function VoiceSettings() {
             <Mic2Icon className="size-4.5" strokeWidth={1.6} />
           </div>
           <div>
-            <p className="text-[13px] font-medium">Medix read aloud</p>
-            <p className="mt-1 text-[12px] leading-5 text-muted-foreground">
+            <p className="font-medium text-[13px]">Medix read aloud</p>
+            <p className="mt-1 text-[12px] text-muted-foreground leading-5">
               Read aloud uses Medix’s clear clinical narration. Playback remains
               available from the response actions menu.
             </p>
@@ -716,8 +716,8 @@ function PrivacyCard({
         <Icon className="size-4" strokeWidth={1.6} />
       </div>
       <div>
-        <p className="text-[13px] font-medium">{title}</p>
-        <p className="mt-1 text-[11.5px] leading-5 text-muted-foreground">
+        <p className="font-medium text-[13px]">{title}</p>
+        <p className="mt-1 text-[11.5px] text-muted-foreground leading-5">
           {description}
         </p>
       </div>

@@ -91,7 +91,7 @@ class KokoroSpeechSynthesizer:
                 from kokoro import KPipeline
             except ImportError as exc:
                 raise KokoroUnavailableError(
-                    "Kokoro TTS is not installed. Run `uv sync` before using Listen."
+                    "Kokoro TTS is not installed. Run `uv sync --extra speech` before using Listen."
                 ) from exc
             factory = KPipeline
 

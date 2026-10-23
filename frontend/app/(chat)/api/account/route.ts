@@ -21,7 +21,7 @@ export async function DELETE() {
     await client.users.deleteUser(clerkUserId);
     await deleteUserAccount({ userId: session.user.id });
     return Response.json({ deleted: true });
-  } catch (_error) {
+  } catch {
     return new ChatbotError(
       "bad_request:api",
       "Account could not be deleted"

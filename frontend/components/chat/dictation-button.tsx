@@ -46,9 +46,11 @@ function createRecognition(): SpeechRecognitionLike | null {
 export function DictationButton({
   disabled,
   onTranscript,
+  onListeningChange,
 }: {
   disabled?: boolean;
   onTranscript: (text: string) => void;
+  onListeningChange?: (listening: boolean) => void;
 }) {
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(true);
@@ -63,6 +65,10 @@ export function DictationButton({
       recognitionRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    onListeningChange?.(listening);
+  }, [listening, onListeningChange]);
 
   if (!supported) {
     return null;
@@ -100,11 +106,11 @@ export function DictationButton({
       recognitionRef.current = null;
       if (event.error !== "aborted" && event.error !== "no-speech") {
         toast({
-          type: "error",
           description:
             event.error === "not-allowed"
               ? "Microphone access was denied."
               : "Dictation stopped unexpectedly.",
+          type: "error",
         });
       }
     };

@@ -1,32 +1,32 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
 const pieces = [
   {
     className: "left-1 top-1 h-[4.25rem] w-[1.05rem]",
-    enter: { x: -34, y: -16, rotate: -8 },
-    rotate: 0,
     delay: 0.52,
+    enter: { rotate: -8, x: -34, y: -16 },
+    rotate: 0,
   },
   {
     className: "left-[1.9rem] top-[0.7rem] h-[3.75rem] w-[1.05rem]",
-    enter: { x: -22, y: 30, rotate: -52 },
-    rotate: -27,
     delay: 0.76,
+    enter: { rotate: -52, x: -22, y: 30 },
+    rotate: -27,
   },
   {
     className: "right-[1.9rem] top-[0.7rem] h-[3.75rem] w-[1.05rem]",
-    enter: { x: 22, y: 30, rotate: 52 },
-    rotate: 27,
     delay: 1,
+    enter: { rotate: 52, x: 22, y: 30 },
+    rotate: 27,
   },
   {
     className: "right-1 top-1 h-[4.25rem] w-[1.05rem]",
-    enter: { x: 34, y: -16, rotate: 8 },
-    rotate: 0,
     delay: 1.24,
+    enter: { rotate: 8, x: 34, y: -16 },
+    rotate: 0,
   },
 ] as const;
 
@@ -266,7 +266,7 @@ export function BrandIntro({ onComplete }: { onComplete: () => void }) {
             >
               <motion.div
                 animate={{ letterSpacing: ["0.34em", "0.24em"] }}
-                className="flex items-center text-xl font-semibold sm:text-2xl"
+                className="flex items-center font-semibold text-xl sm:text-2xl"
                 initial={false}
                 transition={{
                   delay: 2.92,

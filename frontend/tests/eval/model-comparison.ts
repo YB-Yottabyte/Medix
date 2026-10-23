@@ -34,9 +34,9 @@ import type { TranscriptCitation } from "../../lib/ai/tools/search-procedure";
 import { sanitizeProcedureAnswer } from "../../lib/evidence-timestamps";
 
 const ollama = createOpenAICompatible({
-  name: "ollama",
-  baseURL: ollamaOpenAIBaseUrl(),
   apiKey: "ollama",
+  baseURL: ollamaOpenAIBaseUrl(),
+  name: "ollama",
 });
 const NO_THINKING = { ollama: { reasoningEffort: "none" } } as const;
 
@@ -60,9 +60,9 @@ const JUDGE_MODEL = process.env.MEDIX_JUDGE_MODEL ?? SOL_CHAT_MODEL;
 
 /** Sol runs behind an SSH tunnel; same client shape, different base URL. */
 const sol = createOpenAICompatible({
-  name: "ollama",
-  baseURL: solOllamaBaseUrl(),
   apiKey: "ollama",
+  baseURL: solOllamaBaseUrl(),
+  name: "ollama",
 });
 
 /**
@@ -72,9 +72,9 @@ const sol = createOpenAICompatible({
  */
 const ALL_CANDIDATES: Record<string, { label: string; model: LanguageModel }> =
   {
+    medgemma: { label: "medgemma1.5-4b", model: ollama(MEDGEMMA_EVAL_MODEL) },
     qwen35: { label: "qwen3.5-9b (local)", model: ollama(QWEN_CHAT_MODEL) },
     qwen36: { label: "qwen3.6-27b (Sol)", model: sol(SOL_CHAT_MODEL) },
-    medgemma: { label: "medgemma1.5-4b", model: ollama(MEDGEMMA_EVAL_MODEL) },
   };
 const CANDIDATES = (process.env.MEDIX_EVAL_MODELS ?? "qwen35,qwen36")
   .split(",")
@@ -90,51 +90,51 @@ const judgeIsCandidate = CANDIDATES.some((c) =>
 
 const EVIDENCE: TranscriptCitation[] = [
   {
-    cue_id: "S1",
-    start_seconds: 24,
-    end_seconds: 31,
-    clip_start_seconds: 24,
     clip_end_seconds: 31,
+    clip_start_seconds: 24,
+    cue_id: "S1",
+    end_seconds: 31,
+    start_seconds: 24,
     text: "Once the AED arrives, turn it on and it will talk you through every step.",
   },
   {
-    cue_id: "S2",
-    start_seconds: 31,
-    end_seconds: 36,
-    clip_start_seconds: 31,
     clip_end_seconds: 36,
+    clip_start_seconds: 31,
+    cue_id: "S2",
+    end_seconds: 36,
+    start_seconds: 31,
     text: "Attach the AED pads to the patient's bare chest, one below the right collarbone and one on the left side below the armpit.",
   },
   {
-    cue_id: "S3",
-    start_seconds: 36,
-    end_seconds: 43,
-    clip_start_seconds: 36,
     clip_end_seconds: 43,
+    clip_start_seconds: 36,
+    cue_id: "S3",
+    end_seconds: 43,
+    start_seconds: 36,
     text: "Keep doing chest compressions the whole time the second rescuer is preparing the AED.",
   },
   {
-    cue_id: "S4",
-    start_seconds: 43,
-    end_seconds: 49,
-    clip_start_seconds: 43,
     clip_end_seconds: 49,
+    clip_start_seconds: 43,
+    cue_id: "S4",
+    end_seconds: 49,
+    start_seconds: 43,
     text: "When the machine says stand clear, make sure nobody is touching the patient before the shock is delivered.",
   },
   {
-    cue_id: "S5",
-    start_seconds: 49,
-    end_seconds: 56,
-    clip_start_seconds: 49,
     clip_end_seconds: 56,
+    clip_start_seconds: 49,
+    cue_id: "S5",
+    end_seconds: 56,
+    start_seconds: 49,
     text: "Straight after the shock, go back to chest compressions without waiting.",
   },
   {
-    cue_id: "S6",
-    start_seconds: 56,
-    end_seconds: 63,
-    clip_start_seconds: 56,
     clip_end_seconds: 63,
+    clip_start_seconds: 56,
+    cue_id: "S6",
+    end_seconds: 63,
+    start_seconds: 56,
     text: "If the chest is very hairy, use the razor in the AED kit so the pads stick properly.",
   },
 ];
@@ -158,54 +158,54 @@ const FOLLOW_UPS: Array<{
   kind: "answerable" | "unanswerable";
 }> = [
   {
-    question: "Should I keep doing compressions while the AED is being set up?",
     cueIds: ["T003"],
     kind: "answerable",
+    question: "Should I keep doing compressions while the AED is being set up?",
   },
   {
-    question: "Where exactly do the pads go?",
     cueIds: ["T002"],
     kind: "answerable",
+    question: "Where exactly do the pads go?",
   },
   {
-    question: "What do I do right after the shock is delivered?",
     cueIds: ["T005"],
     kind: "answerable",
+    question: "What do I do right after the shock is delivered?",
   },
   {
-    question: "What if the person has a really hairy chest?",
     cueIds: ["T006"],
     kind: "answerable",
+    question: "What if the person has a really hairy chest?",
   },
   {
-    question: "Is it safe for me to be touching them when it shocks?",
     cueIds: ["T004"],
     kind: "answerable",
+    question: "Is it safe for me to be touching them when it shocks?",
   },
   {
-    question: "Do I need to know how to use the machine before it arrives?",
     cueIds: ["T001"],
     kind: "answerable",
+    question: "Do I need to know how to use the machine before it arrives?",
   },
   {
+    cueIds: [],
+    kind: "unanswerable",
     question: "How many compressions per minute should I be doing?",
-    cueIds: [],
-    kind: "unanswerable",
   },
   {
+    cueIds: [],
+    kind: "unanswerable",
     question: "What compression depth is correct for an adult?",
-    cueIds: [],
-    kind: "unanswerable",
   },
   {
+    cueIds: [],
+    kind: "unanswerable",
     question: "What should I do if the AED says no shock advised?",
-    cueIds: [],
-    kind: "unanswerable",
   },
   {
-    question: "How much adrenaline should be given during the arrest?",
     cueIds: [],
     kind: "unanswerable",
+    question: "How much adrenaline should be given during the arrest?",
   },
 ];
 
@@ -214,12 +214,12 @@ const INITIAL_QUESTIONS = [
   "Can I keep the tourniquet on until the ambulance arrives?",
 ];
 const INITIAL_EVIDENCE: Record<string, string> = {
+  "Can I keep the tourniquet on until the ambulance arrives?": `[1:02–1:14] Once the tourniquet is tightened, do not loosen it.
+[1:14–1:25] Write down the time you applied it.`,
   "How do I use an AED on someone who has collapsed?": EVIDENCE.map(
     (c) =>
       `[${Math.floor(c.start_seconds / 60)}:${String(c.start_seconds % 60).padStart(2, "0")}–${Math.floor(c.end_seconds / 60)}:${String(c.end_seconds % 60).padStart(2, "0")}] ${c.text}`
   ).join("\n"),
-  "Can I keep the tourniquet on until the ambulance arrives?": `[1:02–1:14] Once the tourniquet is tightened, do not loosen it.
-[1:14–1:25] Write down the time you applied it.`,
 };
 
 // ----------------------------------------------------------------- prompts
@@ -306,26 +306,26 @@ async function runFollowUp(
   testCase: (typeof FOLLOW_UPS)[number]
 ): Promise<FollowUpResult> {
   const base = {
-    question: testCase.question,
-    kind: testCase.kind,
-    answered: false,
     abstained: false,
     answer: "",
-    valid: false,
-    parseFailure: false,
-    latencyMs: 0,
+    answered: false,
     hallucinatedCueId: false,
+    kind: testCase.kind,
+    latencyMs: 0,
+    parseFailure: false,
+    question: testCase.question,
+    valid: false,
   };
 
   const [, totalMs] = await timed(async () => {
     // Stage 1: assessment over the FULL bundle — the model chooses the cues.
     const assessmentText = await generateText({
-      model,
-      temperature: 0,
       maxOutputTokens: 1200,
+      model,
+      prompt: `Original procedure query: How do I use an AED?\nRecent conversation:\nuser: How do I use an AED?\n\nLatest follow-up: ${testCase.question}\n\nTranscript cues:\n${cueList(ALL_CUE_IDS)}`,
       providerOptions: NO_THINKING,
       system: ASSESSMENT_PROMPT,
-      prompt: `Original procedure query: How do I use an AED?\nRecent conversation:\nuser: How do I use an AED?\n\nLatest follow-up: ${testCase.question}\n\nTranscript cues:\n${cueList(ALL_CUE_IDS)}`,
+      temperature: 0,
     }).then((r) => r.text);
 
     const assessment = parseSemanticAssessment(assessmentText, cues);
@@ -353,12 +353,12 @@ async function runFollowUp(
 
     // Stage 2: grounded generation from the selected cues only.
     const generationText = await generateText({
-      model,
-      temperature: 0.1,
       maxOutputTokens: 1200,
+      model,
+      prompt: `Follow-up: ${testCase.question}\nEvidence sufficiency: ${assessment.sufficiency}\n\nSelected transcript cues:\n${cueList(selected)}`,
       providerOptions: NO_THINKING,
       system: GENERATION_PROMPT,
-      prompt: `Follow-up: ${testCase.question}\nEvidence sufficiency: ${assessment.sufficiency}\n\nSelected transcript cues:\n${cueList(selected)}`,
+      temperature: 0.1,
     }).then((r) => r.text);
 
     const claims = parseGroundedClaims(generationText, selected);
@@ -371,12 +371,12 @@ async function runFollowUp(
 
     // Stage 3: verification.
     const verificationText = await generateText({
-      model,
-      temperature: 0,
       maxOutputTokens: 1200,
+      model,
+      prompt: `Follow-up: ${testCase.question}\n\nSelected transcript cues:\n${cueList(selected)}\n\nProposed claims:\n${claims.map((c, i) => `${i}: ${c.text} (cites ${c.cueIds.join(", ")})`).join("\n")}`,
       providerOptions: NO_THINKING,
       system: VERIFICATION_PROMPT,
-      prompt: `Follow-up: ${testCase.question}\n\nSelected transcript cues:\n${cueList(selected)}\n\nProposed claims:\n${claims.map((c, i) => `${i}: ${c.text} (cites ${c.cueIds.join(", ")})`).join("\n")}`,
+      temperature: 0,
     }).then((r) => r.text);
 
     const verdict = parseClaimVerification(verificationText, selected);
@@ -425,15 +425,15 @@ async function countUnsupported(answer: string, evidenceText: string) {
     return 0;
   }
   const { text } = await generateText({
-    model: judgeModel,
-    temperature: 0,
     maxOutputTokens: 300,
+    model: judgeModel,
+    prompt: `EVIDENCE:\n${evidenceText}\n\nANSWER:\n${answer}`,
     system: `You check whether a medical answer stays within its evidence.
 Split the ANSWER into factual statements. A statement is SUPPORTED only if the EVIDENCE states or directly entails it.
 General medical knowledge that is true but absent from the EVIDENCE counts as UNSUPPORTED.
 Ignore timestamps and hedging phrases about what the video does not cover.
 Return JSON only: {"total":N,"unsupported":N,"examples":["..."]}`,
-    prompt: `EVIDENCE:\n${evidenceText}\n\nANSWER:\n${answer}`,
+    temperature: 0,
   });
   try {
     const parsed = JSON.parse(text.match(/\{[\s\S]*?\}/)?.[0] ?? "{}");
@@ -492,12 +492,9 @@ async function main() {
     }
 
     followUpRows.push({
-      model: candidate.label,
-      "answered/answerable": `${answerable.filter((r) => r.answered).length}/${answerable.length}`,
       "abstained/unanswerable": `${unanswerable.filter((r) => r.abstained).length}/${unanswerable.length}`,
-      "parse-fail": results.filter((r) => r.parseFailure).length,
+      "answered/answerable": `${answerable.filter((r) => r.answered).length}/${answerable.length}`,
       "hallucinated-cue": results.filter((r) => r.hallucinatedCueId).length,
-      "unsupported-claims": unsupportedTotal,
       "mean-words": (
         results
           .filter((r) => r.answer)
@@ -511,6 +508,9 @@ async function main() {
           Math.floor(results.length / 2)
         ] / 1000
       ).toFixed(1),
+      model: candidate.label,
+      "parse-fail": results.filter((r) => r.parseFailure).length,
+      "unsupported-claims": unsupportedTotal,
     });
 
     transcripts.push(
@@ -529,12 +529,12 @@ async function main() {
       process.stdout.write(`  · ${question}\n`);
       const [raw, latency] = await timed(() =>
         generateText({
-          model: candidate.model,
-          temperature: 0.3,
           maxOutputTokens: 600,
+          model: candidate.model,
+          prompt: `User question: ${question}\n\nVerified transcript citations:\n${INITIAL_EVIDENCE[question]}`,
           providerOptions: NO_THINKING,
           system: INITIAL_PROMPT,
-          prompt: `User question: ${question}\n\nVerified transcript citations:\n${INITIAL_EVIDENCE[question]}`,
+          temperature: 0.3,
         }).then((r) => r.text)
       );
       const answer = sanitizeProcedureAnswer(raw);
@@ -543,15 +543,15 @@ async function main() {
         INITIAL_EVIDENCE[question]
       );
       initialRows.push({
+        bold: (answer.match(/\*\*[^*]+\*\*/g) ?? []).length,
+        "cited?": /\[\d+:\d{2}/.test(answer) ? "yes" : "NO",
+        filler: FILLER.test(answer) ? "yes" : "no",
+        heading: HEADING.test(answer) ? "yes" : "no",
+        "latency-s": (latency / 1000).toFixed(1),
         model: candidate.label,
         question: `${question.slice(0, 34)}…`,
-        words: answer.split(/\s+/).filter(Boolean).length,
-        bold: (answer.match(/\*\*[^*]+\*\*/g) ?? []).length,
-        heading: HEADING.test(answer) ? "yes" : "no",
-        filler: FILLER.test(answer) ? "yes" : "no",
-        "cited?": /\[\d+:\d{2}/.test(answer) ? "yes" : "NO",
         unsupported,
-        "latency-s": (latency / 1000).toFixed(1),
+        words: answer.split(/\s+/).filter(Boolean).length,
       });
       transcripts.push(
         `\n──── ${candidate.label} initial: ${question}\n${answer}`

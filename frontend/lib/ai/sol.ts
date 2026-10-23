@@ -1,16 +1,4 @@
-/**
- * Temporary Sol (supercomputer) evaluation endpoint.
- *
- * Sol reaches this machine through an SSH tunnel to a GPU job. Any of the
- * tunnel closing, the job expiring, or the model server stopping makes the
- * endpoint vanish, so every call is bounded by a timeout and every failure is
- * translated into one user-facing sentence. Raw network or Ollama errors must
- * never reach the interface.
- *
- * This is an evaluation configuration. Production defaults are unchanged:
- * DEFAULT_CHAT_MODEL is still GPT-OSS and the follow-up pipeline still runs on
- * local Qwen 3.5 9B.
- */
+/** Sol text endpoint, reached through a manually established SSH tunnel. */
 
 const DEFAULT_SOL_BASE_URL = "http://localhost:11500";
 
@@ -62,8 +50,8 @@ export function solFetch(
 export async function isSolAvailable(): Promise<boolean> {
   try {
     const response = await fetch(`${solOllamaBaseUrl()}/models`, {
-      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
       cache: "no-store",
+      signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     });
     if (!response.ok) {
       return false;

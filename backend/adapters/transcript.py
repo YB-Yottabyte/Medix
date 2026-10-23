@@ -1,7 +1,10 @@
 """Cached YouTube transcript adapter."""
 
 import json
+import logging
 from pathlib import Path
+
+LOGGER = logging.getLogger(__name__)
 
 
 class TranscriptFetcher:
@@ -13,9 +16,10 @@ class TranscriptFetcher:
 
             self.api = YouTubeTranscriptApi()
             self.available = True
-        except ImportError:
+        except ImportError as exc:
             self.api = None
             self.available = False
+            LOGGER.warning("Transcript API unavailable: %s: %s", type(exc).__name__, exc)
 
     def _cache_path(self, video_id: str) -> Path:
         return self.cache_dir / f"{video_id}.json"
@@ -50,7 +54,13 @@ class TranscriptFetcher:
                 snippets.append({"start": s.start, "duration": s.duration, "text": s.text})
             self._save_cache(video_id, snippets)
             return snippets
-        except Exception:
+        except Exception as exc:
+            LOGGER.warning(
+                "Transcript acquisition failed for %s: %s: %s",
+                video_id,
+                type(exc).__name__,
+                exc,
+            )
             return None
 
     # database stores answer_start and answer_end, so we can use those to filter the transcript to just the relevant portion
@@ -77,7 +87,10 @@ class TranscriptFetcher:
             try:
                 with path.open(encoding="utf-8") as f:
                     return json.load(f)
-            except Exception:
+            except Exception as exc:
+                LOGGER.warning(
+                    "Transcript cache read failed for %s: %s: %s", video_id, type(exc).__name__, exc
+                )
                 return None
         return None
 
@@ -85,5 +98,7 @@ class TranscriptFetcher:
         try:
             with self._cache_path(video_id).open("w", encoding="utf-8") as f:
                 json.dump(snippets, f)
-        except Exception:
-            pass
+        except Exception as exc:
+            LOGGER.warning(
+                "Transcript cache write failed for %s: %s: %s", video_id, type(exc).__name__, exc
+            )

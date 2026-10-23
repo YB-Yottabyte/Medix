@@ -2,7 +2,7 @@
 
 import { ChevronDownIcon } from "lucide-react";
 import { useState } from "react";
-import type { CitedCue } from "@/lib/ai/medical-follow-up";
+import type { CitedCue } from "@/lib/ai/evidence-links";
 import { cn } from "@/lib/utils";
 
 function formatTime(seconds: number) {
@@ -55,7 +55,7 @@ export function EvidenceProvenance({
         <ul className="mt-2 space-y-1.5 border-border/60 border-l-2 pl-3">
           {cues.map((cue) => (
             <li
-              className="text-[12px] leading-5 text-muted-foreground"
+              className="text-[12px] text-muted-foreground leading-5"
               key={`${cue.startSeconds}-${cue.text.slice(0, 24)}`}
             >
               <button

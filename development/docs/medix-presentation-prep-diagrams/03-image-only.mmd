@@ -1,0 +1,10 @@
+flowchart TD
+ A[One JPEG or PNG, no text] --> B[Validate upload and inline bytes]
+ B --> C[Next.js detects empty question + image]
+ C --> D[Deterministic clarification reply]
+ D --> E[What would you like help with in this photo?]
+ E --> F[User provides a specific question]
+ F --> G[Reattach photo with question for vision]
+ G --> H[Text + image workflow]
+ C -.-> X[No vision call or RAG for this turn]
+ C -.-> Y[No diagnosis or automatic procedure choice]

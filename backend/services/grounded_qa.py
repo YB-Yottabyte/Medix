@@ -11,6 +11,7 @@ from backend.domain import (
 )
 from backend.generation import InvalidGroundedAnswerError
 from backend.generation.grounded import GENERATION_ABSTENTION_MESSAGE
+from backend.performance import count, timed
 from backend.services.pipeline import (
     RESTRICTED_SCOPE_MESSAGE,
     SafetyAssessment,
@@ -31,16 +32,29 @@ class GroundedMedicalQAPipeline:
         evidence_pipeline: EndToEndMedicalPipeline,
         answer_generator: EvidenceGroundedAnswerGenerator,
         safety_triage: SafetyTriageService | None = None,
+        max_evidence_candidates: int = 1,
     ):
+        if not 1 <= max_evidence_candidates <= 2:
+            raise ValueError("max_evidence_candidates must be 1 or 2")
+        self.max_evidence_candidates = max_evidence_candidates
         self.evidence_pipeline = evidence_pipeline
         self.answer_generator = answer_generator
         self.safety_triage = safety_triage or SafetyTriageService()
 
-    def run(self, question: str) -> GroundedMedicalPipelineResult:
+    @timed("qa.total")
+    def run(
+        self, question: str, *, retrieval_query: str | None = None
+    ) -> GroundedMedicalPipelineResult:
         safety = self.safety_triage.assess(question)
+        count(f"safety.{safety.disposition}")
         if safety.disposition != "supported":
+            count("answer.abstained")
             return self._safety_abstention(question, safety)
-        evidence_result = self.evidence_pipeline.run(question)
+        evidence_result = (
+            self.evidence_pipeline.run(question, retrieval_query=retrieval_query)
+            if retrieval_query is not None
+            else self.evidence_pipeline.run(question)
+        )
         if evidence_result.evidence is None:
             answer = self._abstain(
                 question=evidence_result.question,
@@ -48,13 +62,25 @@ class GroundedMedicalQAPipeline:
                 or "The evidence pipeline returned no complete bundle.",
             )
         else:
-            try:
-                answer = self.answer_generator.generate(evidence_result.evidence)
-            except (InvalidGroundedAnswerError, TypeError, ValueError) as exc:
-                answer = self.answer_generator.abstain(
-                    evidence_result.evidence,
-                    f"Generation output failed grounding validation: {exc}",
+            tried = set()
+            for _ in range(self.max_evidence_candidates):
+                tried.add(evidence_result.evidence.video_id)
+                try:
+                    answer = self.answer_generator.generate(evidence_result.evidence)
+                except (InvalidGroundedAnswerError, TypeError, ValueError) as exc:
+                    answer = self.answer_generator.abstain(
+                        evidence_result.evidence,
+                        f"Generation output failed grounding validation: {exc}",
+                    )
+                if answer.status == "answered" or len(tried) >= self.max_evidence_candidates:
+                    break
+                alternative = self.evidence_pipeline.alternative_evidence(
+                    evidence_result, excluded=tried
                 )
+                if alternative is None:
+                    break
+                evidence_result = alternative
+        count(f"answer.{answer.status}")
         return GroundedMedicalPipelineResult(
             evidence_result=evidence_result,
             answer=answer,

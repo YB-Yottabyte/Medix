@@ -11,35 +11,35 @@ import type { TranscriptCitation } from "../../lib/ai/tools/search-procedure";
 
 const aedEvidence: TranscriptCitation[] = [
   {
-    cue_id: "T021",
-    start_seconds: 33,
-    end_seconds: 39,
-    clip_start_seconds: 33,
     clip_end_seconds: 39,
+    clip_start_seconds: 33,
+    cue_id: "T021",
+    end_seconds: 39,
+    start_seconds: 33,
     text: "Keep doing CPR while the second person hooks up the AED.",
   },
   {
-    cue_id: "T031",
-    start_seconds: 51,
-    end_seconds: 58,
-    clip_start_seconds: 51,
     clip_end_seconds: 58,
+    clip_start_seconds: 51,
+    cue_id: "T031",
+    end_seconds: 58,
+    start_seconds: 51,
     text: "If they have a hairy chest, use the razor in the kit.",
   },
   {
-    cue_id: "T041",
-    start_seconds: 60,
-    end_seconds: 68,
-    clip_start_seconds: 60,
     clip_end_seconds: 68,
+    clip_start_seconds: 60,
+    cue_id: "T041",
+    end_seconds: 68,
+    start_seconds: 60,
     text: "Place one pad on the right upper chest below the collarbone.",
   },
   {
-    cue_id: "T042",
-    start_seconds: 68,
-    end_seconds: 76,
-    clip_start_seconds: 68,
     clip_end_seconds: 76,
+    clip_start_seconds: 68,
+    cue_id: "T042",
+    end_seconds: 76,
+    start_seconds: 68,
     text: "Place the second pad on the left side below the nipple near the armpit.",
   },
 ];
@@ -88,7 +88,7 @@ test("follow-up validation removes internal metadata and requires known citation
   const cleaned = sanitizeFollowUpAnswer(
     "## Answer\n\n- **Keep compressions going.** (cue T021) [0:33-0:39]\n\nGeneration output failed grounding validation."
   );
-  assert.equal(cleaned, "Keep compressions going. [0:33–0:39]");
+  assert.equal(cleaned, "- Keep compressions going. [0:33–0:39]");
   assert.equal(validateFollowUpAnswer(cleaned, aedEvidence).valid, true);
   assert.equal(
     validateFollowUpAnswer("Pause CPR. [9:00–9:10]", aedEvidence).valid,
@@ -108,9 +108,9 @@ test("follow-up timestamps target the existing evidence workspace", () => {
   assert.deepEqual(
     parseEvidenceTimestampHref("#medix-evidence=bundle%2Faed&clip=33,39"),
     {
+      endSeconds: 39,
       evidenceBundleId: "bundle/aed",
       startSeconds: 33,
-      endSeconds: 39,
     }
   );
 });

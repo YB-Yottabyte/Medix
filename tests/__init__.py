@@ -1,1 +1,0 @@
-"""Medix backend tests."""

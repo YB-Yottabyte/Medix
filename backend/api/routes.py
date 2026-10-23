@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
+from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, Response
+from PIL import Image
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from starlette.concurrency import run_in_threadpool
 
@@ -65,6 +69,11 @@ class CitationResponse(BaseModel):
     text: str
 
 
+class ClaimResponse(BaseModel):
+    text: str
+    citation_ids: list[str]
+
+
 class QueryResponse(BaseModel):
     """Stable HTTP contract for the complete canonical prediction."""
 
@@ -81,6 +90,7 @@ class QueryResponse(BaseModel):
     safety_disposition: str
     safety_warning: str | None
     citations: list[CitationResponse]
+    claims: list[ClaimResponse] = Field(default_factory=list)
     evidence_context: list[CitationResponse]
     evidence_bundle_id: str | None
     abstention_reason: str | None
@@ -164,12 +174,62 @@ async def v2_query(
     return await _run_query(payload, request, qa)
 
 
+class MultimodalQueryRequest(QueryRequest):
+    # Strict base64 bytes only; remote image URLs are never fetched.
+    image_base64: str = Field(min_length=1, max_length=14_000_000)
+
+
+@router.post("/multimodal/query", summary="Experimental image plus text evidence retrieval")
+async def multimodal_query(
+    payload: MultimodalQueryRequest,
+    request: Request,
+    qa: QAServiceDependency,
+    container: ContainerDependency,
+) -> dict[str, Any]:
+    if container.vision is None:
+        raise ServiceUnavailableError(
+            "Vision is not configured; check the selected provider and backend API key"
+        )
+    try:
+        image_bytes = base64.b64decode(payload.image_base64, validate=True)
+    except (ValueError, binascii.Error):
+        raise ValidationError("image_base64 must contain valid base64 image bytes") from None
+    try:
+        prepared = await run_in_threadpool(container.vision.prepare, payload.query, image_bytes)
+    except (ValueError, OSError, Image.DecompressionBombError) as exc:
+        raise ValidationError(
+            "Invalid image: use a supported image within the size limits"
+        ) from exc
+    if prepared.observation is None:
+        raise ServiceUnavailableError("Vision provider produced no observation")
+    observation = prepared.observation
+    terms = (*observation.visible_objects, *observation.visible_actions)
+    retrieval_query = payload.query
+    if terms:
+        retrieval_query += "\nVisible context (unverified): " + "; ".join(terms)
+    answer = await _run_query(
+        QueryRequest(query=payload.query), request, qa, retrieval_query=retrieval_query
+    )
+    return {
+        **answer.model_dump(),
+        "vision_status": prepared.vision_status,
+        "visual_observation": asdict(observation),
+        "retrieval_query": retrieval_query,
+        "image_context_is_evidence": False,
+    }
+
+
 async def _run_query(
     payload: QueryRequest,
     request: Request,
     qa: GroundedMedicalQAPipeline,
+    *,
+    retrieval_query: str | None = None,
 ) -> QueryResponse:
-    result = await run_in_threadpool(qa.run, payload.query)
+    if retrieval_query is None:
+        result = await run_in_threadpool(qa.run, payload.query)
+    else:
+        result = await run_in_threadpool(qa.run, payload.query, retrieval_query=retrieval_query)
     answer = result.answer
     clip_url = None
     if answer.clip_artifact_path:
@@ -220,6 +280,10 @@ async def _run_query(
         confidence=result.evidence_result.joint_score,
         safety_disposition=result.safety_assessment.disposition,
         safety_warning=result.safety_assessment.warning,
+        claims=[
+            ClaimResponse(text=claim.text, citation_ids=list(claim.citation_ids))
+            for claim in answer.claims
+        ],
         citations=citations,
         evidence_context=evidence_context,
         evidence_bundle_id=answer.evidence_bundle_id,
@@ -297,3 +361,11 @@ def health(container: ContainerDependency) -> dict[str, Any]:
     if container.startup_error:
         payload["startup_error"] = container.startup_error
     return payload
+
+
+@router.get("/ready", summary="Readiness probe for deployment platforms")
+def ready(container: ContainerDependency) -> JSONResponse:
+    return JSONResponse(
+        {"ready": container.ready},
+        status_code=200 if container.ready else 503,
+    )

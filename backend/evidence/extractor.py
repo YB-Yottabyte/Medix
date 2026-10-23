@@ -15,6 +15,7 @@ from backend.domain import (
     FrameEvidence,
     TranscriptEvidence,
 )
+from backend.performance import timed
 from backend.transcripts import TranscriptUnavailableError
 from backend.video_processing import VideoUnavailableError
 
@@ -68,6 +69,7 @@ class EvidenceExtractor:
         self.store = store
         self.frames_per_bundle = frames_per_bundle
 
+    @timed("evidence.extract")
     def extract(self, request: EvidenceExtractionRequest) -> EvidenceBundle:
         try:
             transcript = self._transcript(request)
@@ -97,6 +99,7 @@ class EvidenceExtractor:
         self.store.write_manifest(bundle.bundle_id, bundle.as_dict())
         return bundle
 
+    @timed("evidence.transcript")
     def _transcript(
         self,
         request: EvidenceExtractionRequest,
@@ -115,6 +118,7 @@ class EvidenceExtractor:
             raise EvidenceUnavailableError("No transcript overlaps the predicted interval")
         return selected
 
+    @timed("evidence.frames")
     def _frames(
         self,
         request: EvidenceExtractionRequest,
@@ -141,6 +145,7 @@ class EvidenceExtractor:
             )
         return tuple(evidence)
 
+    @timed("evidence.clip")
     def _clip(self, request: EvidenceExtractionRequest) -> ClipEvidence:
         path = self.store.clip_path(
             request.video_id,

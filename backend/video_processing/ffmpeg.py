@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import math
 import os
 import re
 import subprocess
 import tempfile
 from pathlib import Path
 
+from backend.performance import count, timed
 from backend.video_processing.base import ClipArtifact, FrameSample, VideoUnavailableError
 
 _VIDEO_ID = re.compile(r"^[A-Za-z0-9_-]+$")
@@ -54,6 +56,7 @@ class FFmpegFrameExtractor:
         self.output_width = output_width
         self._cache: dict[tuple[str, float], FrameSample] = {}
 
+    @timed("video.frames")
     def extract(
         self,
         video_id: str,
@@ -71,9 +74,13 @@ class FFmpegFrameExtractor:
             if frame is None:
                 frame = self._decode(path, video_id, timestamp)
                 self._cache[cache_key] = frame
+                count("frame_cache.miss")
+            else:
+                count("frame_cache.hit")
             frames.append(frame)
         return tuple(frames)
 
+    @timed("video.frame_decode")
     def _decode(self, path: Path, video_id: str, timestamp: float) -> FrameSample:
         command = [
             self.ffmpeg_binary,
@@ -130,6 +137,7 @@ class FFmpegClipExtractor:
         self.ffmpeg_binary = ffmpeg_binary
         self.ffprobe_binary = ffprobe_binary
 
+    @timed("video.clip_extract")
     def extract(
         self,
         video_id: str,
@@ -137,12 +145,28 @@ class FFmpegClipExtractor:
         end_seconds: float,
         output_path: Path,
     ) -> ClipArtifact:
-        if start_seconds < 0 or end_seconds <= start_seconds:
+        if (
+            not all(math.isfinite(value) for value in (start_seconds, end_seconds))
+            or start_seconds < 0
+            or end_seconds <= start_seconds
+        ):
             raise ValueError("clip extraction requires a valid interval")
         source = self.repository.resolve(video_id)
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        expected_duration = end_seconds - start_seconds
+        # Encoders quantize to frame/audio packet boundaries. Never reuse a stale
+        # full-length clip or silently accept a source truncated before the end.
+        tolerance = 0.1
         if output_path.is_file():
-            return ClipArtifact(output_path, self._duration(output_path))
+            try:
+                cached_duration = self._duration(output_path)
+                if abs(cached_duration - expected_duration) <= tolerance:
+                    return ClipArtifact(output_path, cached_duration)
+            except VideoUnavailableError:
+                pass
+        source_duration = self._duration(source)
+        if end_seconds > source_duration + tolerance:
+            raise VideoUnavailableError("Requested clip end exceeds the available video duration")
 
         with tempfile.NamedTemporaryFile(
             dir=output_path.parent,
@@ -185,13 +209,25 @@ class FFmpegClipExtractor:
                 capture_output=True,
                 timeout=300,
             )
-            if not temporary_path.is_file() or temporary_path.stat().st_size == 0:
-                raise VideoUnavailableError(f"FFmpeg created no clip for {video_id}")
+            self._validate_created_clip(temporary_path, video_id, expected_duration, tolerance)
             os.replace(temporary_path, output_path)
+        except VideoUnavailableError:
+            temporary_path.unlink(missing_ok=True)
+            raise
         except (OSError, subprocess.SubprocessError) as exc:
             temporary_path.unlink(missing_ok=True)
             raise VideoUnavailableError(f"Could not extract clip for {video_id}") from exc
         return ClipArtifact(output_path, self._duration(output_path))
+
+    def _validate_created_clip(
+        self, path: Path, video_id: str, expected: float, tolerance: float
+    ) -> None:
+        if not path.is_file() or path.stat().st_size == 0:
+            raise VideoUnavailableError(f"FFmpeg created no clip for {video_id}")
+        if abs(self._duration(path) - expected) > tolerance:
+            raise VideoUnavailableError(
+                "Extracted clip duration does not match requested timestamps"
+            )
 
     def _duration(self, path: Path) -> float:
         command = [

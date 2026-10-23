@@ -35,9 +35,8 @@ venv.bak/
 *~
 
 # Environment variables
-.env
-.env.local
-.env.*.local
+.env*
+!.env.example
 
 # Data
 data/cache/
@@ -58,10 +57,23 @@ frontend/error
 .coverage
 htmlcov/
 .vercel
-qdrant_storage/
-config.yaml
+backend/config.yaml
 
 # Generated research outputs (regenerate from the documented protocol)
-evaluation/results/
-evaluation/artifacts/
+development/evaluation/results/
+development/evaluation/artifacts/
 data/cache_medvidqa_verified/
+
+# Root environment stays in place; relocating a virtualenv breaks installed scripts.
+.venv/
+
+# Request performance traces (no clinical content)
+data/performance/
+
+# Local tooling and retired runtime state
+.pytest_cache/
+.ruff_cache/
+qdrant_storage/
+frontend/*.tsbuildinfo
+frontend/playwright-report/
+frontend/test-results/

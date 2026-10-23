@@ -1,13 +1,13 @@
-# Pre-commit hooks for MedVidQA.
+# Pre-commit hooks for Medix.
 # Enforces: Ruff (Python lint + format), Biome (TS/TSX lint + format via pnpm),
 # and baseline file hygiene. Runs on commit AND on push.
 #
 # First-time setup (after clone):
 #   uv sync --group dev
-#   uv run pre-commit install --hook-type pre-commit --hook-type pre-push
+#   uv run pre-commit install --config .pre-commit-config.yaml --hook-type pre-commit --hook-type pre-push
 #
 # Manual run across all files:
-#   uv run pre-commit run --all-files
+#   uv run pre-commit run --all-files --config .pre-commit-config.yaml
 
 repos:
   # Baseline file hygiene (large files, merge conflicts, invalid JSON/YAML, etc.)
@@ -36,13 +36,13 @@ repos:
       - id: ruff-check
         name: ruff (lint, autofix)
         language: system
-        entry: uv run --frozen ruff check
+        entry: uv run --frozen ruff check --config pyproject.toml
         args: ["--fix", "--exit-non-zero-on-fix"]
         types_or: [python, pyi]
       - id: ruff-format
         name: ruff (format)
         language: system
-        entry: uv run --frozen ruff format
+        entry: uv run --frozen ruff format --config pyproject.toml
         types_or: [python, pyi]
 
   # Biome — TS/TSX lint + format for the Next.js frontend.
@@ -55,7 +55,7 @@ repos:
         language: system
         files: ^frontend/.*\.(ts|tsx|js|jsx|json|jsonc|css)$
         exclude: ^frontend/(node_modules|\.next|pnpm-lock\.yaml)
-        entry: bash -c 'cd frontend && pnpm exec biome check --write --no-errors-on-unmatched "$@"' --
+        entry: bash -c 'cd frontend && args=(); for file in "$@"; do args+=("${file#frontend/}"); done; corepack pnpm exec biome check --write --no-errors-on-unmatched "${args[@]}"' --
         pass_filenames: true
 
   # Pre-push only: run the heavyweight typecheck. Not on every commit.
@@ -64,7 +64,7 @@ repos:
       - id: tsc-noemit
         name: tsc --noEmit (frontend)
         language: system
-        entry: bash -c 'cd frontend && pnpm exec tsc --noEmit'
+        entry: bash -c 'cd frontend && corepack pnpm exec tsc --noEmit'
         pass_filenames: false
         files: ^frontend/.*\.(ts|tsx)$
         stages: [pre-push]

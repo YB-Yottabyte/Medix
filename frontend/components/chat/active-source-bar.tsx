@@ -2,7 +2,7 @@
 
 import { VideoIcon } from "lucide-react";
 import { activeSourceLabel } from "@/lib/active-source";
-import { COLLECTION_SEARCH_REQUEST } from "@/lib/ai/medical-follow-up";
+import { COLLECTION_SEARCH_REQUEST } from "@/lib/ai/evidence-links";
 import type { ChatMessage } from "@/lib/types";
 
 /**

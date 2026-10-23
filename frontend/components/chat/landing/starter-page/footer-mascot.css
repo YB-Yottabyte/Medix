@@ -1,0 +1,81 @@
+/* The footer illustration occupies its own stage above the content card. */
+.medix-footer-sky {
+  position: absolute;
+  inset: -340px 0 auto;
+  z-index: 0;
+  height: 420px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.medix-footer-atmosphere {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 25% 56% at 50% 66%,
+      rgb(58 219 245 / 43%),
+      transparent 80%
+    ),
+    radial-gradient(
+      ellipse 39% 53% at 26% 73%,
+      rgb(158 216 255 / 48%),
+      transparent 85%
+    ),
+    radial-gradient(
+      ellipse 38% 53% at 79% 73%,
+      rgb(185 208 255 / 46%),
+      transparent 85%
+    );
+  filter: blur(18px);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    black 20%,
+    black 78%,
+    transparent
+  );
+}
+.medix-footer-constellation {
+  position: absolute;
+  bottom: 35px;
+  left: 50%;
+  width: min(1440px, 112vw);
+  height: 360px;
+  overflow: visible;
+  transform: translateX(-50%);
+}
+.medix-footer-character,
+.medix-footer-hands {
+  position: absolute;
+  top: -299px;
+  left: 50%;
+  width: 550px;
+  height: 330px;
+  overflow: visible;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.medix-footer-character {
+  z-index: 10;
+}
+.medix-footer-hands {
+  z-index: 30;
+}
+@media (max-width: 639px) {
+  .medix-footer-character,
+  .medix-footer-hands {
+    top: -189px;
+    width: 350px;
+    height: 210px;
+  }
+  .medix-footer-sky {
+    top: -250px;
+    height: 320px;
+  }
+  .medix-footer-constellation {
+    bottom: 15px;
+    width: 520px;
+    height: 260px;
+    opacity: 0.7;
+  }
+}

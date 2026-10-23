@@ -1,8 +1,7 @@
-import { groq } from "@ai-sdk/groq";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { customProvider } from "ai";
 import { isTestEnvironment } from "../constants";
-import { chatModels, QWEN_CHAT_MODEL, titleModel } from "./models";
+import { chatModels, titleModel, VOYAGER_CHAT_MODEL } from "./models";
 import { solFetch, solOllamaBaseUrl } from "./sol";
 
 const DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434";
@@ -15,11 +14,11 @@ export function ollamaOpenAIBaseUrl(
 }
 
 const ollama = createOpenAICompatible({
-  name: "ollama",
-  baseURL: ollamaOpenAIBaseUrl(),
   // Ollama's OpenAI-compatible endpoint requires a value but ignores it.
   apiKey: "ollama",
+  baseURL: ollamaOpenAIBaseUrl(),
   includeUsage: true,
+  name: "ollama",
 });
 
 /**
@@ -28,15 +27,27 @@ const ollama = createOpenAICompatible({
  * "ollama" so providerOptions (e.g. reasoningEffort) pass through unchanged.
  */
 const sol = createOpenAICompatible({
-  name: "ollama",
-  baseURL: solOllamaBaseUrl(),
   apiKey: "ollama",
+  baseURL: solOllamaBaseUrl(),
   fetch: solFetch,
+  name: "ollama",
+});
+
+const voyager = createOpenAICompatible({
+  apiKey: process.env.ASU_RC_API_KEY,
+  baseURL: "https://openai.rc.asu.edu/v1",
+  fetch: solFetch,
+  name: "voyager",
+  transformRequestBody: (body) => ({
+    ...body,
+    chat_template_kwargs: { enable_thinking: false },
+  }),
 });
 
 export function languageModelProvider(modelId: string) {
   return (
-    chatModels.find((candidate) => candidate.id === modelId)?.provider ?? "groq"
+    chatModels.find((candidate) => candidate.id === modelId)?.provider ??
+    "voyager"
   );
 }
 
@@ -63,7 +74,8 @@ export const myProvider = isTestEnvironment
  * budget reasoning and returned empty content.
  */
 export function providerOptionsKey(modelId: string) {
-  return languageModelProvider(modelId) === "groq" ? "groq" : "ollama";
+  const provider = languageModelProvider(modelId);
+  return provider === "voyager" ? "voyager" : "ollama";
 }
 
 export function getLanguageModel(modelId: string) {
@@ -72,30 +84,32 @@ export function getLanguageModel(modelId: string) {
   }
 
   const provider = languageModelProvider(modelId);
+  if (provider === "voyager") {
+    if (!process.env.ASU_RC_API_KEY?.trim()) {
+      throw new Error("ASU_RC_API_KEY is required for Voyager text generation");
+    }
+    return voyager(modelId);
+  }
   if (provider === "sol") {
     return sol(modelId);
   }
-  return provider === "ollama" ? ollama(modelId) : groq(modelId);
+  if (provider === "ollama") {
+    return ollama(modelId);
+  }
+  throw new Error(`Unsupported language model provider: ${provider}`);
 }
 
-/**
- * Same-topic follow-up assessment, generation, and verification always run on
- * the local Qwen model, independent of the model selected in the interface.
- *
- * Qwen is the only local medical generation model. MedGemma 1.5 4B IT was
- * evaluated as an alternative and not promoted: see
- * docs/research/medgemma_comparison.md.
- */
+/** Follow-up assessment, generation, and verification use the Voyager text model. */
 export function getFollowUpModel() {
   if (isTestEnvironment && myProvider) {
     return myProvider.languageModel("chat-model");
   }
-  return ollama(QWEN_CHAT_MODEL);
+  return getLanguageModel(VOYAGER_CHAT_MODEL);
 }
 
 export function getTitleModel() {
   if (isTestEnvironment && myProvider) {
     return myProvider.languageModel("title-model");
   }
-  return groq(titleModel.id);
+  return getLanguageModel(titleModel.id);
 }

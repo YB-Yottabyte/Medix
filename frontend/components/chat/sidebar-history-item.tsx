@@ -57,7 +57,7 @@ const PureChatItem = ({
       <DropdownMenu modal={true}>
         <DropdownMenuTrigger asChild>
           <SidebarMenuAction
-            className="mr-0.5 rounded-md text-sidebar-foreground/50 ring-0 transition-colors duration-150 focus-visible:ring-0 hover:text-sidebar-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            className="mr-0.5 rounded-md text-sidebar-foreground/50 ring-0 transition-colors duration-150 hover:text-sidebar-foreground focus-visible:ring-0 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             showOnHover={!isActive}
           >
             <MoreHorizontalIcon />

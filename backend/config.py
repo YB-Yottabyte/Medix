@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,9 @@ class ProjectPaths:
     transcript_cache: Path
     video_catalog: Path
     video_cache: Path
+    video_cache_metadata: Path
+    video_source_index: Path
+    video_seed_caches: tuple[Path, ...]
     research_artifacts: Path
     supported_video_collection: Path
     ccal_checkpoint: Path
@@ -35,13 +39,31 @@ class ProjectPaths:
         return cls(
             root=root,
             backend=backend,
-            config=root / "config.yaml",
+            config=Path(os.environ.get("MEDIX_CONFIG", str(backend / "config.yaml"))),
             retrieval_cache=root / "data" / "cache_medvidqa_verified",
-            transcript_cache=root / "data" / "transcript_cache",
-            video_catalog=root / "data" / "medvidqa_video_catalog.json",
-            video_cache=root / "data" / "video_cache",
-            research_artifacts=root / "data" / "research_runtime",
-            supported_video_collection=root / "data" / "supported_video_collection.json",
+            transcript_cache=Path(
+                os.environ.get("MEDIX_TRANSCRIPT_CACHE", str(root / "data" / "transcript_cache"))
+            ),
+            video_catalog=Path(
+                os.environ.get(
+                    "MEDIX_VIDEO_CATALOG", str(root / "data" / "medvidqa_video_catalog.json")
+                )
+            ),
+            video_cache=Path(
+                os.environ.get("MEDIX_VIDEO_CACHE", str(root / "data" / "video_cache"))
+            ),
+            video_cache_metadata=root / "data" / "video_cache_metadata",
+            video_source_index=root / "data" / "video_source_index.json",
+            video_seed_caches=(),
+            research_artifacts=Path(
+                os.environ.get("MEDIX_RESEARCH_ARTIFACTS", str(root / "data" / "research_runtime"))
+            ),
+            supported_video_collection=Path(
+                os.environ.get(
+                    "MEDIX_SUPPORTED_VIDEO_COLLECTION",
+                    str(root / "data" / "supported_video_collection.json"),
+                )
+            ),
             ccal_checkpoint=root / "data" / "models" / "ccal",
         )
 
@@ -60,8 +82,6 @@ class DatabaseSettings:
     top_k: int
     similarity_threshold: float
     lexical_weight: float
-    qdrant_url: str
-    qdrant_collection: str
 
 
 @dataclass(frozen=True)
@@ -101,10 +121,12 @@ class ResearchPipelineSettings:
     stride_seconds: float = 45.0
     frames_per_window: int = 3
     frames_per_bundle: int = 3
-    answer_model: str = "structured_groq"
+    answer_model: str = "structured_voyager"
     localizer_strategy: str = "multimodal_window"
     supported_collection_only: bool = False
     ccal_cycle_weight: float = 0.25
+    on_demand_video_cache: bool = False
+    video_cache_max_bytes: int = 20 * 1024**3
 
 
 @dataclass(frozen=True)
@@ -145,14 +167,10 @@ class AppSettings:
                     top_k=int(database.get("top_k", 5)),
                     similarity_threshold=float(database.get("similarity_threshold", 0.25)),
                     lexical_weight=float(database.get("lexical_weight", 0.15)),
-                    qdrant_url=str(database.get("qdrant_url", "http://localhost:6333")),
-                    qdrant_collection=str(
-                        database.get("qdrant_collection", "medical_video_transcripts")
-                    ),
                 ),
                 ai=AISettings(provider=provider, providers=providers),
                 vision=VisionSettings(
-                    model=str(values.get("vision", {}).get("model", "qwen/qwen3.6-27b")),
+                    model=str(values.get("vision", {}).get("model", "qwen35-27b")),
                     max_image_size=int(
                         values.get("vision", {}).get("max_image_size", 10 * 1024 * 1024)
                     ),
@@ -188,7 +206,9 @@ class AppSettings:
                         values.get("research_pipeline", {}).get("frames_per_bundle", 3)
                     ),
                     answer_model=str(
-                        values.get("research_pipeline", {}).get("answer_model", "structured_groq")
+                        values.get("research_pipeline", {}).get(
+                            "answer_model", "structured_voyager"
+                        )
                     ).lower(),
                     localizer_strategy=str(
                         values.get("research_pipeline", {}).get(
@@ -235,15 +255,15 @@ class AppSettings:
                     "similarity_threshold": 0.25,
                 },
                 "ai": {
-                    "provider": "groq",
-                    "groq": {
+                    "provider": "voyager",
+                    "voyager": {
                         "api_key": "",
-                        "model": "openai/gpt-oss-20b",
+                        "model": "qwen35-27b",
                         "temperature": 0.3,
                         "max_tokens": 800,
                     },
                 },
-                "vision": {"model": "qwen/qwen3.6-27b"},
+                "vision": {"model": "qwen35-27b"},
             }
         )
 
@@ -279,12 +299,13 @@ class AppSettings:
             raise ConfigurationError("research_pipeline frame counts must be positive.")
         if self.research.answer_model not in {
             "extractive",
-            "structured_groq",
             "structured_ollama",
+            "structured_sol",
+            "structured_voyager",
         }:
             raise ConfigurationError(
-                "research_pipeline.answer_model must be extractive, structured_groq, "
-                "or structured_ollama."
+                "research_pipeline.answer_model must be extractive, structured_ollama, "
+                "structured_sol, or structured_voyager."
             )
         if self.research.localizer_strategy not in {
             "transcript_window",
@@ -312,8 +333,6 @@ class AppSettings:
                 "top_k": self.database.top_k,
                 "similarity_threshold": self.database.similarity_threshold,
                 "lexical_weight": self.database.lexical_weight,
-                "qdrant_url": self.database.qdrant_url,
-                "qdrant_collection": self.database.qdrant_collection,
             },
             "ai": {"provider": self.ai.provider, **self.ai.providers},
             "vision": {

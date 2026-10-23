@@ -1,0 +1,55 @@
+{
+  "dataset_question_count": 3010,
+  "explicit_why_question_count": 0,
+  "prompt_examples": "Four original training questions; question-only intent examples, no gold intervals or medical answer labels.",
+  "regression_checks": {
+    "frontend_unit_tests": 159,
+    "backend_tests": 10,
+    "typescript": "passed",
+    "python_syntax_and_imports": "passed"
+  },
+  "real_model_pilot": [
+    {
+      "case_id": "train-115",
+      "request_id": "d8096034-e49b-4ff9-8245-3383c365d3ba",
+      "question_source": "train",
+      "derived": false,
+      "scope": "composition-only with saved earlier retrieval",
+      "wall_ms": 1907.568542,
+      "reported_evidence_sufficiency": "insufficient",
+      "stage_inclusive_ms": {
+        "response.reference_selection": 0.9878330000000233,
+        "response.evidence_selection": 1901.266125,
+        "response.composition": 1906.8788749999997
+      },
+      "independent_accuracy_score": null
+    },
+    {
+      "case_id": "derived-why-pressure",
+      "request_id": "cbce2675-5919-48eb-a0e0-7a0e585733c0",
+      "question_source": "train",
+      "derived": true,
+      "scope": "composition-only with saved earlier retrieval",
+      "wall_ms": 23481.728375,
+      "reported_evidence_sufficiency": "sufficient",
+      "stage_inclusive_ms": {
+        "response.reference_selection": 0.1700420000001941,
+        "response.evidence_selection": 1172.640417,
+        "response.generation": 8556.380833000003,
+        "response.verification": 13743.405499999999,
+        "response.composition": 23481.485541000002
+      },
+      "independent_accuracy_score": null
+    }
+  ],
+  "live_end_to_end_measurement": {
+    "completed": false,
+    "reason": "Local backend startup stalled in transformers importlib.metadata.packages_distributions() while reading distribution metadata. Only the temporary process launched for this check was interrupted. No model/dependency bypass was used."
+  },
+  "limits": [
+    "Two cases are not a latency distribution or clinical accuracy estimate.",
+    "Pilot reuses a previously retrieved bandage-check source, so it does not assess fresh retrieval quality for pressure application.",
+    "Internal verified/sufficiency flags are pipeline outputs, not independent ground-truth grades.",
+    "Root timing excludes deployment startup, browser rendering, and an earlier separate upload request."
+  ]
+}

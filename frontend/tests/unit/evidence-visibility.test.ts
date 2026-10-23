@@ -33,27 +33,27 @@ test("completed writing finalizes before media can mount or expand", () => {
 test("follow-ups and limited-evidence responses never create another workspace", () => {
   assert.equal(
     shouldRenderEvidenceWorkspace({
-      status: "answered",
+      hasCitations: true,
+      hasMedia: true,
       retrievalDecision: "continue_current_evidence",
-      hasMedia: true,
-      hasCitations: true,
-    }),
-    false
-  );
-  assert.equal(
-    shouldRenderEvidenceWorkspace({
-      status: "abstained",
-      hasMedia: true,
-      hasCitations: false,
-    }),
-    false
-  );
-  assert.equal(
-    shouldRenderEvidenceWorkspace({
       status: "answered",
-      retrievalDecision: "retrieve_new_source",
+    }),
+    false
+  );
+  assert.equal(
+    shouldRenderEvidenceWorkspace({
+      hasCitations: false,
       hasMedia: true,
+      status: "abstained",
+    }),
+    false
+  );
+  assert.equal(
+    shouldRenderEvidenceWorkspace({
       hasCitations: true,
+      hasMedia: true,
+      retrievalDecision: "retrieve_new_source",
+      status: "answered",
     }),
     true
   );

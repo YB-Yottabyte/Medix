@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from backend.domain import TranscriptCue
+from backend.performance import timed
 from backend.transcripts.base import TranscriptUnavailableError
 
 
@@ -16,6 +17,7 @@ class CachedTranscriptRepository:
     def __init__(self, cache_dir: str | Path):
         self.cache_dir = Path(cache_dir)
 
+    @timed("transcript.load")
     def load(self, video_id: str) -> tuple[TranscriptCue, ...]:
         normalized_id = video_id.strip()
         if not normalized_id:

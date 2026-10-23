@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from backend.adapters.vision_context import OptionalVisionAdapter
     from backend.config import AppSettings, ProjectPaths
     from backend.services.grounded_qa import GroundedMedicalQAPipeline
 
@@ -20,6 +21,7 @@ class ServiceContainer:
     settings: AppSettings
     qa: GroundedMedicalQAPipeline | None
     startup_error: str | None = None
+    vision: OptionalVisionAdapter | None = None
 
     @property
     def ready(self) -> bool:
@@ -45,17 +47,46 @@ class ServiceFactory:
             )
 
         try:
+            import os
+            from pathlib import Path
+
             from backend.research_pipeline import ResearchPipelineFactory
 
+            cache_dir = os.environ.get("MEDIX_FEATURE_CACHE")
             qa, _components = ResearchPipelineFactory(
                 settings=self.settings.research,
                 paths=self.paths,
                 app_settings=self.settings,
+                feature_cache_dir=Path(cache_dir) if cache_dir else None,
+                live_transcript_retrieval=True,
+                visual_candidate_limit=2,
             ).build()
-            return ServiceContainer(
-                settings=self.settings,
-                qa=qa,
-            )
+            max_candidates = int(os.environ.get("MEDIX_MAX_EVIDENCE_CANDIDATES", "2"))
+            if max_candidates not in (1, 2):
+                return ServiceContainer.unavailable(
+                    self.settings, "MEDIX_MAX_EVIDENCE_CANDIDATES must be 1 or 2"
+                )
+            qa.max_evidence_candidates = max_candidates
+
+            from backend.adapters.vision_context import OptionalVisionAdapter
+
+            vision = None
+            provider = os.environ.get("MEDIX_VISION_PROVIDER", "voyager")
+            if provider not in {"voyager", "disabled"}:
+                return ServiceContainer.unavailable(
+                    self.settings, "MEDIX_VISION_PROVIDER must be voyager or disabled"
+                )
+            if provider == "voyager":
+                from backend.adapters.voyager import (
+                    VoyagerVisionModel,
+                    get_voyager_client,
+                    voyager_model,
+                )
+
+                vision = OptionalVisionAdapter(
+                    VoyagerVisionModel(get_voyager_client(), voyager_model())
+                )
+            return ServiceContainer(settings=self.settings, qa=qa, vision=vision)
         except Exception as exc:
             LOGGER.exception("Canonical Medix pipeline could not be initialized")
             return ServiceContainer.unavailable(self.settings, str(exc))

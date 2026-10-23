@@ -18,6 +18,13 @@ async function handleRequest(request: NextRequest, clerkUserId: string | null) {
     return new Response("pong", { status: 200 });
   }
 
+  // Files in `public/` must remain directly accessible before authentication.
+  // Redirecting an image request to the guest-auth endpoint makes the browser
+  // receive text instead of image data and renders a broken-image placeholder.
+  if (!pathname.startsWith("/api/") && /\.[a-z0-9]+$/i.test(pathname)) {
+    return NextResponse.next();
+  }
+
   if (isLocalAuthBypassed) {
     return NextResponse.next();
   }

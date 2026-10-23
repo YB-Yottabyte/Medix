@@ -25,8 +25,8 @@ export function ClerkLoginForm() {
       navigate: ({ session, decorateUrl }) => {
         if (session?.currentTask) {
           toast({
-            type: "error",
             description: "Please complete the additional account verification.",
+            type: "error",
           });
           return;
         }
@@ -42,7 +42,7 @@ export function ClerkLoginForm() {
     });
     if (error) {
       setIsSuccessful(false);
-      toast({ type: "error", description: clerkErrorMessage(error) });
+      toast({ description: clerkErrorMessage(error), type: "error" });
     }
   };
 
@@ -54,8 +54,8 @@ export function ClerkLoginForm() {
     const { error } = await signIn.password({ emailAddress, password });
     if (error) {
       toast({
-        type: "error",
         description: clerkErrorMessage(error, "Invalid email or password."),
+        type: "error",
       });
       return;
     }
@@ -79,16 +79,16 @@ export function ClerkLoginForm() {
           return;
         }
         toast({
-          type: "error",
           description: clerkErrorMessage(result.error),
+          type: "error",
         });
         return;
       }
     }
 
     toast({
-      type: "error",
       description: "This account requires an additional sign-in method.",
+      type: "error",
     });
   };
 
@@ -96,7 +96,7 @@ export function ClerkLoginForm() {
     const code = String(formData.get("code") ?? "").trim();
     const { error } = await signIn.mfa.verifyEmailCode({ code });
     if (error) {
-      toast({ type: "error", description: clerkErrorMessage(error) });
+      toast({ description: clerkErrorMessage(error), type: "error" });
       return;
     }
     if (signIn.status === "complete") {
@@ -107,10 +107,10 @@ export function ClerkLoginForm() {
   return (
     <>
       <div className="text-center">
-        <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">
+        <h1 className="font-semibold text-[28px] text-slate-950 tracking-[-0.04em] sm:text-[30px]">
           Welcome back
         </h1>
-        <p className="mt-2 text-[13px] leading-5 text-slate-500">
+        <p className="mt-2 text-[13px] text-slate-500 leading-5">
           Log in to continue your Medix conversations.
         </p>
       </div>

@@ -2,9 +2,12 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, "codex/**"]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -12,100 +15,91 @@ concurrency:
 
 jobs:
   backend:
-    name: Backend (uv quality gate)
+    name: Backend (lint + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
-
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-
-      - name: Install locked Python dependencies
-        run: uv sync --frozen --group dev
-
-      - name: Ruff lint
-        run: uv run ruff check .
-
-      - name: Ruff format check
-        run: uv run ruff format --check .
-
-      - name: Backend tests with coverage
-        run: uv run pytest -q --cov=backend
+          version: "0.11.28"
+      - run: uv sync --frozen --group dev
+      - run: uv run --frozen ruff check --config pyproject.toml .
+      - run: uv run --frozen ruff format --config pyproject.toml --check .
+      - run: uv run --frozen python -m pytest
 
   frontend:
-    name: Frontend (Biome + TypeScript)
+    name: Frontend (lint + types + tests + build)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: medix
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: medix
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U medix"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      AUTH_SECRET: ci-build-and-test-only-not-a-production-secret
+      ASU_RC_API_KEY: ci-build-only-no-inference
+      POSTGRES_URL: postgresql://medix:ci-only@127.0.0.1:5432/medix
+      MEDIX_API_URL: http://127.0.0.1:5001
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
         with:
-          version: 10
-
+          package_json_file: frontend/package.json
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          cache: "pnpm"
+          node-version: "22"
+          cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Biome check
-        run: pnpm exec biome check .
-
-      - name: TypeScript typecheck
-        run: pnpm exec tsc --noEmit
-
-      - name: Frontend unit tests
-        run: pnpm test:unit
-
-      - name: Next.js production build
-        env:
-          AUTH_SECRET: ci-auth-secret-for-build-only
-          GROQ_API_KEY: ci-groq-key-for-build-only
-          POSTGRES_URL: postgresql://ci:ci@localhost:5432/ci
-          MEDIX_API_URL: http://localhost:8080
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec biome check .
+      - run: pnpm typecheck
+      - run: pnpm test:unit
+      - name: Production dependency security gate
+        run: pnpm audit --prod --audit-level high
+      - name: Validate database migrations
+        run: pnpm db:migrate
+      - name: Production build
         run: pnpm build
 
-  pre-commit:
-    name: pre-commit (all hooks)
+  hygiene:
+    name: Repository hygiene
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version-file: ".python-version"
-
       - uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
+      - run: uv sync --frozen --group dev
+      - name: File, secret and syntax checks
+        run: SKIP=ruff-check,ruff-format,biome-check,tsc-noemit uv run --frozen pre-commit run --all-files
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-          cache-dependency-path: frontend/pnpm-lock.yaml
-
-      - name: Install frontend deps (needed for local Biome hook)
-        working-directory: frontend
-        run: pnpm install --frozen-lockfile
-
-      - name: Install locked Python dependencies
-        run: uv sync --frozen --group dev
-
-      - name: Run all pre-commit hooks
-        run: uv run pre-commit run --all-files
+  container:
+    name: Backend production image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --file backend/Dockerfile --tag medix-backend:ci .
+      - name: Import the application without downloading inference weights
+        run: >-
+          docker run --rm --entrypoint uv medix-backend:ci run --no-sync python -c
+          'from backend.application import create_app; from backend.config import AppSettings;
+          from backend.container import ServiceContainer;
+          s = AppSettings.safe_defaults();
+          app = create_app(settings=s, services=ServiceContainer.unavailable(s, "ci"));
+          assert app.title == "Medix Medical Procedure QA API"'

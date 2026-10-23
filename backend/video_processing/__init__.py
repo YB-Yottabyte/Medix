@@ -12,6 +12,7 @@ from backend.video_processing.ffmpeg import (
     FFmpegFrameExtractor,
     LocalVideoRepository,
 )
+from backend.video_processing.on_demand import OnDemandVideoRepository
 
 __all__ = [
     "ClipArtifact",
@@ -21,5 +22,6 @@ __all__ = [
     "FrameExtractor",
     "FrameSample",
     "LocalVideoRepository",
+    "OnDemandVideoRepository",
     "VideoUnavailableError",
 ]

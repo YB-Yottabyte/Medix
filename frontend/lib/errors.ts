@@ -22,15 +22,15 @@ export type ErrorCode = `${ErrorType}:${Surface}`;
 export type ErrorVisibility = "response" | "log" | "none";
 
 export const visibilityBySurface: Record<Surface, ErrorVisibility> = {
-  database: "log",
-  chat: "response",
-  auth: "response",
-  stream: "response",
   api: "response",
-  history: "response",
-  vote: "response",
+  auth: "response",
+  chat: "response",
+  database: "log",
   document: "response",
+  history: "response",
+  stream: "response",
   suggestions: "response",
+  vote: "response",
 };
 
 export class ChatbotError extends Error {
@@ -58,9 +58,9 @@ export class ChatbotError extends Error {
 
     if (visibility === "log") {
       console.error({
+        cause,
         code,
         message,
-        cause,
       });
 
       return Response.json(
@@ -69,7 +69,7 @@ export class ChatbotError extends Error {
       );
     }
 
-    return Response.json({ code, message, cause }, { status: statusCode });
+    return Response.json({ cause, code, message }, { status: statusCode });
   }
 }
 

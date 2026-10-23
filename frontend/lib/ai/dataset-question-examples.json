@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "source": "MedVidQA/train.json",
+  "purpose": "Question intent examples only; no medical answer or gold interval enters runtime prompts.",
+  "examples": [
+    {
+      "sample_id": "115",
+      "split": "train",
+      "question": "How do you apply a pressure bandage to stop bleeding?",
+      "intent": "procedure"
+    },
+    {
+      "sample_id": "479",
+      "split": "train",
+      "question": "What are the symptoms of a broken finger?",
+      "intent": "recognition"
+    },
+    {
+      "sample_id": "1590",
+      "split": "train",
+      "question": "When to call the emergency if someone is going into shock?",
+      "intent": "escalation"
+    },
+    {
+      "sample_id": "700",
+      "split": "train",
+      "question": "What to do if blood soaks through the bandage?",
+      "intent": "contingency"
+    }
+  ]
+}
