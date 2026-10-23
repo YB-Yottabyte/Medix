@@ -34,3 +34,11 @@ for Render, resource provisioning, production secrets, and operational checks.
 
 The UI's medical answer is composed from checked reference/video evidence; a
 model review or a green CI check is not independent clinical validation.
+
+## Combined Vercel deployment
+
+The repository-root `vercel.json` defines a public `frontend` service and an
+internal `app` service. `MEDIX_API_URL` is injected by the frontend binding at
+runtime; do not set a manual value in Vercel. Standalone local URLs remain valid.
+See [the Vercel Services guide](../development/docs/VERCEL_SERVICES.md) for the
+confirmation plan, container defaults and outstanding evidence-storage work.

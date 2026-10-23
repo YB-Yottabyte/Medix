@@ -5,7 +5,13 @@ const DEFAULT_MEDIX_API_URL = "http://127.0.0.1:5001";
 const REQUEST_TIMEOUT_MS = 180_000;
 
 export function medixApiEndpoint(path: string): string {
-  const configured = process.env.MEDIX_API_URL ?? DEFAULT_MEDIX_API_URL;
+  const boundUrl = process.env.MEDIX_API_URL?.trim();
+  if (!boundUrl && process.env.VERCEL === "1") {
+    throw new Error(
+      "MEDIX_API_URL is missing: configure the frontend-to-app service binding"
+    );
+  }
+  const configured = boundUrl || DEFAULT_MEDIX_API_URL;
   const base = new URL(
     configured.includes("://") ? configured : `http://${configured}`
   );
