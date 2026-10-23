@@ -30,8 +30,8 @@ sessions or the shared API token.
    branch containing this configuration. Keep the Hobby plan if eligible.
 2. Configure `AUTH_SECRET`, `POSTGRES_URL`, `ASU_RC_API_KEY`,
    `ASU_RC_MODEL=qwen35-27b`, and the same `MEDIX_API_TOKEN` for both services.
-   Configure `REDIS_URL` for existing rate limits and `BLOB_READ_WRITE_TOKEN`
-   for image uploads. Clerk keys are needed only if enabling Clerk.
+   Configure `REDIS_URL` for existing rate limits. The current upload route
+   returns data URLs and requires no Blob token. Clerk keys are needed only if enabling Clerk.
 3. Leave `MEDIX_API_URL` unset: the binding supplies it. Set `MEDIX_CONTAINER_PROFILE=vercel` explicitly, or keep Vercel system
    environment variables exposed so `VERCEL=1` selects the profile automatically.
    Leave `PORT` unset unless

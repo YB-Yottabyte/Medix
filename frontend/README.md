@@ -14,8 +14,8 @@ corepack pnpm dev
 ```
 
 Copy the environment example only for a new setup. Configure PostgreSQL,
-`AUTH_SECRET`, and server-only Voyager credentials; configure Blob for image
-uploads. Set `MEDIX_API_URL=http://127.0.0.1:5001` for a local backend or port 5002
+`AUTH_SECRET`, and server-only Voyager credentials. Image attachments use the
+existing data-URL upload route; no Blob token is currently required. Set `MEDIX_API_URL=http://127.0.0.1:5001` for a local backend or port 5002
 for the current Sol tunnel. Set the same optional `MEDIX_API_TOKEN` on both
 services when backend authentication is enabled. Existing private environment
 files must never be committed.
