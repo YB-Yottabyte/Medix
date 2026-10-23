@@ -45,8 +45,8 @@ export function useScrollToBottom() {
     setIsAtBottom(true);
     isAtBottomRef.current = true;
     container.scrollTo({
-      top: container.scrollHeight,
       behavior,
+      top: container.scrollHeight,
     });
 
     if (releaseAutoScrollRef.current) {
@@ -84,7 +84,7 @@ export function useScrollToBottom() {
       // Cancel any native smooth-scroll animation already in flight. Without
       // this, a queued auto-follow can pull the user back down after they try
       // to scroll upward.
-      container.scrollTo({ top: container.scrollTop, behavior: "auto" });
+      container.scrollTo({ behavior: "auto", top: container.scrollTop });
     };
 
     const handleWheel = (event: WheelEvent) => {
@@ -168,11 +168,11 @@ export function useScrollToBottom() {
         }
         isAutoScrollingRef.current = true;
         container.scrollTo({
-          top: container.scrollHeight,
           // DOM and resize observers can fire for every streamed token and
           // every frame of the media reveal. Instant incremental following
           // avoids stacking native smooth-scroll animations.
           behavior: "auto",
+          top: container.scrollHeight,
         });
         setIsAtBottom(true);
         isAtBottomRef.current = true;
@@ -189,9 +189,9 @@ export function useScrollToBottom() {
 
     const mutationObserver = new MutationObserver(scrollIfNeeded);
     mutationObserver.observe(container, {
+      characterData: true,
       childList: true,
       subtree: true,
-      characterData: true,
     });
 
     const resizeObserver = new ResizeObserver(scrollIfNeeded);
@@ -246,9 +246,9 @@ export function useScrollToBottom() {
     containerRef,
     endRef,
     isAtBottom,
-    scrollToBottom,
     onViewportEnter,
     onViewportLeave,
     reset,
+    scrollToBottom,
   };
 }

@@ -13,7 +13,7 @@ export type PlaybackCitation = EvidenceCitation & {
 };
 
 const INTERNAL_CITATION_GROUP = /\[(T\d{3}(?:[\s,]+T\d{3})*)\]/g;
-const PUBLIC_CITATION_GROUP = /\[(\d+(?:\s*,\s*\d+)*)\]/g;
+const PUBLIC_CITATION_GROUP = /\[(\d+(?:\s*,\s*\d+)*)\](?!\()/g;
 const TIMESTAMP_GROUP =
   /\[((?:\d+:)?\d{1,2}:\d{2})(?:\s*[–-]\s*((?:\d+:)?\d{1,2}:\d{2}))?\](?!\()/g;
 const TIMESTAMP_LINK_PREFIX = "#medix-clip=";
@@ -55,7 +55,7 @@ export function mapCitationsToClip(
       duration
     );
 
-    return { ...citation, clipStartSeconds, clipEndSeconds };
+    return { ...citation, clipEndSeconds, clipStartSeconds };
   });
 }
 
@@ -98,8 +98,8 @@ function parseTime(value: string) {
 }
 
 function timestampLink(startSeconds: number, endSeconds: number) {
-  const start = Math.max(0, Math.floor(startSeconds));
-  const end = Math.max(start, Math.floor(endSeconds));
+  const start = Math.max(0, startSeconds);
+  const end = Math.max(start, endSeconds);
   const label =
     end > start ? `${formatTime(start)}–${formatTime(end)}` : formatTime(start);
   return `[${label}](${TIMESTAMP_LINK_PREFIX}${start},${end})`;
@@ -143,8 +143,17 @@ export function timestampAnswerCitations(
     )
     .replace(
       TIMESTAMP_GROUP,
-      (_match, start: string, end: string | undefined) =>
-        timestampLink(parseTime(start), parseTime(end ?? start))
+      (_match, start: string, end: string | undefined) => {
+        const cue = citations.find(
+          (item) =>
+            Math.floor(item.clipStartSeconds) === parseTime(start) &&
+            Math.floor(item.clipEndSeconds) === parseTime(end ?? start)
+        );
+        return timestampLink(
+          cue?.clipStartSeconds ?? parseTime(start),
+          cue?.clipEndSeconds ?? parseTime(end ?? start)
+        );
+      }
     );
 
   // Models sometimes put a citation in its own Markdown paragraph. Keep the
@@ -167,7 +176,7 @@ export function parseTimestampCitationHref(href?: string) {
   if (!(Number.isFinite(start) && Number.isFinite(end))) {
     return null;
   }
-  return { startSeconds: start, endSeconds: Math.max(start, end) };
+  return { endSeconds: Math.max(start, end), startSeconds: start };
 }
 
 const MOMENT_TITLE_RULES: [RegExp, string][] = [
@@ -241,9 +250,7 @@ export function sanitizeProcedureAnswer(
     .replace(/^\s*(?:\*\*)?Steps? to [^\n*]*(?:\*\*)?\s*:?\s*$/gim, "")
     .replace(/^\s*Supporting video guidance is shown below\.?\s*$/gim, "")
     .replace(/\s*Supporting video guidance is shown below\.\s*$/i, "");
-  return limitNumberedSteps(cleaned, 4)
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return cleaned.replace(/\n{3,}/g, "\n\n").trim();
 }
 
 /**
@@ -275,4 +282,23 @@ export function limitNumberedSteps(answer: string, maximumSteps = 4) {
   }
 
   return kept.join("\n");
+}
+
+/** Selected moments only; merge overlaps without joining unrelated gaps. */
+export function relevantPlaybackRanges(citations: PlaybackCitation[]) {
+  const ranges: { start: number; end: number }[] = [];
+  for (const cue of [...citations].sort(
+    (a, b) => a.clipStartSeconds - b.clipStartSeconds
+  )) {
+    if (cue.clipEndSeconds <= cue.clipStartSeconds) {
+      continue;
+    }
+    const last = ranges.at(-1);
+    if (last && cue.clipStartSeconds <= last.end + 0.05) {
+      last.end = Math.max(last.end, cue.clipEndSeconds);
+    } else {
+      ranges.push({ end: cue.clipEndSeconds, start: cue.clipStartSeconds });
+    }
+  }
+  return ranges;
 }

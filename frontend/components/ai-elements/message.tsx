@@ -3,6 +3,7 @@
 import type { UIMessage } from "ai";
 import type { ComponentProps, HTMLAttributes, ReactElement } from "react";
 
+import { ResponseLink, ResponseListItem, ResponseParagraph } from "@/components/chat/response-markdown";
 import { Button } from "@/components/ui/button";
 import {
   ButtonGroup,
@@ -325,13 +326,14 @@ export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 const streamdownPlugins = { cjk, code, math, mermaid };
 
 export const MessageResponse = memo(
-  ({ className, ...props }: MessageResponseProps) => (
+  ({ className, components, ...props }: MessageResponseProps) => (
     <Streamdown
       className={cn(
-        "size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
+        "medix-response size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
         className
       )}
       plugins={streamdownPlugins}
+      components={{ p: ResponseParagraph, li: ResponseListItem, a: ResponseLink, ...components }}
       {...props}
     />
   ),

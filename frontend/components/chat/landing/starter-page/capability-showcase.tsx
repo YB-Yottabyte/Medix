@@ -1,284 +1,211 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
-import {
-  ArrowRight,
-  FileSearch,
-  ImageIcon,
-  MessageCircleMore,
-  Mic,
-  Play,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
-import { useState } from "react";
+import { ArrowUpRight } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
+import { codeHref } from "./data";
+import { EvidenceCardPreview, ResearchCardPreview } from "./feature-previews";
 
-const expandTransition = {
-  duration: 0.68,
-  ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-};
+const examples = [
+  {
+    question: "Show me how to bandage a hand, with video references.",
+    title: "Bandaging",
+  },
+  {
+    question: "Find a demonstration of how to clean a minor wound.",
+    title: "Wound care",
+  },
+  {
+    question: "How can I tell whether a bandage is too tight?",
+    title: "Follow-up questions",
+  },
+];
 
 export function CapabilityShowcase({
   startChat,
 }: {
   startChat: (value?: string) => void;
 }) {
-  const prefersReducedMotion = Boolean(useReducedMotion());
-  const [activeCard, setActiveCard] = useState(0);
+  const reducedMotion = Boolean(useReducedMotion());
 
   return (
-    <section className="bg-white py-24 md:py-32" id="features">
-      <div className="mx-auto max-w-[92rem] px-5 sm:px-7 md:px-10">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-[2.5rem] font-medium tracking-[-0.05em] text-slate-950 sm:text-5xl">
-              Explore Medix
+    <div className="bg-[#f5f5f5] text-neutral-950">
+      <section
+        aria-labelledby="capabilities-title"
+        className="scroll-mt-24 border-neutral-200 border-y py-16 md:py-24"
+        id="features"
+      >
+        <div className="mx-auto max-w-5xl px-6">
+          <h2
+            className="font-semibold text-2xl tracking-tight sm:text-3xl"
+            id="capabilities-title"
+          >
+            Built around your question.
+          </h2>
+          <div className="medix-feature-deck mt-8 grid gap-4">
+            <motion.article
+              className="medix-feature-card group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-[#eeeef6] p-6"
+              data-feature-card="medix"
+              initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+              tabIndex={0}
+              transition={{ duration: 0.45 }}
+              viewport={{ amount: 0.15, once: true }}
+              whileHover={reducedMotion ? undefined : { y: -4 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="font-semibold text-xl">Medix</h3>
+                <button
+                  className="medix-blue-sweep medix-card-action absolute top-6 right-6 inline-flex min-h-10 items-center gap-1 rounded-xl border border-primary bg-primary px-3 text-primary-foreground text-xs focus-visible:outline-2 focus-visible:outline-primary"
+                  onClick={() => startChat()}
+                  type="button"
+                >
+                  Try Medix
+                  <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                </button>
+              </div>
+              <p className="mt-5 text-neutral-500 text-sm leading-6 md:line-clamp-3 md:min-h-[4.5rem]">
+                Ask a medical question, review the available evidence, and
+                continue with focused follow-ups.
+              </p>
+              <div
+                aria-hidden="true"
+                className="medix-card-preview mt-8 h-48 shrink-0 overflow-hidden rounded-t-xl border border-neutral-200 bg-card p-4 transition-transform duration-500 group-hover:-translate-y-1 motion-reduce:transform-none"
+              >
+                <div className="mb-5 flex items-center gap-1.5 border-border border-b pb-3">
+                  <span className="size-1.5 rounded-full bg-primary/50" />
+                  <span className="text-[10px] text-muted-foreground">
+                    Conversation preview
+                  </span>
+                </div>
+                <div className="ml-8 rounded-xl bg-muted/60 px-3 py-2 text-xs">
+                  How do I bandage a hand?
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-muted-foreground text-xs">
+                  <span className="size-2 rounded-full bg-primary/60" />
+                  Question · evidence · follow-up
+                </div>
+                <div className="mt-5 h-9 rounded-xl border border-border bg-background" />
+              </div>
+            </motion.article>
+            <motion.article
+              className="medix-feature-card group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-[#eeeef6] p-6"
+              data-feature-card="video"
+              initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+              tabIndex={0}
+              transition={{ delay: reducedMotion ? 0 : 0.08, duration: 0.45 }}
+              viewport={{ amount: 0.15, once: true }}
+              whileHover={reducedMotion ? undefined : { y: -4 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className="font-semibold text-xl">Video evidence</h3>
+              <p className="mt-5 text-neutral-500 text-sm leading-6 md:line-clamp-3 md:min-h-[4.5rem]">
+                Review supporting clips and timestamped references alongside the
+                answer.
+              </p>
+              <EvidenceCardPreview />
+            </motion.article>
+            <motion.article
+              className="medix-feature-card group relative flex min-w-0 flex-col overflow-hidden rounded-2xl bg-[#eeeef6] p-6"
+              data-feature-card="research"
+              initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+              tabIndex={0}
+              transition={{ delay: reducedMotion ? 0 : 0.16, duration: 0.45 }}
+              viewport={{ amount: 0.15, once: true }}
+              whileHover={reducedMotion ? undefined : { y: -4 }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <h3 className="font-semibold text-xl">Open research</h3>
+              <p className="mt-5 text-neutral-500 text-sm leading-6 md:line-clamp-3 md:min-h-[4.5rem]">
+                Explore the implementation, evaluation, and current limitations.
+              </p>
+              <Link
+                className="mt-4 inline-flex min-h-10 items-center gap-1 font-medium text-primary text-xs hover:underline"
+                href="/docs"
+              >
+                Read the docs
+                <ArrowUpRight aria-hidden="true" className="size-3.5" />
+              </Link>
+              <ResearchCardPreview />
+            </motion.article>
+          </div>
+        </div>
+      </section>
+      <section
+        aria-labelledby="examples-title"
+        className="scroll-mt-24 border-neutral-200 border-b py-14 md:py-20"
+        id="examples"
+      >
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <h2
+              className="font-semibold text-2xl tracking-tight sm:text-3xl"
+              id="examples-title"
+            >
+              Start with a question.
             </h2>
-            <p className="mt-3 text-base text-slate-500">
-              Guidance, evidence, and context—kept together.
+            <p className="text-neutral-500 text-sm">
+              Choose an example, or ask your own.
             </p>
           </div>
-          <button
-            className="group flex w-fit items-center gap-1.5 text-sm font-medium text-slate-700 hover:text-slate-950"
-            onClick={() => startChat()}
-            type="button"
-          >
-            Try Medix
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
-        </div>
-
-        <div className="mt-12 rounded-[2.25rem] border border-slate-200 bg-white p-3 sm:p-4">
-          <fieldset
-            aria-label="Medix feature cards"
-            className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0 lg:h-[35rem] lg:flex-row"
-          >
-            <motion.article
-              animate={{ flexGrow: activeCard === 0 ? 1.7 : 0.78 }}
-              aria-label="Guided answers feature"
-              className="relative flex min-h-[30rem] min-w-0 flex-col overflow-hidden rounded-[1.75rem] bg-[#f2f4f7] p-6 outline-none ring-sky-500/25 transition-shadow focus-visible:ring-4 sm:p-8 lg:min-h-0 lg:basis-0"
-              initial={false}
-              layout
-              onFocus={() => setActiveCard(0)}
-              onMouseEnter={() => setActiveCard(0)}
-              tabIndex={0}
-              transition={expandTransition}
-            >
-              <div className="relative z-10 flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase">
-                    Guided answers
-                  </div>
-                  <h3 className="mt-4 max-w-xl text-2xl font-medium leading-[1.1] tracking-[-0.04em] text-slate-950 sm:text-3xl">
-                    See the next step—and the moment behind it.
-                  </h3>
-                  <p className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
-                    Concise guidance opens at the exact point in a verified
-                    medical video.
-                  </p>
-                </div>
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm">
-                  <Play className="ml-0.5 size-4 fill-slate-700" />
-                </div>
-              </div>
-
-              <div className="relative mt-auto pt-8">
-                <div className="relative h-60 overflow-hidden rounded-[1.4rem] bg-[radial-gradient(circle_at_76%_18%,rgba(125,211,252,0.95),transparent_28%),linear-gradient(145deg,#0f172a,#155e75_58%,#38bdf8)] shadow-[0_28px_70px_-40px_rgba(15,23,42,0.65)]">
-                  <div className="absolute -right-14 -bottom-24 size-64 rounded-full border-[42px] border-white/10" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <motion.div
-                      animate={
-                        prefersReducedMotion
-                          ? undefined
-                          : { scale: [1, 1.06, 1] }
-                      }
-                      className="flex size-16 items-center justify-center rounded-full border border-white/35 bg-white/15 text-white shadow-xl backdrop-blur-xl"
-                      transition={{
-                        duration: 3.4,
-                        ease: "easeInOut",
-                        repeat: Number.POSITIVE_INFINITY,
-                      }}
-                    >
-                      <Play className="ml-1 size-5 fill-white" />
-                    </motion.div>
-                  </div>
-                  <div className="absolute right-5 bottom-5 left-5">
-                    <div className="h-1 rounded-full bg-white/20">
-                      <motion.div
-                        animate={{ width: ["28%", "68%", "28%"] }}
-                        className="h-full rounded-full bg-white"
-                        transition={{
-                          duration: 7,
-                          ease: "easeInOut",
-                          repeat: Number.POSITIVE_INFINITY,
-                        }}
-                      />
-                    </div>
-                    <div className="mt-3 flex justify-between gap-4 text-[11px] text-white/70">
-                      <span className="truncate">
-                        Apply firm, direct pressure
-                      </span>
-                      <span>0:44</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.article>
-
-            <motion.article
-              animate={{ flexGrow: activeCard === 1 ? 1.7 : 0.78 }}
-              aria-label="Source trail feature"
-              className="relative flex min-h-[30rem] min-w-0 flex-col overflow-hidden rounded-[1.75rem] bg-[#ecefff] p-6 outline-none ring-indigo-500/25 transition-shadow focus-visible:ring-4 sm:p-8 lg:min-h-0 lg:basis-0"
-              initial={false}
-              layout
-              onFocus={() => setActiveCard(1)}
-              onMouseEnter={() => setActiveCard(1)}
-              tabIndex={0}
-              transition={expandTransition}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <FileSearch className="size-5 text-indigo-700" />
-                <span className="rounded-full bg-white/75 px-2.5 py-1 text-[10px] font-medium text-indigo-700">
-                  Source attached
+          <div className="mt-7 grid gap-3 md:grid-cols-3">
+            {examples.map(({ title, question }) => (
+              <button
+                className="group flex min-h-36 flex-col rounded-xl border border-neutral-200 bg-white/40 p-5 text-left transition-colors hover:border-neutral-400 hover:bg-white focus-visible:outline-2 focus-visible:outline-sky-600 focus-visible:outline-offset-4"
+                key={title}
+                onClick={() => startChat(question)}
+                type="button"
+              >
+                <span className="flex w-full items-center justify-between gap-3 font-medium text-sm">
+                  {title}
+                  <ArrowUpRight
+                    aria-hidden="true"
+                    className="size-4 text-neutral-400 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none"
+                  />
                 </span>
-              </div>
-              <h3 className="mt-8 max-w-xl text-2xl font-medium leading-[1.1] tracking-[-0.04em] text-slate-950 sm:text-3xl">
-                Know why every step is there.
-              </h3>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
-                Timestamped evidence stays attached, so every important claim
-                can be checked.
-              </p>
-
-              <div className="relative mt-auto h-56 overflow-hidden pt-7">
-                <motion.div
-                  animate={
-                    prefersReducedMotion ? undefined : { y: [8, -42, 8] }
-                  }
-                  className="space-y-3"
-                  transition={{
-                    duration: 8,
-                    ease: "easeInOut",
-                    repeat: Number.POSITIVE_INFINITY,
-                  }}
-                >
-                  {[
-                    ["0:16", "Pack the wound firmly"],
-                    ["0:31", "Add gauze until full"],
-                    ["0:44", "Maintain direct pressure"],
-                    ["0:58", "Reassess while help arrives"],
-                  ].map(([time, text]) => (
-                    <div
-                      className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white/85 px-4 py-3 text-xs text-slate-600 shadow-sm"
-                      key={time}
-                    >
-                      <ShieldCheck className="size-3.5 shrink-0 text-indigo-600" />
-                      <span className="font-mono text-[10px] text-indigo-500">
-                        {time}
-                      </span>
-                      <span className="truncate">{text}</span>
-                    </div>
-                  ))}
-                </motion.div>
-              </div>
-            </motion.article>
-
-            <motion.article
-              animate={{ flexGrow: activeCard === 2 ? 1.7 : 0.78 }}
-              aria-label="Hands-busy input feature"
-              className="relative flex min-h-[30rem] min-w-0 flex-col overflow-hidden rounded-[1.75rem] bg-[linear-gradient(150deg,#d9faec,#f8facb)] p-6 outline-none ring-emerald-500/25 transition-shadow focus-visible:ring-4 sm:p-8 lg:min-h-0 lg:basis-0"
-              initial={false}
-              layout
-              onFocus={() => setActiveCard(2)}
-              onMouseEnter={() => setActiveCard(2)}
-              tabIndex={0}
-              transition={expandTransition}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <Sparkles className="size-5 text-emerald-700" />
-                <span className="text-[10px] font-semibold tracking-[0.13em] text-emerald-900/45 uppercase">
-                  Multimodal
+                <span className="mt-3 text-neutral-500 text-sm leading-6">
+                  {question}
                 </span>
-              </div>
-              <h3 className="mt-8 max-w-xl text-2xl font-medium leading-[1.1] tracking-[-0.04em] text-slate-950 sm:text-3xl">
-                Keep moving. Ask however you need.
-              </h3>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-slate-500">
-                Move between voice, images, and follow-ups without losing the
-                conversation.
-              </p>
-
-              <div className="relative mt-auto h-56">
-                <motion.div
-                  animate={
-                    prefersReducedMotion
-                      ? undefined
-                      : { x: [-5, 6, -5], y: [0, -4, 0] }
-                  }
-                  className="absolute top-6 left-0 flex size-28 items-center justify-center rounded-[1.75rem] bg-white/75 text-emerald-700 shadow-lg shadow-emerald-900/5 backdrop-blur-xl"
-                  transition={{
-                    duration: 5,
-                    ease: "easeInOut",
-                    repeat: Number.POSITIVE_INFINITY,
-                  }}
-                >
-                  <Mic className="size-7" />
-                </motion.div>
-                <motion.div
-                  animate={
-                    prefersReducedMotion
-                      ? undefined
-                      : { x: [5, -6, 5], y: [0, 5, 0] }
-                  }
-                  className="absolute right-0 bottom-2 flex size-32 items-center justify-center rounded-[1.75rem] border border-white/70 bg-white/60 text-emerald-800 shadow-lg shadow-emerald-900/5 backdrop-blur-xl"
-                  transition={{
-                    duration: 6,
-                    ease: "easeInOut",
-                    repeat: Number.POSITIVE_INFINITY,
-                  }}
-                >
-                  <ImageIcon className="size-8" />
-                </motion.div>
-              </div>
-            </motion.article>
-          </fieldset>
-        </div>
-
-        <div className="mt-20 border-t border-slate-200 pt-10">
-          <div className="grid gap-10 md:grid-cols-3 md:gap-16">
-            {[
-              {
-                icon: MessageCircleMore,
-                title: "Context that carries forward",
-                body: "Follow-up questions stay connected to the original evidence.",
-              },
-              {
-                icon: ShieldCheck,
-                title: "Sources, not black boxes",
-                body: "Inspect the timestamp supporting each critical step.",
-              },
-              {
-                icon: Play,
-                title: "Only the moment you need",
-                body: "Jump directly to the relevant section of the video.",
-              },
-            ].map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <div key={feature.title}>
-                  <Icon className="size-5 text-sky-700" />
-                  <h3 className="mt-5 text-lg font-semibold tracking-[-0.025em] text-slate-950">
-                    {feature.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    {feature.body}
-                  </p>
-                </div>
-              );
-            })}
+              </button>
+            ))}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+      <section
+        aria-labelledby="get-started-title"
+        className="border-neutral-200 border-b py-14 md:py-16"
+      >
+        <div className="mx-auto flex max-w-5xl flex-col gap-7 px-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2
+              className="font-semibold text-2xl tracking-tight sm:text-3xl"
+              id="get-started-title"
+            >
+              Take a closer look at Medix.
+            </h2>
+            <p className="mt-2 text-neutral-500 text-sm leading-6">
+              Sign in to explore Medix, or browse the code on GitHub.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-3">
+            <Link
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-5 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-sky-600 focus-visible:outline-offset-4"
+              href="/login"
+            >
+              Sign in
+            </Link>
+            <a
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-neutral-300 px-5 font-medium text-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-sky-600 focus-visible:outline-offset-4"
+              href={codeHref}
+              rel="noreferrer"
+              target="_blank"
+            >
+              GitHub
+              <ArrowUpRight aria-hidden="true" className="size-3.5" />
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

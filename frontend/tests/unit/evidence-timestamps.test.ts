@@ -7,6 +7,7 @@ import {
   limitNumberedSteps,
   mapCitationsToClip,
   parseTimestampCitationHref,
+  relevantPlaybackRanges,
   sanitizeProcedureAnswer,
   timestampAnswerCitations,
 } from "../../lib/evidence-timestamps";
@@ -14,14 +15,14 @@ import {
 const citations: EvidenceCitation[] = [
   {
     cue_id: "T005",
-    start_seconds: 43,
     end_seconds: 46,
+    start_seconds: 43,
     text: "Pack the wound with gauze.",
   },
   {
     cue_id: "T006",
-    start_seconds: 47,
     end_seconds: 51,
+    start_seconds: 47,
     text: "Continue adding gauze.",
   },
 ];
@@ -39,8 +40,8 @@ test("clamps overlapping transcript cues to the clip boundary", () => {
     [
       {
         cue_id: "T001",
-        start_seconds: 24,
         end_seconds: 30,
+        start_seconds: 24,
         text: "A cue beginning before the clip.",
       },
     ],
@@ -70,8 +71,8 @@ test("renders numeric citation arrays as clickable clip-relative timestamps", ()
     "Pack the wound. [0:16–0:24](#medix-clip=16,24)"
   );
   assert.deepEqual(parseTimestampCitationHref("#medix-clip=16,24"), {
-    startSeconds: 16,
     endSeconds: 24,
+    startSeconds: 16,
   });
 });
 
@@ -166,4 +167,35 @@ Supporting video guidance is shown below.`;
   assert.match(limited, /4\. \*\*Fourth\*\*/);
   assert.doesNotMatch(limited, /5\. \*\*Fifth|6\. \*\*Sixth|step five/);
   assert.match(limited, /Supporting video guidance is shown below\./);
+});
+
+test("medical source links remain links and verified safety paragraphs are not truncated", () => {
+  const input =
+    "Check [1](https://www.nhs.uk/conditions/cuts-and-grazes/).\n\n" +
+    Array.from({ length: 6 }, (_, i) => `- Verified step ${i + 1}`).join("\n") +
+    "\n\nGet help for the supported warning signs.";
+  const output = timestampAnswerCitations(
+    sanitizeProcedureAnswer(input),
+    mapCitationsToClip(citations, 100, 140)
+  );
+  assert.match(output, /\[1\]\(https:\/\/www.nhs.uk/);
+  assert.match(output, /Verified step 6/);
+  assert.match(output, /Get help/);
+  assert.doesNotMatch(output, /#medix-clip/);
+});
+
+test("playback merges overlapping relevant moments without playing unrelated gaps", () => {
+  const mapped = mapCitationsToClip(
+    [
+      { cue_id: "a", end_seconds: 16, start_seconds: 12, text: "a" },
+      { cue_id: "b", end_seconds: 19, start_seconds: 15, text: "b" },
+      { cue_id: "c", end_seconds: 34, start_seconds: 30, text: "c" },
+    ],
+    10,
+    40
+  );
+  assert.deepEqual(relevantPlaybackRanges(mapped), [
+    { end: 9, start: 2 },
+    { end: 24, start: 20 },
+  ]);
 });

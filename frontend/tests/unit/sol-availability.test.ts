@@ -61,8 +61,8 @@ test("availability reports false for every session failure mode", async () => {
       () =>
         Promise.resolve(
           new Response(JSON.stringify({ data: [{ id: "some-other-model" }] }), {
-            status: 200,
             headers: { "Content-Type": "application/json" },
+            status: 200,
           })
         ),
     ],
@@ -86,8 +86,8 @@ test("availability reports false for every session failure mode", async () => {
     globalThis.fetch = (() =>
       Promise.resolve(
         new Response(JSON.stringify({ data: [{ id: SOL_CHAT_MODEL }] }), {
-          status: 200,
           headers: { "Content-Type": "application/json" },
+          status: 200,
         })
       )) as unknown as typeof fetch;
     assert.equal(await isSolAvailable(), true);

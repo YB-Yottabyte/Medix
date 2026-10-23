@@ -9,24 +9,28 @@ import { isClerkConfigured } from "@/lib/auth/config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"),
-  title: "MedVidQA",
   description: "Multimodal medical video question answering assistant.",
+  metadataBase: new URL(
+    process.env.RENDER_EXTERNAL_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
+      "http://localhost:3000"
+  ),
+  title: "Medix",
 };
 
 export const viewport = {
   maximumScale: 1,
 };
 
-const geist = Geist({
-  subsets: ["latin"],
+const geistSans = Geist({
   display: "swap",
-  variable: "--font-geist",
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
 });
 
 const geistMono = Geist_Mono({
-  subsets: ["latin"],
   display: "swap",
+  subsets: ["latin"],
   variable: "--font-geist-mono",
 });
 
@@ -71,7 +75,7 @@ export default function RootLayout({
 
   return (
     <html
-      className={`${geist.variable} ${geistMono.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
       lang="en"
       suppressHydrationWarning
     >
@@ -83,7 +87,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="antialiased">
+      <body className="font-sans antialiased">
         {clerkEnabled ? (
           <ClerkProvider
             signInFallbackRedirectUrl="/"

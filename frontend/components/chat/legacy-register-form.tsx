@@ -22,16 +22,16 @@ export function LegacyRegisterForm() {
 
   useEffect(() => {
     if (state.status === "user_exists") {
-      toast({ type: "error", description: "Account already exists!" });
+      toast({ description: "Account already exists!", type: "error" });
     } else if (state.status === "failed") {
-      toast({ type: "error", description: "Failed to create account!" });
+      toast({ description: "Failed to create account!", type: "error" });
     } else if (state.status === "invalid_data") {
       toast({
-        type: "error",
         description: "Failed validating your submission!",
+        type: "error",
       });
     } else if (state.status === "success") {
-      toast({ type: "success", description: "Account created!" });
+      toast({ description: "Account created!", type: "success" });
       setIsSuccessful(true);
       updateSession();
       router.refresh();
@@ -41,10 +41,10 @@ export function LegacyRegisterForm() {
   return (
     <>
       <div className="text-center">
-        <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">
+        <h1 className="font-semibold text-[28px] text-slate-950 tracking-[-0.04em] sm:text-[30px]">
           Create your account
         </h1>
-        <p className="mt-2 text-[13px] leading-5 text-slate-500">
+        <p className="mt-2 text-[13px] text-slate-500 leading-5">
           Save chats and continue your Medix research anywhere.
         </p>
       </div>

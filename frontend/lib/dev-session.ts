@@ -47,19 +47,19 @@ export async function getAppSession(): Promise<AppSession | null> {
       const medixUser = await getOrCreateClerkUser({
         clerkUserId: userId,
         email,
+        image: clerkUser.imageUrl,
         name:
           typeof clerkUser.unsafeMetadata.medixDisplayName === "string"
             ? clerkUser.unsafeMetadata.medixDisplayName
             : clerkUser.fullName,
-        image: clerkUser.imageUrl,
       });
 
       return {
         user: {
-          id: medixUser.id,
           email: medixUser.email,
-          name: medixUser.name,
+          id: medixUser.id,
           image: medixUser.image,
+          name: medixUser.name,
           type: "regular",
         },
       };
@@ -71,10 +71,10 @@ export async function getAppSession(): Promise<AppSession | null> {
     return guestSession?.user?.type === "guest"
       ? {
           user: {
-            id: guestSession.user.id,
             email: guestSession.user.email ?? null,
-            name: guestSession.user.name ?? null,
+            id: guestSession.user.id,
             image: guestSession.user.image ?? null,
+            name: guestSession.user.name ?? null,
             type: guestSession.user.type,
           },
         }
@@ -86,10 +86,10 @@ export async function getAppSession(): Promise<AppSession | null> {
     return session?.user
       ? {
           user: {
-            id: session.user.id,
             email: session.user.email ?? null,
-            name: session.user.name ?? null,
+            id: session.user.id,
             image: session.user.image ?? null,
+            name: session.user.name ?? null,
             type: session.user.type,
           },
         }
@@ -108,8 +108,8 @@ export async function getAppSession(): Promise<AppSession | null> {
 
   return {
     user: {
-      id: localUser.id,
       email: localUser.email,
+      id: localUser.id,
       name: localUser.name ?? "Local Developer",
       type: "regular",
     },

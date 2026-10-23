@@ -23,19 +23,19 @@ import type {
 
 const evidence: TranscriptCitation[] = [
   {
-    cue_id: "S12",
-    start_seconds: 31,
-    end_seconds: 36,
-    clip_start_seconds: 31,
     clip_end_seconds: 36,
+    clip_start_seconds: 31,
+    cue_id: "S12",
+    end_seconds: 36,
+    start_seconds: 31,
     text: "Attach the AED pads to the patient's bare chest.",
   },
   {
-    cue_id: "S13",
-    start_seconds: 36,
-    end_seconds: 43,
-    clip_start_seconds: 36,
     clip_end_seconds: 43,
+    clip_start_seconds: 36,
+    cue_id: "S13",
+    end_seconds: 43,
+    start_seconds: 36,
     text: "Continue CPR while preparing the AED.",
   },
 ];
@@ -44,29 +44,29 @@ const cues = buildFollowUpCues(evidence);
 
 function activeEvidence(): ProcedureToolOutput {
   return {
-    answer: null,
-    status: "answered",
-    answerable: true,
-    confidence: 0.8,
     abstentionReason: null,
-    emergencyWarning: null,
-    safetyDisposition: "supported",
+    answer: null,
+    answerable: true,
     citations: evidence,
-    evidenceContext: evidence,
-    evidenceBundleId: "aed-bundle",
-    videoId: "aed-video",
-    videoUrl: "http://localhost/video.mp4",
     clipUrl: "http://localhost/clip.mp4",
-    startTime: 31,
+    confidence: 0.8,
+    emergencyWarning: null,
     endTime: 43,
-    matchedProcedure: "How do I use an AED?",
-    retrievalQuery: "How do I use an AED?",
-    sourceRetrievalQuery: "How do I use an AED?",
-    queryWasContextualized: false,
-    retrievalDecision: "retrieve_new_source",
+    evidenceBundleId: "aed-bundle",
+    evidenceContext: evidence,
     followUpQuestion: null,
+    matchedProcedure: "How do I use an AED?",
+    queryWasContextualized: false,
     renderMediaWorkspace: true,
     responseInstructions: "",
+    retrievalDecision: "retrieve_new_source",
+    retrievalQuery: "How do I use an AED?",
+    safetyDisposition: "supported",
+    sourceRetrievalQuery: "How do I use an AED?",
+    startTime: 31,
+    status: "answered",
+    videoId: "aed-video",
+    videoUrl: "http://localhost/video.mp4",
   };
 }
 
@@ -76,24 +76,24 @@ function scriptedModel(responses: string[]): ScriptedModel {
   const calls: string[] = [];
   let index = 0;
   const model = {
-    specificationVersion: "v3",
-    provider: "test-ollama",
-    modelId: QWEN_CHAT_MODEL,
-    supportedUrls: {},
     doGenerate: async ({ prompt }: { prompt: unknown }) => {
       calls.push(JSON.stringify(prompt));
       const next = responses[index] ?? responses.at(-1) ?? "";
       index += 1;
       return {
+        content: [{ text: next, type: "text" }],
         finishReason: "stop",
         usage: {
-          inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
-          outputTokens: { total: 1, text: 1, reasoning: 0 },
+          inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
+          outputTokens: { reasoning: 0, text: 1, total: 1 },
         },
-        content: [{ type: "text", text: next }],
         warnings: [],
       };
     },
+    modelId: QWEN_CHAT_MODEL,
+    provider: "test-ollama",
+    specificationVersion: "v3",
+    supportedUrls: {},
   } as unknown as ScriptedModel;
   (model as { calls: string[] }).calls = calls;
   return model;
@@ -102,27 +102,27 @@ function scriptedModel(responses: string[]): ScriptedModel {
 async function runFollowUp(responses: string[], question: string) {
   const model = scriptedModel(responses);
   const result = await generateVerifiedFollowUp({
+    activeEvidence: activeEvidence(),
     model,
     question,
-    activeEvidence: activeEvidence(),
     recentConversation: "user: How do I use an AED?",
   });
-  return { result, model };
+  return { model, result };
 }
 
 const continueAssessment = JSON.stringify({
+  relatedCueIds: [],
   relation: "continue_to_use_evidence",
   sufficiency: "sufficient",
   supportingCueIds: ["T002"],
-  relatedCueIds: [],
 });
 const twoClaims = JSON.stringify({
   claims: [
     {
-      text: "Keep chest compressions going while the AED is prepared",
       cueIds: ["T002"],
+      text: "Keep chest compressions going while the AED is prepared",
     },
-    { text: "Expose the chest before the pads go on", cueIds: ["T002"] },
+    { cueIds: ["T002"], text: "Expose the chest before the pads go on" },
   ],
 });
 
@@ -137,10 +137,10 @@ test("the assessment parser accepts the three-way relation and the legacy alias"
   for (const relation of relations) {
     const parsed = parseSemanticAssessment(
       JSON.stringify({
+        relatedCueIds: [],
         relation,
         sufficiency: "sufficient",
         supportingCueIds: [],
-        relatedCueIds: [],
       }),
       cues
     );
@@ -149,10 +149,10 @@ test("the assessment parser accepts the three-way relation and the legacy alias"
 
   const legacy = parseSemanticAssessment(
     JSON.stringify({
+      relatedCueIds: [],
       relation: "same_topic",
       sufficiency: "sufficient",
       supportingCueIds: [],
-      relatedCueIds: [],
     }),
     cues
   );
@@ -161,10 +161,10 @@ test("the assessment parser accepts the three-way relation and the legacy alias"
   assert.equal(
     parseSemanticAssessment(
       JSON.stringify({
+        relatedCueIds: [],
         relation: "definitely_maybe",
         sufficiency: "sufficient",
         supportingCueIds: [],
-        relatedCueIds: [],
       }),
       cues
     ),
@@ -176,10 +176,10 @@ test("a [No Retrieve] turn gets a conversational reply, not a medical deferral",
   const { result, model } = await runFollowUp(
     [
       JSON.stringify({
+        relatedCueIds: [],
         relation: "no_retrieval_needed",
         sufficiency: "insufficient",
         supportingCueIds: [],
-        relatedCueIds: [],
       }),
       "You're welcome. Let me know if anything else comes up.",
     ],
@@ -228,7 +228,10 @@ test("a conversational reply may not smuggle in medical content", () => {
     `Absolutely. ${"word ".repeat(60)}`,
   ]) {
     const reply = validateConversationalReply(unsafe);
-    assert.match(reply, /^Happy to help\./);
+    assert.match(
+      reply,
+      /^What else would you like to know about this medical procedure\?/
+    );
     assert.doesNotMatch(reply, /compressions|\[0:31|T002/);
   }
 });
@@ -237,10 +240,10 @@ test("a model-reported topic change defers and never retrieves", async () => {
   const { result, model } = await runFollowUp(
     [
       JSON.stringify({
+        relatedCueIds: [],
         relation: "topic_change",
         sufficiency: "insufficient",
         supportingCueIds: [],
-        relatedCueIds: [],
       }),
     ],
     "How do I treat a burn?"
@@ -256,13 +259,13 @@ test("a model-reported topic change defers and never retrieves", async () => {
 test("the verification parser accepts graded support and the legacy boolean", () => {
   const graded = parseClaimVerification(
     JSON.stringify({
-      verdict: "refine",
-      utility: 4,
       claims: [
-        { claimIndex: 0, support: "full", cueIds: ["T002"] },
-        { claimIndex: 1, support: "partial", cueIds: [] },
-        { claimIndex: 2, support: "none", cueIds: [] },
+        { claimIndex: 0, cueIds: ["T002"], support: "full" },
+        { claimIndex: 1, cueIds: [], support: "partial" },
+        { claimIndex: 2, cueIds: [], support: "none" },
       ],
+      utility: 4,
+      verdict: "refine",
     }),
     ["T002"]
   );
@@ -274,11 +277,11 @@ test("the verification parser accepts graded support and the legacy boolean", ()
 
   const legacy = parseClaimVerification(
     JSON.stringify({
-      verdict: "accept",
       claims: [
-        { claimIndex: 0, supported: true, cueIds: [] },
-        { claimIndex: 1, supported: false, cueIds: [] },
+        { claimIndex: 0, cueIds: [], supported: true },
+        { claimIndex: 1, cueIds: [], supported: false },
       ],
+      verdict: "accept",
     }),
     ["T002"]
   );
@@ -291,42 +294,41 @@ test("the verification parser accepts graded support and the legacy boolean", ()
   // An out-of-range utility invalidates the whole verification.
   assert.equal(
     parseClaimVerification(
-      JSON.stringify({ verdict: "accept", utility: 9, claims: [] }),
+      JSON.stringify({ claims: [], utility: 9, verdict: "accept" }),
       ["T002"]
     ),
     null
   );
 });
 
-test("a partially grounded claim is kept but forced to state its limits", async () => {
+test("a partially grounded claim is replaced by a limited source quotation", async () => {
   const { result } = await runFollowUp(
     [
       continueAssessment,
       JSON.stringify({
         claims: [
           {
-            text: "Keep chest compressions going while the AED is prepared",
             cueIds: ["T002"],
+            text: "Keep chest compressions going while the AED is prepared",
           },
         ],
       }),
       JSON.stringify({
-        verdict: "refine",
+        claims: [{ claimIndex: 0, cueIds: ["T002"], support: "partial" }],
         utility: 4,
-        claims: [{ claimIndex: 0, support: "partial", cueIds: ["T002"] }],
+        verdict: "refine",
       }),
     ],
     "Should compressions continue while the AED is readied?"
   );
 
-  // The assessment said "sufficient", but partial groundedness downgrades it.
+  assert.doesNotMatch(result.answer, /Keep chest compressions going/);
+  assert.match(result.answer, /^The current video states:/);
+  // A partial claim is not shown as verified guidance.
   assert.equal(result.evidenceSufficiency, "partial");
   assert.equal(result.taxonomy, "helpful_deferral");
   assert.match(result.answer, /\[0:36–0:43\]/);
-  assert.match(
-    result.answer,
-    /does not provide enough verified information in this segment/
-  );
+  assert.doesNotMatch(result.answer, /left out details I couldn’t verify/);
   assert.equal(validateFollowUpAnswer(result.answer, evidence).valid, true);
 });
 
@@ -336,12 +338,12 @@ test("an unsupported claim is dropped and downgrades the remaining answer", asyn
       continueAssessment,
       twoClaims,
       JSON.stringify({
-        verdict: "refine",
-        utility: 4,
         claims: [
-          { claimIndex: 0, support: "full", cueIds: ["T002"] },
-          { claimIndex: 1, support: "none", cueIds: [] },
+          { claimIndex: 0, cueIds: ["T002"], support: "full" },
+          { claimIndex: 1, cueIds: [], support: "none" },
         ],
+        utility: 4,
+        verdict: "refine",
       }),
     ],
     "Should compressions continue while the AED is readied?"
@@ -359,15 +361,15 @@ test("fully grounded claims keep the sufficient classification", async () => {
       JSON.stringify({
         claims: [
           {
-            text: "Keep chest compressions going while the AED is prepared",
             cueIds: ["T002"],
+            text: "Keep chest compressions going while the AED is prepared",
           },
         ],
       }),
       JSON.stringify({
-        verdict: "accept",
+        claims: [{ claimIndex: 0, cueIds: ["T002"], support: "full" }],
         utility: 5,
-        claims: [{ claimIndex: 0, support: "full", cueIds: ["T002"] }],
+        verdict: "accept",
       }),
     ],
     "Should compressions continue while the AED is readied?"
@@ -386,12 +388,12 @@ test("a grounded answer that does not address the question is not shown", async 
     [
       continueAssessment,
       JSON.stringify({
-        claims: [{ text: "The AED pads go on a bare chest", cueIds: ["T002"] }],
+        claims: [{ cueIds: ["T002"], text: "The AED pads go on a bare chest" }],
       }),
       JSON.stringify({
-        verdict: "accept",
+        claims: [{ claimIndex: 0, cueIds: ["T002"], support: "full" }],
         utility: 1,
-        claims: [{ claimIndex: 0, support: "full", cueIds: ["T002"] }],
+        verdict: "accept",
       }),
     ],
     "How long should I keep going?"
@@ -413,14 +415,14 @@ test("a missing utility score does not block a supported answer", async () => {
       JSON.stringify({
         claims: [
           {
-            text: "Keep chest compressions going while the AED is prepared",
             cueIds: ["T002"],
+            text: "Keep chest compressions going while the AED is prepared",
           },
         ],
       }),
       JSON.stringify({
+        claims: [{ claimIndex: 0, cueIds: ["T002"], support: "full" }],
         verdict: "accept",
-        claims: [{ claimIndex: 0, support: "full", cueIds: ["T002"] }],
       }),
     ],
     "Should compressions continue while the AED is readied?"
@@ -444,10 +446,10 @@ test("no reflection path reaches the retrieval endpoint", async () => {
     await runFollowUp(
       [
         JSON.stringify({
+          relatedCueIds: [],
           relation: "no_retrieval_needed",
           sufficiency: "insufficient",
           supportingCueIds: [],
-          relatedCueIds: [],
         }),
         "You're welcome.",
       ],
@@ -456,10 +458,10 @@ test("no reflection path reaches the retrieval endpoint", async () => {
     await runFollowUp(
       [
         JSON.stringify({
+          relatedCueIds: [],
           relation: "topic_change",
           sufficiency: "insufficient",
           supportingCueIds: [],
-          relatedCueIds: [],
         }),
       ],
       "How do I treat a burn?"

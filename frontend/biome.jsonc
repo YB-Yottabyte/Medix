@@ -33,10 +33,6 @@
         "noNestedTernary": "off",
         "useConsistentTypeDefinitions": "off"
       },
-      "nursery": {
-        "noUnnecessaryConditions": "off",
-        "useSortedClasses": "off"
-      },
       "complexity": {
         "noExcessiveCognitiveComplexity": "off",
         "useSimplifiedLogicExpression": "off"
@@ -54,5 +50,20 @@
         "noDelete": "off"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["tests/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noChildrenProp": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          }
+        }
+      }
+    }
+  ]
 }

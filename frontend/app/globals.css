@@ -1,6 +1,11 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "katex/dist/katex.min.css";
 
+/* Scan UI sources only; tooling and reports may be cloud-only files. */
+@source ".";
+@source "../components";
+@source "../hooks";
+@source "../lib";
 @source "../node_modules/streamdown/dist/index.js";
 
 @custom-variant dark (&:is(.dark, .dark *));
@@ -9,6 +14,8 @@
 @plugin "@tailwindcss/typography";
 
 @theme inline {
+  --font-sans: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-mono: var(--font-geist-mono);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -48,13 +55,13 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.985 0 0);
+  --background: #f5f5f5;
   --foreground: oklch(0.12 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.12 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.12 0 0);
-  --primary: oklch(0.12 0 0);
+  --primary: oklch(0.52 0.16 245);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.965 0 0);
   --secondary-foreground: oklch(0.38 0 0);
@@ -65,7 +72,7 @@
   --destructive: oklch(0.55 0.15 25);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
-  --ring: oklch(0.5 0 0);
+  --ring: oklch(0.52 0.16 245);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -145,11 +152,11 @@
     @apply border-border ring-0;
   }
   body {
-    @apply bg-background text-foreground;
     font-feature-settings: "ss01", "ss02", "cv01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    @apply bg-background text-foreground;
   }
 }
 
@@ -165,8 +172,8 @@
 
 @layer base {
   body {
-    overflow-x: hidden;
     position: relative;
+    overflow-x: hidden;
   }
 
   html {
@@ -179,8 +186,8 @@
   h4,
   h5,
   h6 {
-    letter-spacing: -0.025em;
     line-height: 1.2;
+    letter-spacing: -0.025em;
   }
 
   p {
@@ -351,7 +358,6 @@ textarea:focus-visible {
 }
 
 @utility shimmer {
-  animation: shimmer 2s linear infinite;
   background: linear-gradient(
     90deg,
     transparent,
@@ -359,6 +365,7 @@ textarea:focus-visible {
     transparent
   );
   background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
 }
 
 @utility dot-pulse {
@@ -382,10 +389,10 @@ textarea:focus-visible {
 }
 
 .cm-editor {
-  @apply bg-transparent! outline-hidden! text-[13px]! leading-[1.6]!;
   font-family:
     "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", ui-monospace,
     monospace !important;
+  @apply bg-transparent! outline-hidden! text-[13px]! leading-[1.6]!;
 }
 
 .cm-gutters {
@@ -443,21 +450,21 @@ textarea:focus-visible {
 }
 
 .cm-matchingBracket {
-  background: oklch(0.55 0.12 250 / 0.12) !important;
   outline: 1px solid oklch(0.55 0.12 250 / 0.3);
+  background: oklch(0.55 0.12 250 / 0.12) !important;
   border-radius: 2px;
 }
 
 .suggestion-highlight {
-  @apply cursor-pointer rounded-sm bg-blue-200 transition-colors hover:bg-blue-300 dark:bg-blue-500/40 dark:text-blue-50 dark:hover:bg-blue-400/50;
-  user-select: none;
   -webkit-user-select: none;
+  user-select: none;
+  @apply cursor-pointer rounded-sm bg-blue-200 transition-colors hover:bg-blue-300 dark:bg-blue-500/40 dark:text-blue-50 dark:hover:bg-blue-400/50;
 }
 
 @layer base {
   * {
-    scrollbar-width: thin;
     scrollbar-color: oklch(0 0 0 / 0.12) transparent;
+    scrollbar-width: thin;
   }
 
   .dark * {
@@ -497,4 +504,204 @@ textarea:focus-visible {
 
 [data-testid="artifact"] {
   isolation: isolate;
+}
+
+/* Allow viewport-bound sticky navigation and the landing footer reveal. */
+html:has(.docs-explorer),
+body:has(.docs-explorer),
+html:has(#quest3-research),
+body:has(#quest3-research) {
+  overflow-x: clip;
+}
+
+/* Keep the feature row stable while handing space to the active card. */
+.medix-feature-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+.medix-card-preview {
+  transition:
+    background-color 500ms ease,
+    transform 500ms ease;
+}
+@media (min-width: 768px) {
+  .medix-feature-deck {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+    transition: grid-template-columns 650ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .medix-feature-card {
+    height: 420px;
+  }
+  .medix-feature-deck:has(
+      [data-feature-card="video"]:is(:hover, :focus-within)
+    ) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+  }
+  .medix-feature-deck:has(
+      [data-feature-card="research"]:is(:hover, :focus-within)
+    ) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr);
+  }
+  .medix-feature-deck:has(
+      [data-feature-card="video"]:is(:hover, :focus-within),
+      [data-feature-card="research"]:is(:hover, :focus-within)
+    )
+    .medix-card-action {
+    visibility: hidden;
+    opacity: 0;
+  }
+  .medix-card-action {
+    transition:
+      opacity 250ms ease,
+      visibility 250ms;
+  }
+  .medix-feature-deck:not(
+      :has(
+          [data-feature-card="video"]:is(:hover, :focus-within),
+          [data-feature-card="research"]:is(:hover, :focus-within)
+        )
+    )
+    [data-feature-card="medix"]
+    .medix-card-preview,
+  [data-feature-card="video"]:is(:hover, :focus-within) .medix-card-preview,
+  [data-feature-card="research"]:is(:hover, :focus-within) .medix-card-preview {
+    background-color: color-mix(in srgb, var(--primary) 12%, white);
+  }
+}
+/* The hover sweep stays within the Medix blue palette. */
+.medix-blue-sweep {
+  overflow: hidden;
+  color: var(--primary);
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+  isolation: isolate;
+  transition:
+    color 500ms ease,
+    border-color 500ms ease;
+}
+.medix-blue-sweep::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  background: var(--primary);
+  clip-path: polygon(0 100%, 0 100%, 0 100%);
+  transition: clip-path 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.medix-blue-sweep:is(:hover, :focus-visible) {
+  color: var(--primary-foreground);
+  background: var(--card);
+  border-color: var(--primary);
+}
+.medix-blue-sweep:is(:hover, :focus-visible)::before {
+  clip-path: polygon(0 100%, 0 -100%, 200% 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+  .medix-feature-deck,
+  .medix-card-preview,
+  .medix-card-action,
+  .medix-blue-sweep,
+  .medix-blue-sweep::before {
+    transition: none;
+  }
+}
+
+/* Shared chat typography: hanging list indents keep wrapped lines aligned. */
+.medix-response {
+  line-height: 1.65;
+  overflow-wrap: break-word;
+}
+
+.medix-response :where(p, ul, ol, blockquote, pre) {
+  margin-block: 0.85em;
+}
+
+.medix-response > :first-child {
+  margin-block-start: 0;
+}
+.medix-response > :last-child {
+  margin-block-end: 0;
+}
+
+.medix-response :where(ul, ol):not(.medix-source-list) {
+  display: block;
+  padding-inline-start: 1.75rem;
+  margin-inline-start: 0;
+  list-style-position: outside;
+}
+
+.medix-response ul:not(.medix-source-list) {
+  list-style-type: disc;
+}
+.medix-response ol {
+  list-style-type: decimal;
+}
+
+.medix-response li {
+  display: list-item;
+  padding-block: 0;
+  padding-inline-start: 0.4rem;
+  margin-block: 0.35em;
+  line-height: inherit;
+}
+
+.medix-response li::marker {
+  color: var(--foreground);
+}
+.medix-response li > p {
+  margin-block: 0.35em;
+}
+.medix-response li > :first-child {
+  margin-block-start: 0;
+}
+.medix-response li > :last-child {
+  margin-block-end: 0;
+}
+
+/* A narrow no-wrap group prevents orphaned citations, not normal sentence wrapping. */
+.medix-citation-anchor {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
+.medix-reference-citation {
+  display: inline;
+  padding: 0.08em 0.25em;
+  margin-inline-start: 0;
+  font-size: 0.75em;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+  text-decoration: none;
+  background: var(--muted);
+  border-radius: 0.25rem;
+}
+
+.medix-reference-citation:hover {
+  color: var(--primary);
+  background: var(--secondary);
+}
+.medix-reference-citation:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.medix-response-sources {
+  margin-block-start: 1rem;
+  font-size: 0.8em;
+  color: var(--muted-foreground);
+}
+
+.medix-response-sources > summary {
+  width: fit-content;
+  cursor: pointer;
+}
+.medix-response .medix-source-list {
+  padding-inline-start: 0;
+  list-style: none;
+}
+.medix-response .medix-source-list > li {
+  display: block;
+  padding-inline-start: 0;
+  margin-block: 0.35rem;
 }

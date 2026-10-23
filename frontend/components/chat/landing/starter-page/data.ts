@@ -8,14 +8,12 @@ export const menuItems: Array<{
   href: string;
   external?: boolean;
 }> = [
-  { name: "How it works", href: "#features" },
-  { name: "Pipeline", href: "#pipeline" },
-  { name: "Research", href: "#quest3-research" },
+  { href: "#features", name: "How it works" },
+  { href: "#examples", name: "Examples" },
 ];
 
 /**
- * These name what the system actually does today. Grounded SAM 2, Qdrant,
- * Groq LLaMA, and the AR overlay are no longer part of the pipeline.
+ * These name what the system actually does today. Grounded SAM 2, Groq LLaMA, and the AR overlay are no longer part of the pipeline.
  */
 export const capabilityPills = [
   "Voice Input",

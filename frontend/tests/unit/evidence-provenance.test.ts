@@ -12,79 +12,79 @@ import type { ChatMessage } from "../../lib/types";
 
 const evidence: TranscriptCitation[] = [
   {
-    cue_id: "S12",
-    start_seconds: 31,
-    end_seconds: 36,
-    clip_start_seconds: 31,
     clip_end_seconds: 36,
+    clip_start_seconds: 31,
+    cue_id: "S12",
+    end_seconds: 36,
+    start_seconds: 31,
     text: "Attach the AED pads to the patient's bare chest.",
   },
   {
-    cue_id: "S13",
-    start_seconds: 36,
-    end_seconds: 43,
-    clip_start_seconds: 36,
     clip_end_seconds: 43,
+    clip_start_seconds: 36,
+    cue_id: "S13",
+    end_seconds: 43,
+    start_seconds: 36,
     text: "Continue   CPR while preparing the AED.",
   },
 ];
 
 function activeEvidence(): ProcedureToolOutput {
   return {
-    answer: null,
-    status: "answered",
-    answerable: true,
-    confidence: 0.8,
     abstentionReason: null,
-    emergencyWarning: null,
-    safetyDisposition: "supported",
+    answer: null,
+    answerable: true,
     citations: evidence,
-    evidenceContext: evidence,
-    evidenceBundleId: "aed-bundle",
-    videoId: "aed-video",
-    videoUrl: null,
     clipUrl: null,
-    startTime: 31,
+    confidence: 0.8,
+    emergencyWarning: null,
     endTime: 43,
-    matchedProcedure: "How do I use an AED?",
-    retrievalQuery: "How do I use an AED?",
-    sourceRetrievalQuery: "How do I use an AED?",
-    queryWasContextualized: false,
-    retrievalDecision: "retrieve_new_source",
+    evidenceBundleId: "aed-bundle",
+    evidenceContext: evidence,
     followUpQuestion: null,
+    matchedProcedure: "How do I use an AED?",
+    queryWasContextualized: false,
     renderMediaWorkspace: true,
     responseInstructions: "",
+    retrievalDecision: "retrieve_new_source",
+    retrievalQuery: "How do I use an AED?",
+    safetyDisposition: "supported",
+    sourceRetrievalQuery: "How do I use an AED?",
+    startTime: 31,
+    status: "answered",
+    videoId: "aed-video",
+    videoUrl: null,
   };
 }
 
 function scriptedModel(responses: string[]): LanguageModel {
   let index = 0;
   return {
-    specificationVersion: "v3",
-    provider: "test-ollama",
-    modelId: QWEN_CHAT_MODEL,
-    supportedUrls: {},
     doGenerate: async () => {
       const next = responses[index] ?? responses.at(-1) ?? "";
       index += 1;
       return {
+        content: [{ text: next, type: "text" }],
         finishReason: "stop",
         usage: {
-          inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
-          outputTokens: { total: 1, text: 1, reasoning: 0 },
+          inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
+          outputTokens: { reasoning: 0, text: 1, total: 1 },
         },
-        content: [{ type: "text", text: next }],
         warnings: [],
       };
     },
+    modelId: QWEN_CHAT_MODEL,
+    provider: "test-ollama",
+    specificationVersion: "v3",
+    supportedUrls: {},
   } as unknown as LanguageModel;
 }
 
 async function runFollowUp(responses: string[], question: string) {
   return await generateVerifiedFollowUp({
+    activeEvidence: activeEvidence(),
     model: scriptedModel(responses),
     question,
-    activeEvidence: activeEvidence(),
     recentConversation: "user: How do I use an AED?",
   });
 }
@@ -93,18 +93,18 @@ test("a supported follow-up reports the cues it was built from", async () => {
   const result = await runFollowUp(
     [
       JSON.stringify({
+        relatedCueIds: ["T001"],
         relation: "continue_to_use_evidence",
         sufficiency: "sufficient",
         supportingCueIds: ["T002"],
-        relatedCueIds: ["T001"],
       }),
       JSON.stringify({
-        claims: [{ text: "Keep chest compressions going", cueIds: ["T002"] }],
+        claims: [{ cueIds: ["T002"], text: "Keep chest compressions going" }],
       }),
       JSON.stringify({
-        verdict: "accept",
+        claims: [{ claimIndex: 0, cueIds: ["T002"], supported: true }],
         utility: 5,
-        claims: [{ claimIndex: 0, supported: true, cueIds: ["T002"] }],
+        verdict: "accept",
       }),
     ],
     "Should compressions continue?"
@@ -114,9 +114,9 @@ test("a supported follow-up reports the cues it was built from", async () => {
   // timestamps matching the rendered citation.
   assert.deepEqual(result.citedCues, [
     {
-      text: "Continue CPR while preparing the AED.",
-      startSeconds: 36,
       endSeconds: 43,
+      startSeconds: 36,
+      text: "Continue CPR while preparing the AED.",
     },
   ]);
   assert.doesNotMatch(JSON.stringify(result.citedCues), /T00\d|aed-bundle/);
@@ -126,10 +126,10 @@ test("deferrals and conversational turns expose no provenance", async () => {
   const deferred = await runFollowUp(
     [
       JSON.stringify({
+        relatedCueIds: [],
         relation: "continue_to_use_evidence",
         sufficiency: "insufficient",
         supportingCueIds: [],
-        relatedCueIds: [],
       }),
     ],
     "What dose of adrenaline is used?"
@@ -139,10 +139,10 @@ test("deferrals and conversational turns expose no provenance", async () => {
   const conversational = await runFollowUp(
     [
       JSON.stringify({
+        relatedCueIds: [],
         relation: "no_retrieval_needed",
         sufficiency: "insufficient",
         supportingCueIds: [],
-        relatedCueIds: [],
       }),
       "You're welcome.",
     ],
@@ -156,16 +156,16 @@ function message(
   role: ChatMessage["role"],
   parts: unknown[]
 ): ChatMessage {
-  return { id, role, parts } as ChatMessage;
+  return { id, parts, role } as ChatMessage;
 }
 
 function procedureTurn(output: Record<string, unknown>) {
   return message("assistant-1", "assistant", [
     {
-      type: "tool-searchProcedure",
-      toolCallId: "tool-1",
-      state: "output-available",
       output,
+      state: "output-available",
+      toolCallId: "tool-1",
+      type: "tool-searchProcedure",
     },
   ]);
 }
@@ -173,14 +173,14 @@ function procedureTurn(output: Record<string, unknown>) {
 test("the active-source label names the bundle a follow-up would reuse", () => {
   const history = [
     procedureTurn({
-      status: "answered",
-      videoId: "aed-video",
       evidenceBundleId: "aed-bundle",
       sourceRetrievalQuery: "How do I use an AED?",
+      status: "answered",
+      videoId: "aed-video",
     }),
-    message("user-2", "user", [{ type: "text", text: "and after that?" }]),
+    message("user-2", "user", [{ text: "and after that?", type: "text" }]),
     message("assistant-2", "assistant", [
-      { type: "text", text: "Keep going. [0:36–0:43]" },
+      { text: "Keep going. [0:36–0:43]", type: "text" },
     ]),
   ];
 
@@ -192,10 +192,10 @@ test("the active-source label clears when the newest search did not answer", () 
   assert.equal(
     activeSourceLabel([
       procedureTurn({
-        status: "answered",
-        videoId: "aed-video",
         evidenceBundleId: "aed-bundle",
         sourceRetrievalQuery: "How do I use an AED?",
+        status: "answered",
+        videoId: "aed-video",
       }),
       procedureTurn({ status: "abstained" }),
     ]),

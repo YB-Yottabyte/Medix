@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { medixApiEndpoint } from "@/lib/ai/tools/medix-api-client";
+import {
+  medixApiEndpoint,
+  medixApiHeaders,
+} from "@/lib/ai/tools/medix-api-client";
 import { getAppSession } from "@/lib/dev-session";
 import { ChatbotError } from "@/lib/errors";
 
@@ -28,10 +31,10 @@ export async function POST(request: Request) {
 
   try {
     const kokoroResponse = await fetch(medixApiEndpoint("/api/tts"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
       cache: "no-store",
+      headers: medixApiHeaders({ "Content-Type": "application/json" }),
+      method: "POST",
       signal: AbortSignal.timeout(300_000),
     });
 
@@ -53,8 +56,8 @@ export async function POST(request: Request) {
 
     return new Response(audioBuffer, {
       headers: {
-        "Content-Type": "audio/wav",
         "Cache-Control": "no-store",
+        "Content-Type": "audio/wav",
       },
     });
   } catch (error) {

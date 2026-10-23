@@ -26,16 +26,16 @@ const visibilities: Array<{
   icon: ReactNode;
 }> = [
   {
-    id: "private",
-    label: "Private",
     description: "Only you can access this chat",
     icon: <LockIcon />,
+    id: "private",
+    label: "Private",
   },
   {
-    id: "public",
-    label: "Public",
     description: "Anyone with the link can access this chat",
     icon: <GlobeIcon />,
+    id: "public",
+    label: "Public",
   },
 ];
 
@@ -69,7 +69,7 @@ export function VisibilitySelector({
         )}
       >
         <Button
-          className="gap-1.5 rounded-lg border-border/50 text-muted-foreground shadow-none transition-colors hover:text-foreground focus-visible:ring-0 focus-visible:border-border/50 active:translate-y-0"
+          className="gap-1.5 rounded-lg border-border/50 text-muted-foreground shadow-none transition-colors hover:text-foreground focus-visible:border-border/50 focus-visible:ring-0 active:translate-y-0"
           data-testid="visibility-selector"
           size="sm"
           variant="outline"

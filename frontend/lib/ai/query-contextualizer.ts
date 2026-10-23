@@ -1,12 +1,13 @@
-import { generateText, type LanguageModel } from "ai";
+import type { LanguageModel } from "ai";
 import type { ChatMessage } from "@/lib/types";
 import { getTextFromMessage } from "@/lib/utils";
 import { getTitleModel } from "./providers";
+import { timedText } from "./timed-generation";
 import type { ProcedureToolOutput } from "./tools/search-procedure";
 
 const MAX_HISTORY_CHARACTERS = 3000;
 const FOLLOW_UP_PATTERN =
-  /\b(it|its|that|this|those|them|there|then|next|again|before|afterward|continue|instead|same|still|more|less|longer|tighter|deeper)\b|^(what|how|when|where|why)\s+(next|about|long|often|many|much)\b/i;
+  /\b(it|its|that|this|those|them|their|theirs|they|he|she|his|her|him|there|then|next|again|before|afterward|continue|instead|same|still|more|less|longer|tighter|deeper)\b|^(what|how|when|where|why)\s+(next|about|long|often|many|much)\b/i;
 const EXPLICIT_TOPIC_CHANGE_PATTERN =
   /\b(?:new|different|unrelated)\s+(?:question|topic|procedure)\b|\b(?:change|switch)\s+(?:the\s+)?(?:topic|procedure)\b/i;
 // An explicit request for a different source is the only same-topic case that
@@ -49,10 +50,10 @@ function readProcedureOutput(message: ChatMessage): ProcedureToolOutput | null {
         ...output,
         citations: output.citations ?? [],
         evidenceContext: output.evidenceContext ?? output.citations ?? [],
+        followUpQuestion: output.followUpQuestion ?? null,
+        retrievalDecision: output.retrievalDecision ?? "retrieve_new_source",
         retrievalQuery,
         sourceRetrievalQuery: output.sourceRetrievalQuery ?? retrievalQuery,
-        retrievalDecision: output.retrievalDecision ?? "retrieve_new_source",
-        followUpQuestion: output.followUpQuestion ?? null,
       } as ProcedureToolOutput;
     }
   }
@@ -69,7 +70,15 @@ export function buildConversationContext(
   const transcript: string[] = [];
 
   for (const message of history.slice(-8)) {
-    const text = getTextFromMessage(message).trim();
+    const plainText = getTextFromMessage(message).trim();
+    // Older assistant messages can store their visible answer only in a
+    // procedure card. Recover that answer, not the tool's raw transcript.
+    const cardAnswer =
+      message.role === "assistant"
+        ? readProcedureOutput(message)?.answer
+        : undefined;
+    const text =
+      plainText || (typeof cardAnswer === "string" ? cardAnswer.trim() : "");
     if (text) {
       transcript.push(`${message.role}: ${text}`);
       if (message.role === "user") {
@@ -88,9 +97,10 @@ export function buildConversationContext(
     }
     const reusable =
       procedureOutput.status === "answered" &&
-      Boolean(procedureOutput.videoId) &&
-      Boolean(procedureOutput.evidenceBundleId) &&
-      procedureOutput.evidenceContext.length > 0;
+      ((Boolean(procedureOutput.videoId) &&
+        Boolean(procedureOutput.evidenceBundleId) &&
+        procedureOutput.evidenceContext.length > 0) ||
+        Boolean(procedureOutput.medicalSources?.length));
     if (reusable) {
       activeEvidence = procedureOutput;
       activeProcedure =
@@ -108,8 +118,8 @@ export function buildConversationContext(
   }
 
   return {
-    activeProcedure,
     activeEvidence,
+    activeProcedure,
     previousUserQuestion,
     recentTranscript: transcript.join("\n").slice(-MAX_HISTORY_CHARACTERS),
   };
@@ -211,10 +221,10 @@ export async function contextualizeMedicalQuery({
 
   if (retrievalDecision === "continue_current_evidence") {
     return {
-      query: fallbackQuery(question, context),
-      wasContextualized: true,
       context,
+      query: fallbackQuery(question, context),
       retrievalDecision,
+      wasContextualized: true,
     };
   }
 
@@ -224,36 +234,38 @@ export async function contextualizeMedicalQuery({
     !context.recentTranscript
   ) {
     return {
-      query: question,
-      wasContextualized: false,
       context,
+      query: question,
       retrievalDecision,
+      wasContextualized: false,
     };
   }
 
   try {
-    const { text } = await generateText({
+    const { text } = await timedText("routing.context_rewrite")({
+      maxOutputTokens: 80,
       model: rewriteModel ?? getTitleModel(),
-      system: `Summarize the medical-procedure conversation as one standalone retrieval query.
-Preserve the active procedure, body part, current stage, and latest information need.
-Use only facts and procedure names present in the conversation.
-Do not answer the question, add medical advice, or invent details.
-Return only the retrieval query.`,
       prompt: `Conversation:
 ${context.recentTranscript}
 
 Latest question: ${question}`,
+      providerOptions: {},
+      system: `Summarize the medical-procedure conversation as one standalone retrieval query.
+Preserve the active procedure, body part, current stage, and latest information need.
+Preserve interrogative intent: WHY asks for a reason or purpose, HOW asks for a method, and WHAT IF asks for a next action. Never rewrite a rationale question into a how-to query.
+Use only facts and procedure names present in the conversation.
+Do not answer the question, add medical advice, or invent details.
+Return only the retrieval query.`,
       temperature: 0,
-      maxOutputTokens: 80,
     });
     const rewritten = cleanRewrittenQuery(text);
 
     if (rewritten.length >= 3) {
       return {
-        query: rewritten,
-        wasContextualized: true,
         context,
+        query: rewritten,
         retrievalDecision,
+        wasContextualized: true,
       };
     }
   } catch (error) {
@@ -261,9 +273,9 @@ Latest question: ${question}`,
   }
 
   return {
-    query: fallbackQuery(question, context),
-    wasContextualized: true,
     context,
+    query: fallbackQuery(question, context),
     retrievalDecision,
+    wasContextualized: true,
   };
 }

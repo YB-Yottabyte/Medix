@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import { CheckCircleFillIcon, WarningIcon } from "./icons";
 
 const iconsByType: Record<"success" | "error", ReactNode> = {
-  success: <CheckCircleFillIcon />,
   error: <WarningIcon />,
+  success: <CheckCircleFillIcon />,
 };
 
 export function toast(props: Omit<ToastProps, "id">) {
@@ -45,7 +45,7 @@ function Toast(props: ToastProps) {
     <div className="flex toast-mobile:w-[356px] w-full justify-center">
       <div
         className={cn(
-          "flex toast-mobile:w-fit w-full flex-row gap-3 rounded-lg bg-card border border-border/50 shadow-[var(--shadow-float)] p-3",
+          "flex toast-mobile:w-fit w-full flex-row gap-3 rounded-lg border border-border/50 bg-card p-3 shadow-[var(--shadow-float)]",
           multiLine ? "items-start" : "items-center"
         )}
         data-testid="toast"
@@ -60,7 +60,7 @@ function Toast(props: ToastProps) {
         >
           {iconsByType[type]}
         </div>
-        <div className="text-sm text-foreground" ref={descriptionRef}>
+        <div className="text-foreground text-sm" ref={descriptionRef}>
           {description}
         </div>
       </div>

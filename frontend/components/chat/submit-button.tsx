@@ -20,7 +20,7 @@ export function SubmitButton({
   return (
     <Button
       aria-disabled={pending || isSuccessful}
-      className="relative mt-1 h-11 rounded-full bg-slate-950 text-[13px] font-medium text-white shadow-none transition-[background-color,transform] duration-200 hover:bg-slate-800 active:scale-[0.99]"
+      className="medix-blue-sweep relative mt-1 h-11 rounded-xl bg-primary font-medium text-[13px] text-primary-foreground shadow-none active:scale-[0.99]"
       disabled={pending || isSuccessful}
       type={pending ? "button" : "submit"}
     >

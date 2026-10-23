@@ -27,16 +27,16 @@ export function ClerkRegisterForm() {
   const showError = (error: unknown, fallback?: string) => {
     const message = clerkErrorMessage(error, fallback);
     setIsSuccessful(false);
-    setFeedback({ type: "error", message });
-    toast({ type: "error", description: message });
+    setFeedback({ message, type: "error" });
+    toast({ description: message, type: "error" });
   };
 
   const finishSignUp = async () => {
     const destination = `/chat/${generateUUID()}`;
     setIsSuccessful(true);
     setFeedback({
-      type: "success",
       message: "Account created. Signing you in…",
+      type: "success",
     });
 
     try {
@@ -95,8 +95,8 @@ export function ClerkRegisterForm() {
       }
       setNeedsEmailCode(true);
       setFeedback({
-        type: "success",
         message: `We sent a verification code to ${emailAddress}.`,
+        type: "success",
       });
     } catch (error) {
       showError(error, "Could not create your account.");
@@ -136,8 +136,8 @@ export function ClerkRegisterForm() {
         return;
       }
       setFeedback({
-        type: "success",
         message: `A new verification code was sent to ${email}.`,
+        type: "success",
       });
     } catch (error) {
       showError(error, "Could not send a new verification code.");
@@ -147,10 +147,10 @@ export function ClerkRegisterForm() {
   return (
     <>
       <div className="text-center">
-        <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">
+        <h1 className="font-semibold text-[28px] text-slate-950 tracking-[-0.04em] sm:text-[30px]">
           Create your account
         </h1>
-        <p className="mt-2 text-[13px] leading-5 text-slate-500">
+        <p className="mt-2 text-[13px] text-slate-500 leading-5">
           Save chats and continue your Medix research anywhere.
         </p>
       </div>
@@ -175,7 +175,7 @@ export function ClerkRegisterForm() {
             Verify
           </SubmitButton>
           <button
-            className="text-center text-[12.5px] font-medium text-slate-600 transition-opacity hover:opacity-60"
+            className="text-center font-medium text-[12.5px] text-slate-600 transition-opacity hover:opacity-60"
             onClick={resendCode}
             type="button"
           >
@@ -189,7 +189,7 @@ export function ClerkRegisterForm() {
           passwordAutoComplete="new-password"
         >
           <div id="clerk-captcha" />
-          <p className="-mt-3 text-center text-[11.5px] leading-4 text-slate-400">
+          <p className="-mt-3 text-center text-[11.5px] text-slate-400 leading-4">
             If prompted, complete the human verification above to continue.
           </p>
           <SubmitButton

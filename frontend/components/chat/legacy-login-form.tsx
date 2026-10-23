@@ -22,11 +22,11 @@ export function LegacyLoginForm() {
 
   useEffect(() => {
     if (state.status === "failed") {
-      toast({ type: "error", description: "Invalid credentials!" });
+      toast({ description: "Invalid credentials!", type: "error" });
     } else if (state.status === "invalid_data") {
       toast({
-        type: "error",
         description: "Failed validating your submission!",
+        type: "error",
       });
     } else if (state.status === "success") {
       setIsSuccessful(true);
@@ -38,10 +38,10 @@ export function LegacyLoginForm() {
   return (
     <>
       <div className="text-center">
-        <h1 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">
+        <h1 className="font-semibold text-[28px] text-slate-950 tracking-[-0.04em] sm:text-[30px]">
           Welcome back
         </h1>
-        <p className="mt-2 text-[13px] leading-5 text-slate-500">
+        <p className="mt-2 text-[13px] text-slate-500 leading-5">
           Log in to continue your Medix conversations.
         </p>
       </div>

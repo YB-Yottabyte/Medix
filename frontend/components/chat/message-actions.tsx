@@ -1,5 +1,4 @@
-import { CheckIcon, Volume2Icon } from "lucide-react";
-import Image from "next/image";
+import { CheckIcon, CopyIcon, Volume2Icon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useCopyToClipboard } from "usehooks-ts";
 import {
@@ -101,14 +100,7 @@ export function PureMessageActions({
             {hasCopied ? (
               <CheckIcon className="size-4" strokeWidth={1.8} />
             ) : (
-              <Image
-                alt=""
-                aria-hidden
-                className="size-4 opacity-60 dark:invert"
-                height={16}
-                src="/icons/copy.png"
-                width={16}
-              />
+              <CopyIcon className="size-4 -scale-x-100" strokeWidth={1.8} />
             )}
           </Action>
         </div>
@@ -117,7 +109,7 @@ export function PureMessageActions({
   }
 
   return (
-    <Actions className="-ml-1 mt-0.5 text-muted-foreground/60">
+    <Actions className="mt-0.5 -ml-1 text-muted-foreground/60">
       <Action
         className="size-8 rounded-lg hover:bg-muted hover:text-foreground"
         onClick={handleCopy}
@@ -127,14 +119,7 @@ export function PureMessageActions({
         {hasCopied ? (
           <CheckIcon className="size-4" strokeWidth={1.8} />
         ) : (
-          <Image
-            alt=""
-            aria-hidden
-            className="size-4 opacity-60 dark:invert"
-            height={16}
-            src="/icons/copy.png"
-            width={16}
-          />
+          <CopyIcon className="size-4 -scale-x-100" strokeWidth={1.8} />
         )}
       </Action>
       <DropdownMenu>

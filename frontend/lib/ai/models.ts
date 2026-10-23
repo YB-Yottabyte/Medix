@@ -1,21 +1,16 @@
-import { SOL_CHAT_MODEL as SOL_MODEL_ID } from "./sol";
-
 export { SOL_CHAT_MODEL } from "./sol";
 
-export const DEFAULT_CHAT_MODEL = "openai/gpt-oss-20b";
+export const VOYAGER_CHAT_MODEL = process.env.ASU_RC_MODEL ?? "qwen35-27b";
+export const DEFAULT_CHAT_MODEL = VOYAGER_CHAT_MODEL;
 export const QWEN_CHAT_MODEL =
   process.env.OLLAMA_CHAT_MODEL ?? "qwen3.5:9b-q4_K_M";
 
-/**
- * Temporary Sol-backed evaluation model. Selectable so it can be compared
- * against local Qwen, but not a default: DEFAULT_CHAT_MODEL and the follow-up
- * pipeline are unchanged. See docs/research/ for the comparison protocol.
- */
+/** Titles and query contextualization use the same Voyager text deployment. */
 export const titleModel = {
-  id: "openai/gpt-oss-20b",
-  name: "GPT-OSS 20B",
-  provider: "groq",
-  description: "Fast Groq model for chat titles",
+  description: "Voyager model for chat titles and query contextualization",
+  id: VOYAGER_CHAT_MODEL,
+  name: "Qwen 3.5 27B",
+  provider: "voyager",
 };
 
 export type ModelCapabilities = {
@@ -37,29 +32,12 @@ export type ChatModel = {
 
 export const chatModels: ChatModel[] = [
   {
-    id: "openai/gpt-oss-20b",
-    name: "GPT-OSS 20B",
-    provider: "groq",
-    description: "Used for user-facing response generation",
-    reasoningEffort: "low",
-  },
-  {
-    id: QWEN_CHAT_MODEL,
-    name: "Qwen 3.5 9B",
-    provider: "ollama",
-    deployment: "Local model",
+    deployment: "ASU Research Computing",
     description:
-      "Can generate the user-facing response using the same grounded evidence pipeline",
-    reasoningEffort: "none",
-  },
-  {
-    id: SOL_MODEL_ID,
-    name: "Qwen 3.6 27B",
-    provider: "sol",
-    deployment: "Sol supercomputer",
-    description:
-      "Under evaluation on the Sol GPU cluster; requires an active Sol session",
-    reasoningEffort: "none",
+      "Voyager text generation; images use the separate evidence retrieval stage",
+    id: VOYAGER_CHAT_MODEL,
+    name: "Qwen 3.5 27B",
+    provider: "voyager",
   },
 ];
 
@@ -67,7 +45,7 @@ export function getCapabilities(): Record<string, ModelCapabilities> {
   return Object.fromEntries(
     chatModels.map((model) => [
       model.id,
-      { tools: true, vision: false, reasoning: true },
+      { reasoning: true, tools: true, vision: false },
     ])
   );
 }

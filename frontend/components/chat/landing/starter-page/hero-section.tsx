@@ -1,36 +1,20 @@
 "use client";
 
-import { motion } from "framer-motion";
-import {
-  ArrowUp,
-  FileSearch,
-  ImageIcon,
-  Mic,
-  Paperclip,
-  Stethoscope,
-} from "lucide-react";
+import { ArrowUp } from "lucide-react";
+import { motion } from "motion/react";
 import { LandingSection } from "./landing-section";
 
 const promptSuggestions = [
+  { label: "Medical questions", prompt: "What should I do for a minor burn?" },
   {
-    label: "Ask a question",
-    prompt: "What should I do for a minor burn?",
-    icon: Stethoscope,
-  },
-  {
-    label: "Use voice",
-    prompt: "How do I control bleeding while help is on the way?",
-    icon: Mic,
-  },
-  {
-    label: "Add an image",
-    prompt: "Can you help me understand what I am looking at?",
-    icon: ImageIcon,
-  },
-  {
-    label: "Find evidence",
+    label: "Video evidence",
     prompt: "Show me the video evidence for wound care.",
-    icon: FileSearch,
+  },
+  { label: "Bandaging", prompt: "How do I bandage a hand?" },
+  { label: "Wound care", prompt: "How do I clean a minor wound?" },
+  {
+    label: "First aid",
+    prompt: "How do I check whether a bandage is too tight?",
   },
 ];
 
@@ -47,29 +31,27 @@ export function HeroSection({
 }) {
   return (
     <LandingSection
-      className="relative flex min-h-dvh items-center overflow-hidden pt-24 pb-16"
+      className="relative flex min-h-dvh items-center overflow-hidden bg-[#f5f5f5] pt-24 pb-16"
       index={0}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(circle_at_50%_12%,rgba(224,242,254,0.42),transparent_48%)]" />
-
-      <div className="relative mx-auto w-full max-w-5xl px-5 text-center sm:px-7">
+      <div className="relative mx-auto w-full max-w-4xl px-5 text-center sm:px-7">
         <motion.h1
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto max-w-2xl text-balance text-[2.35rem] font-medium leading-[1.08] tracking-[-0.05em] text-slate-950 sm:text-[3.15rem] md:text-[3.5rem]"
+          className="mx-auto max-w-2xl text-balance font-medium text-[1.8rem] leading-[1.15] tracking-[-0.035em] sm:text-[2.25rem]"
           initial={false}
         >
-          What can Medix help with?
+          Ask Medix, See Why
         </motion.h1>
 
         <motion.div
           animate={{ opacity: 1, y: 0 }}
-          className="mx-auto mt-8 max-w-[52rem]"
+          className="mx-auto mt-10 max-w-[44rem] sm:mt-12"
           initial={false}
         >
-          <div className="rounded-[1.65rem] border border-slate-200 bg-white p-3 shadow-[0_24px_70px_-42px_rgba(15,23,42,0.35)] transition-shadow focus-within:shadow-[0_28px_80px_-38px_rgba(15,23,42,0.42)]">
+          <div className="rounded-2xl border border-border bg-card p-3 shadow-sm transition-shadow focus-within:ring-1 focus-within:ring-primary/25">
             <textarea
               aria-label="Ask Medix a question"
-              className="block min-h-20 w-full resize-none border-0 bg-transparent px-3 pt-2 text-[15px] leading-6 text-slate-800 outline-none placeholder:text-slate-400"
+              className="block min-h-16 w-full resize-none border-0 bg-transparent px-3 pt-2 text-[15px] text-slate-800 leading-6 outline-none placeholder:text-slate-400"
               onChange={(event) => setPrompt(event.target.value)}
               onKeyDown={(event) => {
                 if (
@@ -82,30 +64,14 @@ export function HeroSection({
                 }
               }}
               placeholder={typedPlaceholder || "Ask Medix"}
-              rows={3}
+              rows={2}
               value={prompt}
             />
 
-            <div className="flex items-center justify-between gap-3 px-1">
-              <div className="flex items-center gap-1">
-                <button
-                  aria-label="Attach a file"
-                  className="flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                  type="button"
-                >
-                  <Paperclip className="size-4" />
-                </button>
-                <button
-                  aria-label="Use voice input"
-                  className="flex size-9 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                  type="button"
-                >
-                  <Mic className="size-4" />
-                </button>
-              </div>
+            <div className="flex justify-end px-1">
               <button
                 aria-label="Send question"
-                className="flex size-10 items-center justify-center rounded-full bg-slate-950 text-white transition-colors hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-300"
+                className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground/40"
                 disabled={!prompt.trim()}
                 onClick={() => startChat()}
                 type="button"
@@ -116,24 +82,20 @@ export function HeroSection({
           </div>
 
           <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {promptSuggestions.map((suggestion) => {
-              const Icon = suggestion.icon;
-              return (
-                <button
-                  className="flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3.5 py-2 text-xs text-slate-600 transition-colors hover:border-slate-300 hover:bg-white hover:text-slate-950"
-                  key={suggestion.label}
-                  onClick={() => setPrompt(suggestion.prompt)}
-                  type="button"
-                >
-                  <Icon className="size-3.5" />
-                  {suggestion.label}
-                </button>
-              );
-            })}
+            {promptSuggestions.map((suggestion) => (
+              <button
+                className="inline-flex min-h-10 items-center justify-center rounded-xl border border-border bg-card px-3 text-foreground/80 text-xs transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                key={suggestion.label}
+                onClick={() => setPrompt(suggestion.prompt)}
+                type="button"
+              >
+                {suggestion.label}
+              </button>
+            ))}
           </div>
         </motion.div>
 
-        <p className="mt-8 text-xs text-slate-400">
+        <p className="mt-8 text-slate-400 text-xs">
           Research prototype · Not a substitute for professional medical care
         </p>
       </div>

@@ -1,35 +1,12 @@
 import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
-const basePath = process.env.IS_DEMO === "1" ? "/demo" : "";
-
 const nextConfig: NextConfig = {
-  ...(basePath
-    ? {
-        basePath,
-        assetPrefix: "/demo-assets",
-        redirects: async () => [
-          {
-            source: "/",
-            destination: basePath,
-            permanent: false,
-            basePath: false,
-          },
-        ],
-      }
-    : {}),
-  env: {
-    NEXT_PUBLIC_BASE_PATH: basePath,
-  },
   cacheComponents: true,
+  partialPrefetching: true,
   devIndicators: false,
-  poweredByHeader: false,
-  reactCompiler: true,
-  logging: {
-    fetches: {
-      fullUrl: false,
-    },
-    incomingRequests: false,
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
   },
   images: {
     remotePatterns: [
@@ -37,18 +14,19 @@ const nextConfig: NextConfig = {
         hostname: "avatar.vercel.sh",
       },
       {
-        protocol: "https",
         hostname: "*.public.blob.vercel-storage.com",
+        protocol: "https",
       },
     ],
   },
-  experimental: {
-    prefetchInlining: true,
-    cachedNavigations: true,
-    appNewScrollHandler: true,
-    inlineCss: true,
-    turbopackFileSystemCacheForDev: true,
+  logging: {
+    fetches: {
+      fullUrl: false,
+    },
+    incomingRequests: false,
   },
+  poweredByHeader: false,
+  reactCompiler: true,
 };
 
 export default withBotId(nextConfig);

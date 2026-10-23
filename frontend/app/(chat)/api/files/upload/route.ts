@@ -1,4 +1,3 @@
-import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAppSession } from "@/lib/dev-session";
@@ -47,16 +46,12 @@ export async function POST(request: Request) {
     const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
     const fileBuffer = await file.arrayBuffer();
 
-    try {
-      const data = await put(`${safeName}`, fileBuffer, {
-        access: "public",
-      });
-
-      return NextResponse.json(data);
-    } catch (_error) {
-      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
-    }
-  } catch (_error) {
+    return NextResponse.json({
+      contentType: file.type,
+      pathname: safeName.slice(0, 100),
+      url: `data:${file.type};base64,${Buffer.from(fileBuffer).toString("base64")}`,
+    });
+  } catch {
     return NextResponse.json(
       { error: "Failed to process request" },
       { status: 500 }

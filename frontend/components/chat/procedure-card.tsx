@@ -1,5 +1,4 @@
 "use client";
-
 import { CaptionsIcon, ChevronDownIcon, PlayCircleIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,6 +7,7 @@ import {
   mapCitationsToClip,
   type PlaybackCitation,
   parseTimestampCitationHref,
+  relevantPlaybackRanges,
   sanitizeProcedureAnswer,
   timestampAnswerCitations,
 } from "@/lib/evidence-timestamps";
@@ -19,9 +19,11 @@ import {
   shouldRenderEvidenceWorkspace,
   showsRealMedia,
 } from "@/lib/evidence-visibility";
+import { medixMediaUrl } from "@/lib/medix-media";
 import { cn } from "@/lib/utils";
 import { MessageResponse } from "../ai-elements/message";
 import { EvidenceProvenance } from "./evidence-provenance";
+import { ResponseLink } from "./response-markdown";
 
 type ProcedureOutput = {
   answer?: string | null;
@@ -33,6 +35,8 @@ type ProcedureOutput = {
   emergencyWarning?: string | null;
   safetyDisposition?: "supported" | "emergency" | "restricted";
   citations?: EvidenceCitation[];
+  relatedEvidence?: EvidenceCitation[];
+  evidenceRole?: "related";
   evidenceBundleId?: string | null;
   videoId?: string | null;
   videoUrl?: string | null;
@@ -61,9 +65,13 @@ export function ProcedureCard({
   writtenAnswer?: string;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const followUpRange = useRef<{ start: number; end: number } | null>(null);
   const sourceCitations = useMemo(
-    () => output.citations ?? [],
-    [output.citations]
+    () =>
+      output.evidenceRole === "related"
+        ? (output.relatedEvidence ?? [])
+        : (output.citations ?? []),
+    [output.citations, output.relatedEvidence, output.evidenceRole]
   );
   const clipStart = output.startTime ?? 0;
   const clipEnd = output.endTime ?? clipStart;
@@ -71,7 +79,11 @@ export function ProcedureCard({
     () => mapCitationsToClip(sourceCitations, clipStart, clipEnd),
     [clipEnd, clipStart, sourceCitations]
   );
-  const [transcriptOpen, setTranscriptOpen] = useState(true);
+  const playbackRanges = useMemo(
+    () => relevantPlaybackRanges(citations),
+    [citations]
+  );
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [activeCueId, setActiveCueId] = useState<string | null>(
     citations[0]?.cue_id ?? null
   );
@@ -79,12 +91,12 @@ export function ProcedureCard({
   const abstained =
     output.status === "abstained" || output.answerable === false;
   const hasEvidenceMedia = shouldRenderEvidenceWorkspace({
-    status: output.status,
     answerable: output.answerable,
-    retrievalDecision: output.retrievalDecision,
-    renderMediaWorkspace: output.renderMediaWorkspace,
-    hasMedia: Boolean(output.clipUrl || output.videoId),
     hasCitations: citations.length > 0,
+    hasMedia: Boolean(output.clipUrl || output.videoId),
+    renderMediaWorkspace: output.renderMediaWorkspace,
+    retrievalDecision: output.retrievalDecision,
+    status: output.status,
   });
   const displayAnswer = sanitizeProcedureAnswer(
     writtenAnswer.trim() || (abstained ? (output.answer ?? "") : ""),
@@ -119,6 +131,7 @@ export function ProcedureCard({
         event as CustomEvent<{
           evidenceBundleId: string;
           startSeconds: number;
+          endSeconds?: number;
         }>
       ).detail;
       if (detail?.evidenceBundleId !== evidenceBundleId) {
@@ -128,7 +141,17 @@ export function ProcedureCard({
       if (!video) {
         return;
       }
-      video.currentTime = Math.max(0, detail.startSeconds);
+      followUpRange.current = {
+        end: Math.min(
+          clipEnd - clipStart,
+          detail.endSeconds ?? clipEnd - clipStart
+        ),
+        start: Math.max(0, detail.startSeconds),
+      };
+      video.currentTime = Math.min(
+        Math.max(0, clipEnd - clipStart),
+        Math.max(0, detail.startSeconds)
+      );
       // A follow-up citation is usually many turns below this workspace, so
       // bring it into view instead of playing off-screen.
       video.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -139,7 +162,7 @@ export function ProcedureCard({
     window.addEventListener("medix:seek-evidence", handleEvidenceSeek);
     return () =>
       window.removeEventListener("medix:seek-evidence", handleEvidenceSeek);
-  }, [output.evidenceBundleId]);
+  }, [output.evidenceBundleId, clipStart, clipEnd]);
 
   if (output?.error) {
     return (
@@ -161,6 +184,7 @@ export function ProcedureCard({
     : null;
 
   const selectCitation = (citation: PlaybackCitation) => {
+    followUpRange.current = null;
     setActiveCueId(citation.cue_id);
     const video = videoRef.current;
     if (!video) {
@@ -173,11 +197,15 @@ export function ProcedureCard({
   };
 
   const seekToTime = (seconds: number) => {
+    followUpRange.current = null;
     const video = videoRef.current;
     if (!video) {
       return;
     }
-    video.currentTime = Math.max(0, seconds);
+    video.currentTime = Math.min(
+      Math.max(0, clipEnd - clipStart),
+      Math.max(0, seconds)
+    );
     video.play().catch(() => {
       // Browsers may require a second user interaction before playback.
     });
@@ -185,7 +213,29 @@ export function ProcedureCard({
 
   const updateActiveCitation = () => {
     const video = videoRef.current;
-    if (!video || citations.length === 0) {
+    if (!video) {
+      return;
+    }
+    const duration = clipEnd - clipStart;
+    if (usesClipClock && duration > 0 && video.currentTime >= duration) {
+      video.pause();
+      if (video.currentTime > duration) {
+        video.currentTime = duration;
+      }
+    }
+    if (usesClipClock && !video.paused && playbackRanges.length) {
+      const ranges = followUpRange.current
+        ? [followUpRange.current]
+        : playbackRanges;
+      const range = ranges.find((item) => video.currentTime < item.end);
+      if (!range) {
+        video.pause();
+        video.currentTime = ranges.at(-1)?.end ?? video.currentTime;
+      } else if (video.currentTime < range.start) {
+        video.currentTime = range.start;
+      }
+    }
+    if (citations.length === 0) {
       return;
     }
     const current =
@@ -211,7 +261,7 @@ export function ProcedureCard({
               className={cn(
                 "size-1.5 rounded-full",
                 phase === "thinking" || phase === "streaming"
-                  ? "animate-pulse bg-amber-500"
+                  ? "animate-pulse bg-primary"
                   : "bg-emerald-500"
               )}
             />
@@ -235,17 +285,18 @@ export function ProcedureCard({
         {timestampedAnswer ? (
           <div
             className={cn(
-              "relative text-[13px] leading-6 text-foreground/90 sm:text-sm",
+              "relative text-[13px] text-foreground/90 leading-6 sm:text-sm",
               isAnswerStreaming &&
                 "after:ml-1 after:inline-block after:h-3.5 after:w-[2px] after:translate-y-[2px] after:animate-pulse after:rounded-full after:bg-foreground/20 after:content-['']"
             )}
           >
             <MessageResponse
+              className="max-w-[76ch]"
               components={{
                 a: ({ children, href }) => {
                   const timestamp = parseTimestampCitationHref(href);
                   if (!timestamp) {
-                    return <a href={href}>{children}</a>;
+                    return <ResponseLink href={href}>{children}</ResponseLink>;
                   }
                   return (
                     <button
@@ -274,6 +325,7 @@ export function ProcedureCard({
         ) : null}
         {timestampedAnswer &&
           citations.length > 0 &&
+          output.evidenceRole !== "related" &&
           !hasInlineTimestampCitation &&
           !isAnswerStreaming && (
             <div className="mt-3 flex flex-wrap gap-1.5 border-border/60 border-t pt-3">
@@ -293,18 +345,21 @@ export function ProcedureCard({
               ))}
             </div>
           )}
-        {timestampedAnswer && !isAnswerStreaming && citations.length > 0 && (
-          <EvidenceProvenance
-            cues={citations.map((citation) => ({
-              text: citation.text.trim().replace(/\s+/g, " "),
-              startSeconds: citation.clipStartSeconds,
-              endSeconds: citation.clipEndSeconds,
-            }))}
-            onSeek={seekToTime}
-          />
-        )}
+        {timestampedAnswer &&
+          !isAnswerStreaming &&
+          citations.length > 0 &&
+          output.evidenceRole !== "related" && (
+            <EvidenceProvenance
+              cues={citations.map((citation) => ({
+                endSeconds: citation.clipEndSeconds,
+                startSeconds: citation.clipStartSeconds,
+                text: citation.text.trim().replace(/\s+/g, " "),
+              }))}
+              onSeek={seekToTime}
+            />
+          )}
         {output.abstentionReason && (
-          <div className="mt-2.5 max-w-4xl text-[11px] leading-5 text-muted-foreground">
+          <div className="mt-2.5 max-w-4xl text-[11px] text-muted-foreground leading-5">
             {output.abstentionReason}
           </div>
         )}
@@ -315,10 +370,18 @@ export function ProcedureCard({
         phase === "loading-media") && (
         <output className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground">
           <span className="size-1.5 animate-pulse rounded-full bg-[#356b83]" />
-          Preparing supporting video…
+          {output.evidenceRole === "related"
+            ? "Preparing related demonstration…"
+            : "Preparing supporting video…"}
         </output>
       )}
 
+      {mediaMounted && output.evidenceRole === "related" && (
+        <p className="text-muted-foreground text-xs">
+          The guidance above uses the linked medical references. This video is a
+          related demonstration.
+        </p>
+      )}
       {mediaMounted && (
         <article
           className={cn(
@@ -333,7 +396,7 @@ export function ProcedureCard({
               <div aria-busy={!realMediaVisible} className="grid">
                 <EvidenceWorkspaceSkeleton
                   className={cn(
-                    "[grid-area:1/1] transition-opacity duration-500",
+                    "transition-opacity duration-500 [grid-area:1/1]",
                     realMediaVisible
                       ? "pointer-events-none opacity-0"
                       : "opacity-100"
@@ -342,10 +405,10 @@ export function ProcedureCard({
                 <div
                   aria-hidden={!realMediaVisible}
                   className={cn(
-                    "space-y-3 [grid-area:1/1] transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                    "space-y-3 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] [grid-area:1/1] motion-reduce:transition-none",
                     realMediaVisible
                       ? "visible translate-y-0 opacity-100"
-                      : "invisible pointer-events-none translate-y-2 opacity-0"
+                      : "pointer-events-none invisible translate-y-2 opacity-0"
                   )}
                   inert={!realMediaVisible}
                 >
@@ -357,18 +420,25 @@ export function ProcedureCard({
                         : "grid-cols-1"
                     )}
                   >
-                    <div className="min-w-0 lg:border-r lg:border-border/60">
+                    <div className="min-w-0 lg:border-border/60 lg:border-r">
                       <div className="relative overflow-hidden bg-[#111]">
                         {output.clipUrl ? (
                           <video
                             className="aspect-video w-full object-contain"
                             controls
                             onLoadedData={markMediaLoaded}
+                            onLoadedMetadata={() => {
+                              if (videoRef.current && playbackRanges[0]) {
+                                videoRef.current.currentTime =
+                                  playbackRanges[0].start;
+                              }
+                            }}
+                            onSeeking={updateActiveCitation}
                             onTimeUpdate={updateActiveCitation}
                             playsInline
                             preload="metadata"
                             ref={videoRef}
-                            src={output.clipUrl}
+                            src={medixMediaUrl(output.clipUrl) ?? undefined}
                           >
                             <track kind="captions" />
                           </video>
@@ -390,15 +460,21 @@ export function ProcedureCard({
 
                         <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-1.5 rounded-md border border-white/10 bg-black/70 px-2 py-1 font-medium text-[10px] text-white shadow-sm backdrop-blur-sm">
                           <PlayCircleIcon className="size-3" />
-                          Localized evidence clip
+                          {output.evidenceRole === "related"
+                            ? "Related demonstration"
+                            : "Evidence clip"}{" "}
+                          · {formatTime(clipStart)}–{formatTime(clipEnd)} in
+                          source
                         </div>
                       </div>
 
                       {citations.length > 0 && (
-                        <div className="border-t border-border/60 bg-card px-3 py-3">
+                        <div className="border-border/60 border-t bg-card px-3 py-3">
                           <div className="mb-2.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                             <div className="font-medium text-[11px] text-foreground">
-                              Evidence moments
+                              {output.evidenceRole === "related"
+                                ? "Video moments"
+                                : "Evidence moments"}
                             </div>
                             <div className="text-[10px] text-muted-foreground">
                               {citations.length > VISIBLE_MOMENTS
@@ -454,10 +530,10 @@ export function ProcedureCard({
 
                     {transcriptOpen && (
                       <aside className="flex min-h-[280px] flex-col bg-card lg:max-h-[475px]">
-                        <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/60 px-3.5">
+                        <div className="flex h-11 shrink-0 items-center justify-between border-border/60 border-b px-3.5">
                           <div className="flex items-center gap-2 font-semibold text-[11px]">
                             <CaptionsIcon className="size-3.5 text-muted-foreground" />
-                            Clip transcript
+                            Relevant transcript
                           </div>
                           <span className="mr-auto ml-2 hidden text-[9px] text-muted-foreground sm:inline">
                             {usesClipClock ? "Clip time" : "Source-video time"}
@@ -505,7 +581,7 @@ export function ProcedureCard({
                               ))}
                             </ol>
                           ) : (
-                            <div className="flex h-full min-h-40 items-center justify-center px-6 text-center text-[11px] leading-5 text-muted-foreground">
+                            <div className="flex h-full min-h-40 items-center justify-center px-6 text-center text-[11px] text-muted-foreground leading-5">
                               This response abstained before transcript claims
                               could be cited. The localized clip remains
                               available for review.
@@ -551,16 +627,16 @@ export function ProcedureCardSkeleton({
       aria-label="Retrieving medical evidence"
       className="flex items-center gap-2 px-1 py-1 text-[11px] text-muted-foreground"
     >
-      <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+      <span className="size-1.5 animate-pulse rounded-full bg-primary" />
       <div>
         <div className="font-medium">
           {searchingAdditionalEvidence
-            ? "Searching additional evidence…"
+            ? "Checking relevant evidence…"
             : "Thinking…"}
         </div>
         <div className="text-[10px]">
           {searchingAdditionalEvidence
-            ? "The current source could not answer this follow-up"
+            ? "Finding support for your question"
             : "Preparing verified evidence"}
         </div>
       </div>

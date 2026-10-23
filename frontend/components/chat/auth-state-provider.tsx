@@ -53,18 +53,18 @@ function ClerkAuthBridge({ children }: { children: React.ReactNode }) {
       : null;
   const value = useMemo<AuthState>(
     () => ({
-      isLoaded,
       isAuthenticated: Boolean(isLoaded && isSignedIn),
-      user: user
-        ? {
-            email: user.primaryEmailAddress?.emailAddress ?? null,
-            name: medixDisplayName ?? user.fullName,
-            image: user.imageUrl,
-          }
-        : null,
+      isLoaded,
       signOut: async () => {
         await clerk.signOut({ redirectUrl: "/" });
       },
+      user: user
+        ? {
+            email: user.primaryEmailAddress?.emailAddress ?? null,
+            image: user.imageUrl,
+            name: medixDisplayName ?? user.fullName,
+          }
+        : null,
     }),
     [clerk, isLoaded, isSignedIn, medixDisplayName, user]
   );
@@ -82,18 +82,18 @@ function LegacyAuthBridge({ children }: { children: React.ReactNode }) {
     isLocalAuthBypassed || guestRegex.test(data?.user?.email ?? "");
   const value = useMemo<AuthState>(
     () => ({
-      isLoaded: status !== "loading",
       isAuthenticated: status === "authenticated" && !isGuest,
-      user: data?.user
-        ? {
-            email: data.user.email ?? null,
-            name: data.user.name ?? null,
-            image: data.user.image ?? null,
-          }
-        : null,
+      isLoaded: status !== "loading",
       signOut: async () => {
         await nextAuthSignOut({ redirectTo: "/" });
       },
+      user: data?.user
+        ? {
+            email: data.user.email ?? null,
+            image: data.user.image ?? null,
+            name: data.user.name ?? null,
+          }
+        : null,
     }),
     [data?.user, isGuest, status]
   );

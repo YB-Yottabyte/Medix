@@ -5,7 +5,8 @@ import {
   COLLECTION_SEARCH_REQUEST,
   offersCollectionSearch,
   parseEvidenceTimestampHref,
-} from "@/lib/ai/medical-follow-up";
+} from "@/lib/ai/evidence-links";
+import { responseTimingSchema } from "@/lib/response-timing-data";
 import type { ChatMessage } from "@/lib/types";
 import { cn, sanitizeText } from "@/lib/utils";
 import { MessageContent, MessageResponse } from "../ai-elements/message";
@@ -17,6 +18,8 @@ import { ImageAnalysisCard } from "./image-analysis-card";
 import { MessageActions } from "./message-actions";
 import { PreviewAttachment } from "./preview-attachment";
 import { ProcedureCard, ProcedureCardSkeleton } from "./procedure-card";
+import { ResponseLink } from "./response-markdown";
+import { ResponseTimingPanel } from "./response-timing";
 
 const PurePreviewMessage = ({
   message,
@@ -57,6 +60,11 @@ const PurePreviewMessage = ({
     (part) => part.type === "data-follow-up-evidence"
   )?.data as { evidenceBundleId: string | null; cues: CitedCue[] } | undefined;
 
+  const timingPart = message.parts.find(
+    (part) => part.type === "data-performance"
+  );
+  const timing = responseTimingSchema.safeParse(timingPart?.data);
+
   const attachments = attachmentsFromMessage.length > 0 && (
     <div
       className="flex flex-row justify-end gap-2"
@@ -65,8 +73,8 @@ const PurePreviewMessage = ({
       {attachmentsFromMessage.map((attachment) => (
         <PreviewAttachment
           attachment={{
-            name: attachment.filename ?? "file",
             contentType: attachment.mediaType,
+            name: attachment.filename ?? "file",
             url: attachment.url,
           }}
           key={attachment.url}
@@ -141,7 +149,7 @@ const PurePreviewMessage = ({
               a: ({ children, href }) => {
                 const timestamp = parseEvidenceTimestampHref(href);
                 if (!timestamp) {
-                  return <a href={href}>{children}</a>;
+                  return <ResponseLink href={href}>{children}</ResponseLink>;
                 }
                 return (
                   <button
@@ -172,6 +180,9 @@ const PurePreviewMessage = ({
                   ? window.dispatchEvent(
                       new CustomEvent("medix:seek-evidence", {
                         detail: {
+                          endSeconds: followUpEvidence.cues.find(
+                            (cue) => cue.startSeconds === seconds
+                          )?.endSeconds,
                           evidenceBundleId: followUpEvidence.evidenceBundleId,
                           startSeconds: seconds,
                         },
@@ -281,7 +292,14 @@ const PurePreviewMessage = ({
     <>
       {attachments}
       {parts}
-      {actions}
+      {isAssistant && !isLoading ? (
+        <div className="flex flex-wrap items-center gap-1">
+          {actions}
+          {timing.success && <ResponseTimingPanel timing={timing.data} />}
+        </div>
+      ) : (
+        actions
+      )}
     </>
   );
 
@@ -311,20 +329,18 @@ const PurePreviewMessage = ({
 
 export const PreviewMessage = PurePreviewMessage;
 
-export const ThinkingMessage = () => {
-  return (
-    <div
-      className="group/message w-full"
-      data-role="assistant"
-      data-testid="message-assistant-loading"
-    >
-      <div className="flex items-start">
-        <div className="flex h-[calc(13px*1.65)] items-center text-[13px] leading-[1.65]">
-          <Shimmer className="font-medium" duration={1}>
-            Thinking...
-          </Shimmer>
-        </div>
+export const ThinkingMessage = () => (
+  <div
+    className="group/message w-full"
+    data-role="assistant"
+    data-testid="message-assistant-loading"
+  >
+    <div className="flex items-start">
+      <div className="flex h-[calc(13px*1.65)] items-center text-[13px] leading-[1.65]">
+        <Shimmer className="font-medium" duration={1}>
+          Thinking...
+        </Shimmer>
       </div>
     </div>
-  );
-};
+  </div>
+);

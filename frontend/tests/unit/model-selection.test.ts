@@ -3,59 +3,44 @@ import test from "node:test";
 import {
   chatModels,
   DEFAULT_CHAT_MODEL,
-  getCapabilities,
-  QWEN_CHAT_MODEL,
-  SOL_CHAT_MODEL,
+  VOYAGER_CHAT_MODEL,
 } from "../../lib/ai/models";
 import {
+  getFollowUpModel,
+  getLanguageModel,
+  getTitleModel,
   languageModelProvider,
-  ollamaOpenAIBaseUrl,
   providerOptionsKey,
 } from "../../lib/ai/providers";
 
-test("keeps GPT-OSS and local Qwen, and adds Sol-backed Qwen 3.6 for evaluation", () => {
-  assert.equal(DEFAULT_CHAT_MODEL, "openai/gpt-oss-20b");
+test("Voyager is the only active provider and uses the exact portal model ID", () => {
+  assert.equal(DEFAULT_CHAT_MODEL, VOYAGER_CHAT_MODEL);
+  assert.equal(VOYAGER_CHAT_MODEL, "qwen35-27b");
   assert.deepEqual(
-    chatModels.map(({ name, provider }) => ({ name, provider })),
-    [
-      { name: "GPT-OSS 20B", provider: "groq" },
-      { name: "Qwen 3.5 9B", provider: "ollama" },
-      { name: "Qwen 3.6 27B", provider: "sol" },
-    ]
+    chatModels.map(({ provider }) => provider),
+    ["voyager"]
   );
-  assert.equal(chatModels[1]?.id, QWEN_CHAT_MODEL);
-  assert.equal(chatModels[1]?.deployment, "Local model");
-  assert.equal(languageModelProvider(DEFAULT_CHAT_MODEL), "groq");
-  assert.equal(languageModelProvider(QWEN_CHAT_MODEL), "ollama");
-  assert.equal(getCapabilities()[QWEN_CHAT_MODEL]?.tools, true);
-  // Sol is an evaluation option only: it must not become any default.
-  assert.notEqual(DEFAULT_CHAT_MODEL, SOL_CHAT_MODEL);
-  assert.equal(chatModels[2]?.id, SOL_CHAT_MODEL);
+  assert.equal(languageModelProvider(DEFAULT_CHAT_MODEL), "voyager");
+  assert.equal(providerOptionsKey(DEFAULT_CHAT_MODEL), "voyager");
 });
 
-test("normalizes Ollama hosts to the OpenAI-compatible v1 endpoint", () => {
-  assert.equal(
-    ollamaOpenAIBaseUrl("http://127.0.0.1:11434/"),
-    "http://127.0.0.1:11434/v1"
-  );
-  assert.equal(
-    ollamaOpenAIBaseUrl("http://ollama.internal:11434/v1"),
-    "http://ollama.internal:11434/v1"
-  );
-});
-
-test("providerOptions are keyed by the client name, not the registry provider", () => {
-  // Sol's registry provider is "sol" for UI grouping, but its AI SDK client is
-  // registered as "ollama". Keying by the registry name silently drops
-  // reasoningEffort, which makes the thinking model return empty content.
-  assert.equal(languageModelProvider(SOL_CHAT_MODEL), "sol");
-  assert.equal(providerOptionsKey(SOL_CHAT_MODEL), "ollama");
-
-  assert.equal(providerOptionsKey(QWEN_CHAT_MODEL), "ollama");
-  assert.equal(providerOptionsKey(DEFAULT_CHAT_MODEL), "groq");
-
-  // Every local model must be able to receive the non-thinking option.
-  for (const model of chatModels.filter((m) => m.reasoningEffort === "none")) {
-    assert.equal(providerOptionsKey(model.id), "ollama", model.id);
+test("answers, follow-ups and titles share Voyager without performing inference", () => {
+  const oldKey = process.env.ASU_RC_API_KEY;
+  process.env.ASU_RC_API_KEY = "mock-key";
+  try {
+    for (const model of [
+      getLanguageModel(DEFAULT_CHAT_MODEL),
+      getFollowUpModel(),
+      getTitleModel(),
+    ]) {
+      assert.equal(model.modelId, VOYAGER_CHAT_MODEL);
+      assert.match(model.provider, /voyager/);
+    }
+  } finally {
+    if (oldKey === undefined) {
+      delete process.env.ASU_RC_API_KEY;
+    } else {
+      process.env.ASU_RC_API_KEY = oldKey;
+    }
   }
 });

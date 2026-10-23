@@ -12,35 +12,35 @@ function message(
   role: ChatMessage["role"],
   parts: unknown[]
 ): ChatMessage {
-  return { id, role, parts } as ChatMessage;
+  return { id, parts, role } as ChatMessage;
 }
 
 test("buildConversationContext retains the latest procedure and user question", () => {
   const history = [
     message("user-1", "user", [
-      { type: "text", text: "How do I clean a wound?" },
+      { text: "How do I clean a wound?", type: "text" },
     ]),
     message("assistant-1", "assistant", [
       {
-        type: "tool-searchProcedure",
-        toolCallId: "tool-1",
-        state: "output-available",
         input: { query: "How do I clean a wound?" },
         output: {
-          status: "answered",
-          videoId: "wound-video",
-          evidenceBundleId: "wound-bundle",
-          matchedProcedure: "Cleaning a minor wound",
-          retrievalQuery: "How do I clean a wound?",
           citations: [
             {
               cue_id: "T001",
-              start_seconds: 10,
               end_seconds: 15,
+              start_seconds: 10,
               text: "Clean the wound.",
             },
           ],
+          evidenceBundleId: "wound-bundle",
+          matchedProcedure: "Cleaning a minor wound",
+          retrievalQuery: "How do I clean a wound?",
+          status: "answered",
+          videoId: "wound-video",
         },
+        state: "output-available",
+        toolCallId: "tool-1",
+        type: "tool-searchProcedure",
       },
     ]),
   ];
@@ -66,31 +66,31 @@ test("detects contextual follow-ups but leaves standalone questions alone", () =
 test("reuses active evidence for same-procedure follow-ups", () => {
   const context = buildConversationContext([
     message("user-1", "user", [
-      { type: "text", text: "How do I pack a wound?" },
+      { text: "How do I pack a wound?", type: "text" },
     ]),
     message("assistant-1", "assistant", [
       {
-        type: "tool-searchProcedure",
-        toolCallId: "tool-1",
-        state: "output-available",
         input: {
-          query: "How do I pack a wound?",
           action: "search_new_source",
+          query: "How do I pack a wound?",
         },
         output: {
-          status: "answered",
-          videoId: "wound-packing-video",
-          evidenceBundleId: "wound-packing-bundle",
-          retrievalQuery: "How do I pack a wound?",
           citations: [
             {
               cue_id: "T001",
-              start_seconds: 16,
               end_seconds: 31,
+              start_seconds: 16,
               text: "Pack the wound with gauze or a clean shirt.",
             },
           ],
+          evidenceBundleId: "wound-packing-bundle",
+          retrievalQuery: "How do I pack a wound?",
+          status: "answered",
+          videoId: "wound-packing-video",
         },
+        state: "output-available",
+        toolCallId: "tool-1",
+        type: "tool-searchProcedure",
       },
     ]),
   ]);
@@ -100,6 +100,8 @@ test("reuses active evidence for same-procedure follow-ups", () => {
     "How long should I do that?",
     "Should I keep pressure on it?",
     "Can I use a shirt instead?",
+    "How do I check their circulation?",
+    "How do I help her?",
   ]) {
     assert.equal(
       decideRetrieval(followUp, context),
@@ -112,27 +114,27 @@ test("retrieves a new source only for a clear topic change", () => {
   const context = buildConversationContext([
     message("assistant-1", "assistant", [
       {
-        type: "tool-searchProcedure",
-        toolCallId: "tool-1",
-        state: "output-available",
         input: {
-          query: "How do I pack a wound?",
           action: "search_new_source",
+          query: "How do I pack a wound?",
         },
         output: {
-          status: "answered",
-          videoId: "wound-packing-video",
-          evidenceBundleId: "wound-packing-bundle",
-          retrievalQuery: "How do I pack a wound?",
           citations: [
             {
               cue_id: "T001",
-              start_seconds: 16,
               end_seconds: 31,
+              start_seconds: 16,
               text: "Pack the wound with gauze.",
             },
           ],
+          evidenceBundleId: "wound-packing-bundle",
+          retrievalQuery: "How do I pack a wound?",
+          status: "answered",
+          videoId: "wound-packing-video",
         },
+        state: "output-available",
+        toolCallId: "tool-1",
+        type: "tool-searchProcedure",
       },
     ]),
   ]);
@@ -159,28 +161,28 @@ test("keeps the active evidence through a long text-only follow-up exchange", ()
   const history = [
     message("assistant-initial", "assistant", [
       {
-        type: "tool-searchProcedure",
-        toolCallId: "tool-initial",
-        state: "output-available",
         output: {
-          status: "answered",
-          videoId: "aed-video",
-          evidenceBundleId: "aed-bundle",
-          retrievalQuery: "How do I use an AED?",
           citations: [
             {
               cue_id: "T001",
-              start_seconds: 10,
               end_seconds: 15,
+              start_seconds: 10,
               text: "Place the AED pads on the chest.",
             },
           ],
+          evidenceBundleId: "aed-bundle",
+          retrievalQuery: "How do I use an AED?",
+          status: "answered",
+          videoId: "aed-video",
         },
+        state: "output-available",
+        toolCallId: "tool-initial",
+        type: "tool-searchProcedure",
       },
     ]),
     ...Array.from({ length: 10 }, (_, index) =>
       message(`follow-up-${index}`, index % 2 ? "assistant" : "user", [
-        { type: "text", text: `Follow-up turn ${index}` },
+        { text: `Follow-up turn ${index}`, type: "text" },
       ])
     ),
   ];
@@ -191,4 +193,65 @@ test("keeps the active evidence through a long text-only follow-up exchange", ()
     decideRetrieval("Where should I place them?", context),
     "continue_current_evidence"
   );
+});
+
+test("history includes visible procedure-card answers when no plain-text part was saved", () => {
+  const answer =
+    "A circulation check was explained. A routine monitoring interval was also explained.";
+  const context = buildConversationContext([
+    message("user", "user", [
+      { text: "How can I check their arm bandage?", type: "text" },
+    ]),
+    message("assistant", "assistant", [
+      {
+        output: {
+          answer,
+          citations: [],
+          evidenceBundleId: "bundle",
+          evidenceContext: [
+            {
+              cue_id: "T001",
+              end_seconds: 3,
+              start_seconds: 0,
+              text: "RAW_TRANSCRIPT_NOT_THE_VISIBLE_REPLY",
+            },
+          ],
+          retrievalQuery: "Arm bandage",
+          status: "answered",
+          videoId: "bandage",
+        },
+        state: "output-available",
+        toolCallId: "procedure",
+        type: "tool-searchProcedure",
+      },
+    ]),
+  ]);
+  assert.match(
+    context.recentTranscript,
+    /assistant: A circulation check was explained/
+  );
+  assert.equal(context.recentTranscript.split(answer).length - 1, 1);
+  assert.doesNotMatch(context.recentTranscript, /RAW_TRANSCRIPT/);
+});
+
+test("plain-text assistant replies take precedence over procedure-card copies in history", () => {
+  const answer = "The visible answer.";
+  const context = buildConversationContext([
+    message("assistant", "assistant", [
+      { text: answer, type: "text" },
+      {
+        output: {
+          answer: "A stale card copy.",
+          citations: [],
+          retrievalQuery: "Bandage",
+          status: "answered",
+        },
+        state: "output-available",
+        toolCallId: "procedure",
+        type: "tool-searchProcedure",
+      },
+    ]),
+  ]);
+  assert.equal(context.recentTranscript.split(answer).length - 1, 1);
+  assert.doesNotMatch(context.recentTranscript, /stale card/);
 });

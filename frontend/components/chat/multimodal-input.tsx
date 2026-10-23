@@ -7,6 +7,7 @@ import {
   CheckIcon,
   ChevronDownIcon,
   LockIcon,
+  PlusIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -38,7 +39,6 @@ import {
   type ChatModel,
   chatModels,
   DEFAULT_CHAT_MODEL,
-  type ModelCapabilities,
 } from "@/lib/ai/models";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -49,7 +49,7 @@ import {
 } from "../ai-elements/prompt-input";
 import { Button } from "../ui/button";
 import { DictationButton } from "./dictation-button";
-import { PaperclipIcon, StopIcon } from "./icons";
+import { StopIcon } from "./icons";
 import { PreviewAttachment } from "./preview-attachment";
 import {
   type SlashCommand,
@@ -210,19 +210,19 @@ function PureMultimodalInput({
     );
 
     sendMessage({
-      role: "user",
       parts: [
         ...attachments.map((attachment) => ({
+          mediaType: attachment.contentType,
+          name: attachment.name,
           type: "file" as const,
           url: attachment.url,
-          name: attachment.name,
-          mediaType: attachment.contentType,
         })),
         {
-          type: "text",
           text: input,
+          type: "text",
         },
       ],
+      role: "user",
     });
 
     setAttachments([]);
@@ -251,8 +251,8 @@ function PureMultimodalInput({
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/files/upload`,
         {
-          method: "POST",
           body: formData,
+          method: "POST",
         }
       );
 
@@ -261,14 +261,14 @@ function PureMultimodalInput({
         const { url, pathname, contentType } = data;
 
         return {
-          url,
-          name: pathname,
           contentType,
+          name: pathname,
+          url,
         };
       }
       const { error } = await response.json();
       toast.error(error);
-    } catch (_error) {
+    } catch {
       toast.error("Failed to upload file, please try again!");
     }
   }, []);
@@ -290,7 +290,7 @@ function PureMultimodalInput({
           ...currentAttachments,
           ...successfullyUploadedAttachments,
         ]);
-      } catch (_error) {
+      } catch {
         toast.error("Failed to upload files");
       } finally {
         setUploadQueue([]);
@@ -336,7 +336,7 @@ function PureMultimodalInput({
           ...curr,
           ...(successfullyUploadedAttachments as Attachment[]),
         ]);
-      } catch (_error) {
+      } catch {
         toast.error("Failed to upload pasted image(s)");
       } finally {
         setUploadQueue([]);
@@ -394,7 +394,7 @@ function PureMultimodalInput({
       </div>
 
       <PromptInput
-        className="[&>div]:h-auto [&>div]:rounded-[26px] [&>div]:border [&>div]:border-border/70 [&>div]:bg-card [&>div]:shadow-[0_8px_30px_-22px_rgba(15,23,42,0.32),0_1px_2px_rgba(15,23,42,0.05)] [&>div]:transition-[border-color,box-shadow] [&>div]:duration-300 [&>div]:focus-within:border-border [&>div]:focus-within:shadow-[0_14px_36px_-24px_rgba(15,23,42,0.34),0_1px_3px_rgba(15,23,42,0.08)] [&>div]:has-[[data-slot=input-group-control]:focus-visible]:border-border [&>div]:has-[[data-slot=input-group-control]:focus-visible]:ring-0"
+        className="[&>div]:h-auto [&>div]:rounded-2xl [&>div]:border [&>div]:border-border/70 [&>div]:bg-card [&>div]:shadow-sm [&>div]:transition-[border-color,box-shadow] [&>div]:duration-300 [&>div]:focus-within:border-border [&>div]:focus-within:shadow-[0_14px_36px_-24px_rgba(15,23,42,0.34),0_1px_3px_rgba(15,23,42,0.08)] [&>div]:has-[[data-slot=input-group-control]:focus-visible]:border-border [&>div]:has-[[data-slot=input-group-control]:focus-visible]:ring-0"
         onSubmit={() => {
           if (input.startsWith("/")) {
             const query = input.slice(1).trim();
@@ -417,7 +417,7 @@ function PureMultimodalInput({
         <div className="flex w-full flex-col">
           {(attachments.length > 0 || uploadQueue.length > 0) && (
             <div
-              className="flex w-full self-start flex-row gap-2 overflow-x-auto px-4 pt-3 no-scrollbar"
+              className="no-scrollbar flex w-full flex-row gap-2 self-start overflow-x-auto px-4 pt-3"
               data-testid="attachments-preview"
             >
               {attachments.map((attachment) => (
@@ -438,9 +438,9 @@ function PureMultimodalInput({
               {uploadQueue.map((filename) => (
                 <PreviewAttachment
                   attachment={{
-                    url: "",
-                    name: filename,
                     contentType: "",
+                    name: filename,
+                    url: "",
                   }}
                   isUploading={true}
                   key={filename}
@@ -514,8 +514,8 @@ function PureMultimodalInput({
                 className={cn(
                   "size-8 shrink-0 rounded-full transition-all duration-200",
                   input.trim()
-                    ? "bg-foreground text-background hover:opacity-85 active:scale-95"
-                    : "bg-muted text-muted-foreground/25 cursor-not-allowed"
+                    ? "bg-primary text-primary-foreground hover:opacity-85 active:scale-95"
+                    : "cursor-not-allowed bg-muted text-muted-foreground/25"
                 )}
                 data-testid="send-button"
                 disabled={!input.trim() || uploadQueue.length > 0}
@@ -557,29 +557,21 @@ export const MultimodalInput = memo(
 function PureAttachmentsButton({
   fileInputRef,
   status,
-  selectedModelId,
 }: {
   fileInputRef: React.MutableRefObject<HTMLInputElement | null>;
   status: UseChatHelpers<ChatMessage>["status"];
   selectedModelId: string;
 }) {
-  const { data: modelsResponse } = useSWR(
-    `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
-    (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: false, dedupingInterval: 3_600_000 }
-  );
-
-  const caps: Record<string, ModelCapabilities> | undefined =
-    modelsResponse?.capabilities ?? modelsResponse;
-  const hasVision = caps?.[selectedModelId]?.vision ?? false;
+  const hasVision = true; // Dedicated backend Qwen vision, independent of answer model.
 
   return (
     <Button
+      aria-label="Add an image or file"
       className={cn(
-        "size-8 shrink-0 rounded-full border-0 p-0 transition-colors",
+        "size-8 shrink-0 rounded-full border-0 bg-transparent p-0 shadow-none transition-colors hover:bg-transparent",
         hasVision
-          ? "text-foreground hover:border-border hover:text-foreground"
-          : "text-muted-foreground/30 cursor-not-allowed"
+          ? "text-muted-foreground hover:text-primary"
+          : "cursor-not-allowed text-muted-foreground/30"
       )}
       data-testid="attachments-button"
       disabled={status !== "ready" || !hasVision}
@@ -587,9 +579,10 @@ function PureAttachmentsButton({
         event.preventDefault();
         fileInputRef.current?.click();
       }}
+      title="Add an image or file"
       variant="ghost"
     >
-      <PaperclipIcon size={15} style={{ width: 15, height: 15 }} />
+      <PlusIcon aria-hidden="true" className="size-[18px]" strokeWidth={1.7} />
     </Button>
   );
 }
@@ -609,7 +602,7 @@ function PureModelSelectorCompact({
   const { data: modelsData, mutate: refreshModels } = useSWR(
     `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/models`,
     (url: string) => fetch(url).then((r) => r.json()),
-    { revalidateOnFocus: true, dedupingInterval: 15_000 }
+    { dedupingInterval: 15_000, revalidateOnFocus: true }
   );
 
   const dynamicModels: ChatModel[] | undefined = modelsData?.models;
@@ -648,7 +641,7 @@ function PureModelSelectorCompact({
       <ModelSelectorTrigger asChild>
         <Button
           aria-label="Choose response model"
-          className="h-8 max-w-[210px] justify-between gap-1.5 rounded-lg px-2 text-[15px] font-semibold tracking-[-0.025em] text-foreground shadow-none transition-colors hover:bg-muted/70"
+          className="h-8 max-w-[210px] justify-between gap-1.5 rounded-lg px-2 font-semibold text-[15px] text-foreground tracking-[-0.025em] shadow-none transition-colors hover:bg-muted/70"
           data-testid="model-selector"
           type="button"
           variant="ghost"
@@ -698,7 +691,7 @@ function PureModelSelectorCompact({
               if (!grouped[key]) {
                 grouped[key] = [];
               }
-              grouped[key].push({ model, curated: curatedIds.has(model.id) });
+              grouped[key].push({ curated: curatedIds.has(model.id), model });
             }
 
             const sortedKeys = Object.keys(grouped).sort((a, b) => {
@@ -728,20 +721,19 @@ function PureModelSelectorCompact({
               moonshotai: "Moonshot",
               morph: "Morph",
               nvidia: "Nvidia",
-              openai: "OpenAI",
-              groq: "Groq",
               ollama: "Ollama",
-              sol: "Sol",
+              openai: "OpenAI",
               perplexity: "Perplexity",
               "prime-intellect": "Prime Intellect",
-              xiaomi: "Xiaomi",
+              sol: "Sol",
               xai: "xAI",
+              xiaomi: "Xiaomi",
               zai: "Zai",
             };
 
             return sortedKeys.map((key) => (
               <ModelSelectorGroup
-                className="**:[[cmdk-group-heading]]:text-[10.5px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:tracking-[-0.01em] **:[[cmdk-group-heading]]:text-foreground/60"
+                className="**:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:text-[10.5px] **:[[cmdk-group-heading]]:text-foreground/60 **:[[cmdk-group-heading]]:tracking-[-0.01em]"
                 heading={
                   key === "_available"
                     ? "Available"
@@ -762,7 +754,7 @@ function PureModelSelectorCompact({
                       className={cn(
                         "flex w-full cursor-pointer items-center rounded-lg border border-transparent px-2.5 py-2 transition-colors hover:bg-muted/60 data-[selected=true]:bg-muted/60",
                         isSelected && "border-border/70 bg-muted/50",
-                        !selectable && "opacity-40 cursor-default"
+                        !selectable && "cursor-default opacity-40"
                       )}
                       data-active-model={isSelected ? "true" : "false"}
                       key={model.id}
@@ -786,7 +778,7 @@ function PureModelSelectorCompact({
                         provider={logoProvider}
                       />
                       <div className="min-w-0 flex-1 text-left">
-                        <ModelSelectorName className="block text-[12px] font-medium tracking-[-0.01em] text-foreground/90">
+                        <ModelSelectorName className="block font-medium text-[12px] text-foreground/90 tracking-[-0.01em]">
                           {model.name}
                           {offline && (
                             <span className="ml-2 rounded-full bg-muted px-1.5 py-0.5 font-normal text-[10px] text-muted-foreground">
@@ -829,7 +821,7 @@ function PureStopButton({
 }) {
   return (
     <Button
-      className="size-8 shrink-0 rounded-full bg-foreground p-1 text-background transition-all duration-200 hover:opacity-85 active:scale-95 disabled:bg-muted disabled:text-muted-foreground/25 disabled:cursor-not-allowed"
+      className="size-8 shrink-0 rounded-full bg-primary p-1 text-primary-foreground transition-all duration-200 hover:opacity-85 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground/25"
       data-testid="stop-button"
       onClick={(event) => {
         event.preventDefault();

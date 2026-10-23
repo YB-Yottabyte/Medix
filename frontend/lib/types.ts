@@ -1,9 +1,9 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
-
-import type { CitedCue } from "./ai/medical-follow-up";
+import type { CitedCue } from "./ai/evidence-links";
 import type { analyzeImage } from "./ai/tools/analyze-image";
 import type { searchProcedure } from "./ai/tools/search-procedure";
+import type { ResponseTiming } from "./response-timing-data";
 
 export const messageMetadataSchema = z.object({
   createdAt: z.string(),
@@ -20,6 +20,7 @@ export type ChatTools = {
 };
 
 export type CustomUIDataTypes = {
+  performance: ResponseTiming;
   appendMessage: string;
   id: string;
   title: string;

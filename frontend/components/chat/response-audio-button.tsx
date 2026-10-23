@@ -11,8 +11,8 @@ export function useResponseAudio(text: string) {
   const stopRequestedRef = useRef(false);
   const objectUrlsRef = useRef<string[]>([]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       stopRequestedRef.current = true;
       if (audioRef.current) {
         audioRef.current.pause();
@@ -22,8 +22,9 @@ export function useResponseAudio(text: string) {
         URL.revokeObjectURL(url);
       }
       objectUrlsRef.current = [];
-    };
-  }, []);
+    },
+    []
+  );
 
   const splitIntoChunks = (input: string) => {
     const normalized = prepareSpeechText(input);
@@ -86,9 +87,9 @@ export function useResponseAudio(text: string) {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/api/tts`,
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: chunk }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
       }
     );
 
@@ -125,8 +126,8 @@ export function useResponseAudio(text: string) {
   const handleToggleSpeech = async () => {
     if (!text.trim()) {
       toast({
-        type: "error",
         description: "There is no response text to read aloud.",
+        type: "error",
       });
       return;
     }
@@ -150,11 +151,11 @@ export function useResponseAudio(text: string) {
       }
     } catch (error) {
       toast({
-        type: "error",
         description:
           error instanceof Error
             ? error.message
             : "Could not play the audio response.",
+        type: "error",
       });
     } finally {
       setIsLoading(false);

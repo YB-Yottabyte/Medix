@@ -28,51 +28,51 @@ import type { TranscriptCitation } from "../../lib/ai/tools/search-procedure";
 
 const EVIDENCE: TranscriptCitation[] = [
   {
-    cue_id: "S1",
-    start_seconds: 24,
-    end_seconds: 31,
-    clip_start_seconds: 24,
     clip_end_seconds: 31,
+    clip_start_seconds: 24,
+    cue_id: "S1",
+    end_seconds: 31,
+    start_seconds: 24,
     text: "Once the AED arrives, turn it on and it will talk you through every step.",
   },
   {
-    cue_id: "S2",
-    start_seconds: 31,
-    end_seconds: 36,
-    clip_start_seconds: 31,
     clip_end_seconds: 36,
+    clip_start_seconds: 31,
+    cue_id: "S2",
+    end_seconds: 36,
+    start_seconds: 31,
     text: "Attach the AED pads to the patient's bare chest, one below the right collarbone and one on the left side below the armpit.",
   },
   {
-    cue_id: "S3",
-    start_seconds: 36,
-    end_seconds: 43,
-    clip_start_seconds: 36,
     clip_end_seconds: 43,
+    clip_start_seconds: 36,
+    cue_id: "S3",
+    end_seconds: 43,
+    start_seconds: 36,
     text: "Keep doing chest compressions the whole time the second rescuer is preparing the AED.",
   },
   {
-    cue_id: "S4",
-    start_seconds: 43,
-    end_seconds: 49,
-    clip_start_seconds: 43,
     clip_end_seconds: 49,
+    clip_start_seconds: 43,
+    cue_id: "S4",
+    end_seconds: 49,
+    start_seconds: 43,
     text: "When the machine says stand clear, make sure nobody is touching the patient before the shock is delivered.",
   },
   {
-    cue_id: "S5",
-    start_seconds: 49,
-    end_seconds: 56,
-    clip_start_seconds: 49,
     clip_end_seconds: 56,
+    clip_start_seconds: 49,
+    cue_id: "S5",
+    end_seconds: 56,
+    start_seconds: 49,
     text: "Straight after the shock, go back to chest compressions without waiting.",
   },
   {
-    cue_id: "S6",
-    start_seconds: 56,
-    end_seconds: 63,
-    clip_start_seconds: 56,
     clip_end_seconds: 63,
+    clip_start_seconds: 56,
+    cue_id: "S6",
+    end_seconds: 63,
+    start_seconds: 56,
     text: "If the chest is very hairy, use the razor in the AED kit so the pads stick properly.",
   },
 ];
@@ -84,43 +84,43 @@ const CASES: Array<{
   sufficiency: "sufficient" | "partial";
 }> = [
   {
+    cueIds: ["T003"],
     question: "Should I keep doing compressions while the AED is being set up?",
-    cueIds: ["T003"],
     sufficiency: "sufficient",
   },
   {
-    question: "Where exactly do the pads go?",
     cueIds: ["T002"],
+    question: "Where exactly do the pads go?",
     sufficiency: "sufficient",
   },
   {
-    question: "What do I do right after the shock is delivered?",
     cueIds: ["T005"],
+    question: "What do I do right after the shock is delivered?",
     sufficiency: "sufficient",
   },
   {
-    question: "What if the person has a really hairy chest?",
     cueIds: ["T006"],
+    question: "What if the person has a really hairy chest?",
     sufficiency: "sufficient",
   },
   {
-    question: "Is it safe for me to be touching them when it shocks?",
     cueIds: ["T004"],
+    question: "Is it safe for me to be touching them when it shocks?",
     sufficiency: "sufficient",
   },
   {
-    question: "Do I need to know how to use the machine before it arrives?",
     cueIds: ["T001"],
+    question: "Do I need to know how to use the machine before it arrives?",
     sufficiency: "sufficient",
   },
   {
-    question: "How many compressions per minute should I be doing?",
     cueIds: ["T003"],
+    question: "How many compressions per minute should I be doing?",
     sufficiency: "partial",
   },
   {
-    question: "How long do I keep going before I can stop?",
     cueIds: ["T003", "T005"],
+    question: "How long do I keep going before I can stop?",
     sufficiency: "partial",
   },
 ];
@@ -191,37 +191,37 @@ async function runArm(
 ): Promise<Outcome> {
   const cueList = formatCues(testCase.cueIds);
   const generation = await generateText({
-    model,
-    temperature: 0.1,
     maxOutputTokens: 400,
+    model,
+    prompt: `Follow-up: ${testCase.question}\nEvidence sufficiency: ${testCase.sufficiency}\n\nSelected transcript cues:\n${cueList}`,
     providerOptions: LOCAL_MODEL_OPTIONS,
     system: systemPrompt,
-    prompt: `Follow-up: ${testCase.question}\nEvidence sufficiency: ${testCase.sufficiency}\n\nSelected transcript cues:\n${cueList}`,
+    temperature: 0.1,
   });
 
   const claims = parseGroundedClaims(generation.text, testCase.cueIds);
   const limitation = parseUnsupportedAspect(generation.text);
   if (!claims) {
     return {
-      question: testCase.question,
       answer: "",
-      valid: false,
-      utility: null,
       claimCount: 0,
       droppedClaims: 0,
       failure: `unparseable claims: ${generation.text.slice(0, 120)}`,
+      question: testCase.question,
+      utility: null,
+      valid: false,
     };
   }
 
   const verification = await generateText({
-    model,
-    temperature: 0,
     maxOutputTokens: 400,
-    providerOptions: LOCAL_MODEL_OPTIONS,
-    system: VERIFICATION_PROMPT,
+    model,
     prompt: `Follow-up: ${testCase.question}\n\nSelected transcript cues:\n${cueList}\n\nProposed claims:\n${claims
       .map((c, i) => `${i}: ${c.text} (cites ${c.cueIds.join(", ")})`)
       .join("\n")}`,
+    providerOptions: LOCAL_MODEL_OPTIONS,
+    system: VERIFICATION_PROMPT,
+    temperature: 0,
   });
   const verdict = parseClaimVerification(verification.text, testCase.cueIds);
 
@@ -246,15 +246,15 @@ async function runArm(
   const validation = validateFollowUpAnswer(rendered, EVIDENCE);
 
   return {
-    question: testCase.question,
     answer: validation.answer,
-    valid: validation.valid,
-    utility: verdict?.utility ?? null,
     claimCount: claims.length,
     droppedClaims: claims.length - kept.length,
     failure: validation.valid
       ? ""
       : `invalid render: ${rendered.slice(0, 160)}`,
+    question: testCase.question,
+    utility: verdict?.utility ?? null,
+    valid: validation.valid,
   };
 }
 
@@ -391,30 +391,30 @@ function summarize(label: string, outcomes: Outcome[]): ArmSummary {
     (_, i) => CASES[i].sufficiency === "partial"
   );
   return {
-    label,
-    validRate: outcomes.filter((o) => o.valid).length / outcomes.length,
-    meanUtility: mean(
-      outcomes.map((o) => o.utility).filter((u): u is number => u !== null)
-    ),
-    meanWords: mean(valid.map((o) => words(o.answer).length)),
-    meanIntentOverlap: mean(
-      valid.map((o) => intentOverlap(o.question, o.answer))
-    ),
-    transcriptVoiceRate:
-      valid.filter((o) => TRANSCRIPT_VOICE.test(o.answer)).length /
-      Math.max(1, valid.length),
-    scaffoldingRate:
-      valid.filter((o) => SCAFFOLDING.test(o.answer)).length /
-      Math.max(1, valid.length),
-    meanLongestEcho: mean(valid.map((o) => longestCueEcho(o.answer))),
     absenceClaimRate:
       valid.filter((o) => ABSENCE_CLAIM.test(o.answer)).length /
       Math.max(1, valid.length),
+    droppedClaimRate: mean(outcomes.map((o) => o.droppedClaims)),
+    label,
     limitationRate:
       partialCases.filter((o) =>
         /does not (?:contain|provide) enough verified/i.test(o.answer)
       ).length / Math.max(1, partialCases.length),
-    droppedClaimRate: mean(outcomes.map((o) => o.droppedClaims)),
+    meanIntentOverlap: mean(
+      valid.map((o) => intentOverlap(o.question, o.answer))
+    ),
+    meanLongestEcho: mean(valid.map((o) => longestCueEcho(o.answer))),
+    meanUtility: mean(
+      outcomes.map((o) => o.utility).filter((u): u is number => u !== null)
+    ),
+    meanWords: mean(valid.map((o) => words(o.answer).length)),
+    scaffoldingRate:
+      valid.filter((o) => SCAFFOLDING.test(o.answer)).length /
+      Math.max(1, valid.length),
+    transcriptVoiceRate:
+      valid.filter((o) => TRANSCRIPT_VOICE.test(o.answer)).length /
+      Math.max(1, valid.length),
+    validRate: outcomes.filter((o) => o.valid).length / outcomes.length,
   };
 }
 
@@ -426,14 +426,14 @@ async function judge(
   flipped: boolean
 ) {
   const { text } = await generateText({
-    model,
-    temperature: 0,
     maxOutputTokens: 200,
+    model,
+    prompt: `Question: ${question}\n\nAnswer A:\n${answerA}\n\nAnswer B:\n${answerB}`,
     providerOptions: LOCAL_MODEL_OPTIONS,
     system: `You compare two answers to the same medical question. For each axis pick "A", "B", or "tie".
 Axes: addressesIntent (which better answers what was asked), completeness (which omits less important information), irrelevantContent (which contains LESS content it shouldn't — pick the better one), naturalness (which reads more like a person explaining, less like a transcript).
 Return JSON only: {"addressesIntent":"A|B|tie","completeness":"A|B|tie","irrelevantContent":"A|B|tie","naturalness":"A|B|tie"}`,
-    prompt: `Question: ${question}\n\nAnswer A:\n${answerA}\n\nAnswer B:\n${answerB}`,
+    temperature: 0,
   });
   const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as Record<
     string,
@@ -470,17 +470,17 @@ async function main() {
   console.log("\n=== Deterministic metrics (Med-PaLM 2 rubric proxies) ===");
   console.table(
     summaries.map((s) => ({
-      arm: s.label,
-      "valid%": (s.validRate * 100).toFixed(0),
-      utility: s.meanUtility.toFixed(2),
-      words: s.meanWords.toFixed(1),
-      "intent-overlap": s.meanIntentOverlap.toFixed(2),
-      "transcript-voice%": (s.transcriptVoiceRate * 100).toFixed(0),
-      "scaffolding%": (s.scaffoldingRate * 100).toFixed(0),
-      "longest-echo": s.meanLongestEcho.toFixed(1),
       "absence-claim%": (s.absenceClaimRate * 100).toFixed(0),
-      "limitation-stated%": (s.limitationRate * 100).toFixed(0),
+      arm: s.label,
       "claims-dropped": s.droppedClaimRate.toFixed(2),
+      "intent-overlap": s.meanIntentOverlap.toFixed(2),
+      "limitation-stated%": (s.limitationRate * 100).toFixed(0),
+      "longest-echo": s.meanLongestEcho.toFixed(1),
+      "scaffolding%": (s.scaffoldingRate * 100).toFixed(0),
+      "transcript-voice%": (s.transcriptVoiceRate * 100).toFixed(0),
+      utility: s.meanUtility.toFixed(2),
+      "valid%": (s.validRate * 100).toFixed(0),
+      words: s.meanWords.toFixed(1),
     }))
   );
 
@@ -498,7 +498,7 @@ async function main() {
       : [before[i].answer, after[i].answer];
     const verdicts = await judge(CASES[i].question, a, b, flipped);
     for (const [axis, winner] of Object.entries(verdicts)) {
-      tally[axis] ??= { before: 0, after: 0, tie: 0 };
+      tally[axis] ??= { after: 0, before: 0, tie: 0 };
       tally[axis][winner] += 1;
     }
   }

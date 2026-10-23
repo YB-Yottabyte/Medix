@@ -197,7 +197,7 @@ export const ReasoningTrigger = memo(
   }
 );
 
-export type ReasoningContentProps = HTMLAttributes<HTMLDivElement> & {
+export type ReasoningContentProps = Omit<ComponentProps<typeof Streamdown>, "children"> & {
   children: string;
 };
 

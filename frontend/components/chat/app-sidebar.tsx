@@ -24,6 +24,7 @@ import {
 import type { AppUser } from "@/lib/auth/types";
 import { isLocalAuthBypassed } from "@/lib/constants";
 import { generateUUID } from "@/lib/utils";
+import { MedixBrand } from "./medix-brand";
 
 export function AppSidebar({ user }: { user: AppUser | undefined }) {
   const router = useRouter();
@@ -33,15 +34,16 @@ export function AppSidebar({ user }: { user: AppUser | undefined }) {
   const isGuest = !user || isLocalAuthBypassed || user.type === "guest";
 
   return (
-    <Sidebar className="border-r border-slate-200/70" collapsible="offcanvas">
+    <Sidebar className="border-slate-200/70 border-r" collapsible="offcanvas">
       <SidebarHeader className="px-3 pt-3.5 pb-1">
         <div className="flex h-10 items-center justify-between gap-3 px-2">
           <Link
-            className="text-[17px] font-semibold tracking-[-0.04em] text-foreground transition-opacity hover:opacity-70"
+            aria-label="Medix home"
+            className="font-semibold text-[17px] text-foreground tracking-[-0.04em] transition-opacity hover:opacity-70"
             href="/"
             onClick={() => setOpenMobile(false)}
           >
-            Medix
+            <MedixBrand className="text-[21px]" />
           </Link>
           <div className="flex items-center gap-0.5">
             <Button
@@ -93,7 +95,7 @@ export function AppSidebar({ user }: { user: AppUser | undefined }) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  className="h-9 rounded-lg px-2.5 text-[13px] font-medium text-sidebar-foreground/85 transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                  className="h-9 rounded-lg px-2.5 font-medium text-[13px] text-sidebar-foreground/85 transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   onClick={() => {
                     setSearchOpen(false);
                     setSearchQuery("");
@@ -116,21 +118,19 @@ export function AppSidebar({ user }: { user: AppUser | undefined }) {
       </SidebarContent>
 
       {isGuest ? (
-        <SidebarFooter className="border-t border-slate-200/70 px-3 pt-4 pb-4">
+        <SidebarFooter className="border-slate-200/70 border-t px-3 pt-4 pb-4">
           <div className="px-1 font-sans">
-            <h2 className="text-[12px] font-semibold leading-5 tracking-[-0.01em] text-foreground">
+            <h2 className="font-semibold text-[12px] text-foreground leading-5 tracking-[-0.01em]">
               Get responses tailored to you
             </h2>
-            <p className="mt-2 text-[11px] leading-[1.48] text-sidebar-foreground/65">
-              Log in to get answers based on saved chats, plus create images and
-              upload files.
+            <p className="mt-2 text-[11px] text-sidebar-foreground/65 leading-[1.48]">
+              Sign in to save and revisit your Medix conversations.
             </p>
             <Link
-              className="group/login relative mt-4 flex h-9 w-full items-center justify-center overflow-hidden rounded-full border border-sidebar-border bg-white text-[12px] font-medium text-slate-950 transition-colors duration-500 hover:text-white"
+              className="medix-blue-sweep relative mt-4 flex h-9 w-full items-center justify-center rounded-xl font-medium text-[12px]"
               href="/login"
               onClick={() => setOpenMobile(false)}
             >
-              <span className="absolute inset-0 bg-slate-950 [clip-path:polygon(0_100%,0_100%,0_100%)] transition-[clip-path] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/login:[clip-path:polygon(0_100%,0_-100%,200%_100%)]" />
               <span className="relative z-10">Log in</span>
             </Link>
           </div>

@@ -46,41 +46,41 @@ type Scenario = { question: string; evidence: string };
 
 const SCENARIOS: Scenario[] = [
   {
-    question: "How do I use an AED on someone who has collapsed?",
     evidence: `[0:24–0:31] Once the AED arrives, turn it on and it will talk you through every step.
 [0:31–0:36] Attach the AED pads to the patient's bare chest, one below the right collarbone and one on the left side below the armpit.
 [0:36–0:43] Keep doing chest compressions the whole time the second rescuer is preparing the AED.
 [0:43–0:49] When the machine says stand clear, make sure nobody is touching the patient before the shock is delivered.
 [0:49–0:56] Straight after the shock, go back to chest compressions without waiting.`,
+    question: "How do I use an AED on someone who has collapsed?",
   },
   {
-    question: "How should I pack a bleeding wound?",
     evidence: `[0:16–0:31] If direct pressure does not stop the bleeding, move to packing the wound with gauze.
 [0:31–0:44] Push the gauze right down into the wound, as deep as it will go.
 [0:44–0:58] Keep packing until you cannot fit any more gauze in.
 [0:58–1:10] Then press down hard on top of the packed wound with both hands.`,
+    question: "How should I pack a bleeding wound?",
   },
   {
-    question: "What should I do if someone is choking?",
     evidence: `[0:12–0:20] Ask them if they are choking and encourage them to cough it out.
 [0:20–0:33] If they cannot cough, give five sharp back blows between the shoulder blades.
 [0:33–0:47] If that does not clear it, give five abdominal thrusts.`,
+    question: "What should I do if someone is choking?",
   },
   {
-    question: "Can I keep the tourniquet on until the ambulance arrives?",
     evidence: `[1:02–1:14] Once the tourniquet is tightened, do not loosen it.
 [1:14–1:25] Write down the time you applied it.`,
+    question: "Can I keep the tourniquet on until the ambulance arrives?",
   },
 ];
 
 async function answer(rules: string, scenario: Scenario) {
   const { text } = await generateText({
-    model,
-    temperature: 0.3,
     maxOutputTokens: 600,
+    model,
+    prompt: `User question: ${scenario.question}\n\nVerified transcript citations:\n${scenario.evidence}`,
     providerOptions: LOCAL_MODEL_OPTIONS,
     system: `${PREAMBLE}\n\n${rules}`,
-    prompt: `User question: ${scenario.question}\n\nVerified transcript citations:\n${scenario.evidence}`,
+    temperature: 0.3,
   });
   // Answers pass through the same sanitizer the app applies before display.
   return sanitizeProcedureAnswer(text);
@@ -111,12 +111,8 @@ function summarize(label: string, answers: string[]) {
     (answers.filter(predicate).length / answers.length) * 100;
   return {
     arm: label,
-    "heading%": rate((a) => HEADING.test(a)).toFixed(0),
-    "title-phrase%": rate((a) => TITLE_LINE.test(a)).toFixed(0),
     "filler%": rate((a) => FILLER.test(a)).toFixed(0),
-    "preamble-open%": rate((a) =>
-      PREAMBLE_OPENER.test(firstSentence(a))
-    ).toFixed(0),
+    "heading%": rate((a) => HEADING.test(a)).toFixed(0),
     "mean-bold": (
       answers.reduce((sum, a) => sum + boldCount(a), 0) / answers.length
     ).toFixed(1),
@@ -126,6 +122,10 @@ function summarize(label: string, answers: string[]) {
         0
       ) / answers.length
     ).toFixed(0),
+    "preamble-open%": rate((a) =>
+      PREAMBLE_OPENER.test(firstSentence(a))
+    ).toFixed(0),
+    "title-phrase%": rate((a) => TITLE_LINE.test(a)).toFixed(0),
   };
 }
 
